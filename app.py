@@ -137,7 +137,7 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
-    st.markdown("<h4 class='section-title'>2025 Composition</h4>", unsafe_allow_html=True)
+    st.subheader("2025 Composition", help="Categories can overlap; totals won’t sum to overall controversial exposure.")
     cA, cB = st.columns([0.56,0.44], gap="small")
     with cA:
         if ctx is not None:
@@ -146,7 +146,6 @@ with tab_dash:
         byscreen = read_csv(CTX_BYSCREEN)
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
-            st.caption("Categories can overlap; totals won’t sum to overall controversial exposure.")
 
     st.markdown("<h4 class='section-title'>Spotlight</h4>", unsafe_allow_html=True)
     s1,s2 = st.columns(2, gap="small")
