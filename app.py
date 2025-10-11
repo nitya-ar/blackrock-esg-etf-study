@@ -9,8 +9,8 @@ st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 st.markdown(
     """
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-      html, body, [class*="css"] { font-family: 'Inter', sans-serif; color:#E6E9EF; background:#0B0C10; }
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+      html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#E6E9EF; background:#0B0C10; }
       .block-container { padding-top: 12px; padding-bottom: 10px; max-width: 1200px; }
       h1,h2,h3 { letter-spacing:0.2px; }
       .footer { margin-top: 14px; padding-top: 12px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
@@ -24,7 +24,6 @@ st.markdown(
       div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
       div[data-testid="stMetricDelta"] { font-size: 12px; }
-      .df-compact .row-widget.stDataFrame { margin-top: 8px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -85,10 +84,10 @@ def chart_composition(df):
     m = m.assign(order=order).sort_values("order")
     colors = {"Clean":CLEAN_COLOR,"Controversial":CONTRO_COLOR,"Other":OTHER_COLOR}
     return alt.Chart(m).mark_bar().encode(
-        x=alt.X(f"{share}:Q", stack="normalize", axis=alt.Axis(format="%")),
+        x=alt.X(f"{share}:Q", stack="normalize", axis=alt.Axis(format="%", title="Share of total AUM")),
         color=alt.Color(cls, scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=None),
-        tooltip=[alt.Tooltip(cls, title="Category"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=95)
+        tooltip=[alt.Tooltip(cls, title="Category"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
+    ).properties(height=160)
 
 def chart_by_screen(df):
     cat = pick(df, [lambda s: s in ("screen_category","screen_categories","category")])
@@ -98,10 +97,10 @@ def chart_by_screen(df):
     colors = {"Controversial":CONTRO_COLOR,"Clean":CLEAN_COLOR}
     return alt.Chart(d).mark_bar().encode(
         y=alt.Y(f"{cat}:N", sort="-x", title=""),
-        x=alt.X(f"{share}:Q", axis=alt.Axis(format="%")),
+        x=alt.X(f"{share}:Q", axis=alt.Axis(format="%", title="Share of total AUM")),
         color=alt.Color(f"{cls}:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title="")),
-        tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=150)
+        tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
+    ).properties(height=230)
 
 st.markdown("## BlackRock ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)")
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
