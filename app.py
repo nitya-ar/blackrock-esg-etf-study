@@ -11,19 +11,20 @@ st.markdown(
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
       html, body, [class*="css"] { font-family: 'Inter', sans-serif; color:#E6E9EF; background:#0B0C10; }
-      .block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
+      .block-container { padding-top: 1.25rem; padding-bottom: 1.25rem; max-width: 1200px; }
       h1,h2,h3 { letter-spacing:0.2px; }
-      .subtle { color:#9AA4B2; }
-      .footer { margin-top: 28px; padding-top: 14px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
+      .footer { margin-top: 18px; padding-top: 12px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
       .footer a { color:#E6E9EF; text-decoration:none; font-size:13px; margin-right:16px; opacity:0.9; }
       .footer a:hover { opacity:1.0; text-decoration:underline; }
       .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419; border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
       .asof { font-size:12px; color:#9AA4B2; text-align:right; }
       .muted-accent { background:#191c22; border:1px solid #2A2F36; color:#C9D2DF; padding:6px 10px; border-radius:8px; display:inline-block; }
-      .stTabs [data-baseweb="tab-list"] { gap: 18px; }
-      .stTabs [data-baseweb="tab-list"] button { font-weight:600; color:#E6E9EF; }
-      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] { color:#63A4E9; border-bottom:3px solid #63A4E9; }
-      .tight { margin-top:-8px; }
+      .kpi-row { margin-top:-6px; }
+      div[data-testid="stMetric"] { padding: 2px 6px; }
+      div[data-testid="stMetricValue"] { font-size: 28px; }
+      div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
+      div[data-testid="stMetricDelta"] { font-size: 13px; }
+      .section-title { margin-top: 8px; margin-bottom: 2px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -36,12 +37,11 @@ AN2 = BASE / "Analysis 2"
 CTX_SUMMARY = AN1 / "context_summary_2025.csv"
 CTX_BYSCREEN = AN1 / "context_breakdown_by_screen.csv"
 TOP_SPOTLIGHT = AN1 / "top_holdings_spotlight.csv"
-HOLDINGS_EXPLORER = AN1 / "holdings_explorer_2025.csv"
 AGG_TRENDS = AN2 / "aggregate_exposure_trends.csv"
 
-CLEAN_COLOR = "#0A8F6A"
-CONTRO_COLOR = "#B63C3C"
-OTHER_COLOR = "#4B5865"
+CLEAN_COLOR = "#0A7C5E"
+CONTRO_COLOR = "#9F3535"
+OTHER_COLOR = "#46515C"
 
 @st.cache_data
 def read_csv(p: Path):
@@ -51,8 +51,7 @@ def pick(df, fns):
     low = {c.lower(): c for c in df.columns}
     for fn in fns:
         for k,v in low.items():
-            if fn(k):
-                return v
+            if fn(k): return v
     return None
 
 def get_asof(df):
@@ -72,12 +71,11 @@ def deltas_from_trends(df):
     ycol = pick(df, [lambda s: s=="year"])
     clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
-    d = df
-    y17 = d.loc[d[ycol]==2017]
-    y25 = d.loc[d[ycol]==2025]
-    dc = float(y25[clean_col].mean() - y17[clean_col].mean()) if len(y17) and len(y25) else np.nan
-    dv = float(y25[contro_col].mean() - y17[contro_col].mean()) if contro_col and len(y17) and len(y25) else np.nan
-    return dc, dv
+    y17 = df.loc[df[ycol]==2017]
+    y25 = df.loc[df[ycol]==2025]
+    d_clean = float(y25[clean_col].mean() - y17[clean_col].mean()) if len(y17) and len(y25) else np.nan
+    d_contro = float(y25[contro_col].mean() - y17[contro_col].mean()) if contro_col and len(y17) and len(y25) else np.nan
+    return d_clean, d_contro
 
 def chart_composition(df):
     cls = pick(df, [lambda s: s=="classification"])
@@ -90,22 +88,20 @@ def chart_composition(df):
         x=alt.X(f"{share}:Q", stack="normalize", axis=alt.Axis(format="%")),
         color=alt.Color(cls, scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=None),
         tooltip=[alt.Tooltip(cls, title="Category"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=140)
+    ).properties(height=110)
 
 def chart_by_screen(df):
     cat = pick(df, [lambda s: s in ("screen_category","screen_categories","category")])
     cls = pick(df, [lambda s: s=="classification"])
     share = pick(df, [lambda s: "share_of_total_aum_pct" in s or s=="share_pct" or s=="share"])
-    d = df[[cat, cls, share]].copy()
-    d[cat] = d[cat].astype(str)
-    d = d.groupby([cat, cls], as_index=False)[share].sum()
+    d = df[[cat, cls, share]].groupby([cat, cls], as_index=False)[share].sum()
     colors = {"Controversial":CONTRO_COLOR,"Clean":CLEAN_COLOR}
     return alt.Chart(d).mark_bar().encode(
         y=alt.Y(f"{cat}:N", sort="-x", title=""),
         x=alt.X(f"{share}:Q", axis=alt.Axis(format="%")),
         color=alt.Color(f"{cls}:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title="")),
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=200)
+    ).properties(height=170)
 
 st.markdown("## BlackRock ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)")
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
@@ -117,14 +113,14 @@ with tab_dash:
     agg = read_csv(AGG_TRENDS)
     asof = get_asof(ctx) if ctx is not None else "2025"
 
-    c1,c2 = st.columns([0.7,0.3])
+    c1,c2 = st.columns([0.65,0.35])
     with c1:
         st.markdown("<span class='muted-accent'>All ESG ETFs</span>", unsafe_allow_html=True)
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
-    st.markdown("### Overview")
-    k1,k2,k3,k4,k5 = st.columns(5)
+    st.markdown("<h4 class='section-title'>Overview</h4>", unsafe_allow_html=True)
+    k1,k2,k3,k4,k5 = st.columns([0.18,0.18,0.26,0.19,0.19], gap="small")
     if ctx is not None:
         pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
         k1.metric("% Controversial", f"{pct_con:.1f}%")
@@ -142,8 +138,8 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
-    st.markdown("### 2025 Composition")
-    cA, cB = st.columns([0.55,0.45])
+    st.markdown("<h4 class='section-title'>2025 Composition</h4>", unsafe_allow_html=True)
+    cA, cB = st.columns([0.56,0.44], gap="small")
     with cA:
         if ctx is not None:
             st.altair_chart(chart_composition(ctx), use_container_width=True)
@@ -157,8 +153,8 @@ with tab_dash:
         else:
             st.empty()
 
-    st.markdown("### Spotlight", help="Largest contributors to total AUM exposure")
-    s1,s2 = st.columns(2)
+    st.markdown("<h4 class='section-title'>Spotlight</h4>", unsafe_allow_html=True)
+    s1,s2 = st.columns(2, gap="small")
     top = read_csv(TOP_SPOTLIGHT)
     if top is not None:
         cohort = pick(top, [lambda s: s=="cohort"])
@@ -168,44 +164,27 @@ with tab_dash:
         share = pick(top, [lambda s: "share_of_total_aum_pct" in s or "share_pct"==s])
         etfsn = pick(top, [lambda s: s in ("num_etfs","#etfs","count_etfs")])
         tags = pick(top, [lambda s: "screen_categories" in s or s=="tags"])
-        top_c = top[top[cohort].str.lower()=="controversial"].copy()
-        top_g = top[top[cohort].str.lower()=="clean"].copy()
         cols = [rank, ticker, name, share, etfsn, tags]
         rename_map = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
+
         with s1:
-            st.subheader("Top Controversial")
-            if not top_c.empty:
-                dfv = top_c[cols].rename(columns=rename_map)
-                dfv["Share of AUM (%)"] = dfv["Share of AUM (%)"].map(lambda x: round(float(x),4))
-                st.dataframe(dfv, use_container_width=True, hide_index=True)
-            else:
-                st.dataframe(pd.DataFrame(), use_container_width=True)
+            st.subheader("Top Controversial", divider=False)
+            tc = top[top[cohort].str.lower()=="controversial"][cols].rename(columns=rename_map).copy()
+            tc["Share of AUM (%)"] = tc["Share of AUM (%)"].astype(float).round(4)
+            st.dataframe(tc.head(5), use_container_width=True, hide_index=True)
+            with st.expander("View all"):
+                st.dataframe(tc, use_container_width=True, hide_index=True)
+
         with s2:
-            st.subheader("Top Clean")
-            if not top_g.empty:
-                dfv = top_g[cols].rename(columns=rename_map)
-                dfv["Share of AUM (%)"] = dfv["Share of AUM (%)"].map(lambda x: round(float(x),4))
-                st.dataframe(dfv, use_container_width=True, hide_index=True)
-            else:
-                st.dataframe(pd.DataFrame(), use_container_width=True)
+            st.subheader("Top Clean", divider=False)
+            tg = top[top[cohort].str.lower()=="clean"][cols].rename(columns=rename_map).copy()
+            tg["Share of AUM (%)"] = tg["Share of AUM (%)"].astype(float).round(4)
+            st.dataframe(tg.head(5), use_container_width=True, hide_index=True)
+            with st.expander("View all"):
+                st.dataframe(tg, use_container_width=True, hide_index=True)
     else:
         with s1: st.dataframe(pd.DataFrame(), use_container_width=True)
         with s2: st.dataframe(pd.DataFrame(), use_container_width=True)
-
-    st.markdown("### Downloads")
-    d1, d2, d3, d4 = st.columns(4)
-    if CTX_SUMMARY.exists():
-        with d1:
-            st.download_button("context_summary_2025.csv", data=CTX_SUMMARY.read_bytes(), file_name="context_summary_2025.csv")
-    if CTX_BYSCREEN.exists():
-        with d2:
-            st.download_button("context_breakdown_by_screen.csv", data=CTX_BYSCREEN.read_bytes(), file_name="context_breakdown_by_screen.csv")
-    if TOP_SPOTLIGHT.exists():
-        with d3:
-            st.download_button("top_holdings_spotlight.csv", data=TOP_SPOTLIGHT.read_bytes(), file_name="top_holdings_spotlight.csv")
-    if HOLDINGS_EXPLORER.exists():
-        with d4:
-            st.download_button("holdings_explorer_2025.csv", data=HOLDINGS_EXPLORER.read_bytes(), file_name="holdings_explorer_2025.csv")
 
 with tab_report:
     st.header("Report")
