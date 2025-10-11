@@ -10,7 +10,7 @@ from datetime import date
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution & Tradeoffs",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 PRIMARY = "#00A3FF"  # accent blue
@@ -26,28 +26,26 @@ BORDER = "#2A2F36"
 st.markdown(
     f"""
     <style>
-        html, body, [class^="css"]  {{
-            background-color: {BG} !important;
-        }}
-        .block-container {{
-            padding-top: 1.2rem; padding-bottom: 2rem; color: {TEXT};
-        }}
+        html, body, [class^="css"]  {{ background-color: {BG} !important; }}
+        .block-container {{ padding-top: 0.8rem; padding-bottom: 1.6rem; color: {TEXT}; max-width: 1400px; }}
         .app-header {{ display:flex; align-items:center; justify-content:space-between; }}
-        .title-wrap h1 {{ margin:0; font-size: 28px; font-weight: 700; letter-spacing:.2px; }}
-        .title-wrap p {{ margin:.25rem 0 0 0; color:{MUTED}; font-size:14px; }}
+        .title-wrap h1 {{ margin:0; font-size: 24px; font-weight: 700; letter-spacing:.2px; }}
+        .title-wrap p {{ margin:.25rem 0 0 0; color:{MUTED}; font-size:13px; }}
         .panel {{ background:{PANEL}; border:1px solid {BORDER}; border-radius:16px; padding:16px 18px; }}
         .pill {{ display:inline-block; padding:6px 10px; border-radius:100px; border:1px solid {BORDER}; color:{MUTED}; font-size:13px; margin-right:6px; }}
-        .footer {{ color:{MUTED}; text-align:center; margin-top:28px; padding-top:18px; border-top:1px solid {BORDER}; }}
+        .footer {{ color:{TEXT}; text-align:center; margin-top:28px; padding-top:18px; border-top:1px solid {BORDER}; }}
         .tab-title {{ font-size:18px; font-weight:700; margin-bottom:6px; }}
         .subtle {{ color:{MUTED}; font-size:14px; }}
         .kpi {{ display:flex; align-items:center; justify-content:center; height:92px; background:{PANEL}; border:1px solid {BORDER}; border-radius:16px; font-size:18px; color:{TEXT};}}
+        hr.divider {{ border:0; border-top:1px solid {BORDER}; opacity:.6; margin: 8px 0 12px 0; }}
+        .footer a {{ text-decoration:none; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # -----------------------------
-# Header (minimal, no icons)
+# Header (ultra compact)
 # -----------------------------
 st.markdown(
     """
@@ -57,51 +55,42 @@ st.markdown(
             <p>Alignment, evolution, and tradeoffs (2017–2025)</p>
         </div>
     </div>
+    <hr class='divider'>
     """,
     unsafe_allow_html=True,
 )
 
 # -----------------------------
-# Intro / Project Overview (third person)
+# Left Sidebar: Navigation + Quick Context
 # -----------------------------
-st.markdown(
-    f"""
-    <div class="panel">
-        <div class="tab-title">Project Overview</div>
-        <p class="subtle">This project presents a clear, auditably‑sourced view of BlackRock’s ESG‑labelled ETFs. Using standardized 2017–2025 holdings, the 2025 clean/controversial classification map, and fund‑level AUM, it tells three parts of the story:</p>
-        <ul>
-            <li><b>2025 Snapshot:</b> How today’s ETF dollars split across Clean, Controversial, and Other — and which holdings drive the split.</li>
-            <li><b>Change since 2017:</b> Applying the 2025 lens to past portfolios to show how exposure evolved (Equal‑Weighted and AUM‑Weighted views).</li>
-            <li><b>Tradeoff Experiment:</b> Simulating cleaner portfolios through tilts and exclusions under a tracking‑error budget.</li>
-        </ul>
-        <p class="subtle">Screen categories can overlap (e.g., Fossil and Weapons). Per‑ETF weights are re‑normalized to 100% for consistency. Each charted number can be traced back to ETF × holding rows.</p>
-        <div style="margin-top:10px;">
-            <span class="pill">Clean = <span style=\"color:{GREEN}\">Green</span></span>
-            <span class="pill">Controversial = <span style=\"color:{RED}\">Red</span></span>
-            <span class="pill">Other = Blue‑grey</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+with st.sidebar:
+    st.markdown("<div style='font-weight:700; font-size:14px; letter-spacing:.2px;'>Navigation</div>", unsafe_allow_html=True)
+    view = st.radio("", ["Report (Context)", "Dashboard"], index=0, label_visibility="collapsed")
+    st.markdown("<div style='margin:10px 0; height:1px; background:#2A2F36;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-weight:700; font-size:14px; letter-spacing:.2px;'>Dashboard Sections</div>", unsafe_allow_html=True)
+    section = st.radio("", ["2025 Overview", "Change since 2017", "Tradeoff Experiment"], index=0, label_visibility="collapsed")
+    st.markdown("<div style='margin:10px 0; height:1px; background:#2A2F36;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-weight:700; font-size:14px; letter-spacing:.2px;'>Legend</div>", unsafe_allow_html=True)
+    st.markdown("<span class='pill'>Clean = <span style='color:#00D38D'>Green</span></span>", unsafe_allow_html=True)
+    st.markdown("<span class='pill'>Controversial = <span style='color:#FF5C5C'>Red</span></span>", unsafe_allow_html=True)
+    st.markdown("<span class='pill'>Other = Blue‑grey</span>", unsafe_allow_html=True)
 
 # -----------------------------
-# Primary Panel Switcher (Dashboard | Report)
+# Compact overview banner (collapsible)
 # -----------------------------
-view = st.segmented_control(
-    "View",
-    options=["Dashboard", "Report"],
-    selection_mode="single",
-    default="Dashboard",
-)
+with st.expander("Project Overview (summary)", expanded=False):
+    st.markdown(
+        """
+        <div class='subtle'>This study combines standardized ETF holdings (2017–2025) with the 2025 clean/controversial map and AUM to show: a 2025 snapshot, the change since 2017, and a tradeoff experiment that pushes portfolios cleaner under realistic risk constraints. Screen categories may overlap; ETF weights are re‑normalized to 100%.</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # -----------------------------
-# Dashboard Tabs (layout only; placeholders for charts)
+# Routing: Report first by default
 # -----------------------------
 if view == "Dashboard":
-    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Experiment"])
-
-    with tab1:
+    if section == "2025 Overview":
         st.markdown("<div class='tab-title'>2025 Overview</div>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
         for c in (c1, c2, c3, c4):
@@ -112,52 +101,51 @@ if view == "Dashboard":
         st.markdown("<div class='panel' style='margin-top:12px;'>Spotlight Top 10 tables (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Holdings explorer table (placeholder)</div>", unsafe_allow_html=True)
 
-    with tab2:
+    elif section == "Change since 2017":
         st.markdown("<div class='tab-title'>Change since 2017</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel'>Trend — % Clean over time (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Trend — % Controversial over time (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Heatmap Fund×Year (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Year‑vs‑Year bars + Movers list (placeholder)</div>", unsafe_allow_html=True)
 
-    with tab3:
+    else:  # Tradeoff Experiment
         st.markdown("<div class='tab-title'>Tradeoff Experiment</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel'>Scenario KPI cards (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Baseline vs Scenario stacked bars (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Mini frontier: % Clean vs Tracking Error (placeholder)</div>", unsafe_allow_html=True)
         st.markdown("<div class='panel' style='margin-top:12px;'>Movers table (placeholder)</div>", unsafe_allow_html=True)
-
-# -----------------------------
-# Report View (concise narrative only — methodology removed)
-# -----------------------------
 else:
-    st.markdown("<div class='tab-title'>Report</div>", unsafe_allow_html=True)
+    st.markdown("<div class='tab-title'>Report (Context First)</div>", unsafe_allow_html=True)
     st.markdown(
         """
-        <div class="panel">
-            <h4 style="margin-top:0;">Context & Story</h4>
+        <div class='panel'>
+            <h4 style='margin-top:0;'>Context</h4>
             <p>By 2025, BlackRock’s ESG‑labelled ETFs represent a substantial share of investor assets. This report frames how those portfolios align with a clean vs. controversial lens, how alignment evolved since 2017, and what changes when cleaner design choices are simulated under realistic constraints.</p>
-            <h4>What’s Included</h4>
+            <h4>What’s Inside</h4>
             <ol>
-                <li><b>2025 Snapshot</b> — composition, screen exposure, top contributors, and a holdings explorer.</li>
-                <li><b>Change since 2017</b> — trend views (EW/AUM), cross‑fund dispersion, fund×year heatmap, and largest movers.</li>
-                <li><b>Tradeoff Experiment</b> — baseline vs cleaner scenarios with Tracking Error, Active Share, and drift.</li>
+                <li><b>2025 Snapshot</b> — composition, by‑screen exposure, top contributors, explorer.</li>
+                <li><b>Change since 2017</b> — trends (EW/AUM), dispersion, fund×year heatmap, movers.</li>
+                <li><b>Tradeoff Experiment</b> — baseline vs cleaner scenarios with Tracking Error, Active Share, drift.</li>
             </ol>
-            <p class="subtle">Notes: screen categories may overlap; exposures are reported in percentage points; per‑ETF weights are re‑normalized to 100%.</p>
+            <div style='margin-top:10px; display:flex; gap:8px;'>
+                <a href='#' onclick="const r=document.querySelector('section.main'); window.scrollTo({top:0, behavior:'smooth'});" style='background:#00A3FF; color:#0B0C10; padding:8px 14px; border-radius:10px; text-decoration:none; font-weight:600;'>Go to Dashboard</a>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 # -----------------------------
-# Footer (links only here)
+# Footer (emphasize Feedback; no copyright)
 # -----------------------------
 st.markdown(
-    f"""
-    <div class="footer">
-        <span>© {date.today().year} • BlackRock ESG ETFs — Alignment, Evolution & Tradeoffs</span><br/>
-        <a href="https://github.com/nitya-ar" target="_blank">GitHub</a> · 
-        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a> · 
-        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank">Feedback</a>
+    """
+    <div class='footer'>
+        <div style='display:flex; align-items:center; justify-content:center; gap:24px;'>
+            <a href='https://forms.gle/qid7S1eJpGCuYdtY8' target='_blank' style='font-size:17px; font-weight:700; color:#E6E9EF; text-decoration:none; border:1px solid #2A2F36; padding:8px 16px; border-radius:12px;'>Feedback</a>
+            <a href='https://github.com/nitya-ar' target='_blank' style='font-size:15px; color:#E6E9EF; text-decoration:none;'>GitHub</a>
+            <a href='https://www.linkedin.com/in/nitya-arya/' target='_blank' style='font-size:15px; color:#E6E9EF; text-decoration:none;'>LinkedIn</a>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
