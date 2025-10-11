@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 
@@ -56,12 +57,12 @@ with tab_dash:
     st.markdown("### Spotlight")
     s1,s2 = st.columns(2)
     with s1:
-        st.dataframe(data=None, use_container_width=True)
+        st.dataframe(pd.DataFrame(), use_container_width=True)
     with s2:
-        st.dataframe(data=None, use_container_width=True)
+        st.dataframe(pd.DataFrame(), use_container_width=True)
 
     st.markdown("### Holdings Explorer")
-    st.dataframe(data=None, use_container_width=True)
+    st.dataframe(pd.DataFrame(), use_container_width=True)
 
     st.markdown("### Change since 2017")
     t1,t2 = st.columns(2)
@@ -76,7 +77,7 @@ with tab_dash:
     with y1:
         st.empty()
     with y2:
-        st.dataframe(data=None, use_container_width=True)
+        st.dataframe(pd.DataFrame(), use_container_width=True)
 
     st.markdown("### Tradeoffs")
     scenario = st.segmented_control("Scenario", options=["Baseline","Pragmatic Tilt","Strict Exclusion"], default="Baseline")
@@ -91,12 +92,12 @@ with tab_dash:
         st.empty()
     with b2:
         st.empty()
-    st.dataframe(data=None, use_container_width=True)
+    st.dataframe(pd.DataFrame(), use_container_width=True)
 
 with tab_report:
-    st.markdown("### Report")
+    st.header("Report")
     st.markdown("Context, methods, results highlights, and notes will appear here.")
-    st.markdown("#### Methodology", anchor="methodology")
+    st.header("Methodology", anchor="methodology")
     st.markdown("Will be added here when you share the copy.")
 
 st.markdown(
