@@ -11,9 +11,12 @@ st.markdown(
     <style>
       @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap');
       html, body, [class*="css"] { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#E6E9EF; background:#0B0C10; }
-      .block-container { padding-top: 10px; padding-bottom: 10px; max-width: 1200px; }
+      /* bigger top/bottom margins */
+      .block-container { padding-top: 32px; padding-bottom: 32px; max-width: 1200px; }
       h1,h2,h3 { letter-spacing:0.2px; }
-      .footer { margin-top: 14px; padding-top: 12px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
+      .brandrow { display:flex; align-items:center; gap:16px; }
+      .brandrow h2 { margin:0; font-size:28px; font-weight:700; }
+      .footer { margin-top: 18px; padding-top: 14px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
       .footer a { color:#E6E9EF; text-decoration:none; font-size:13px; margin-right:16px; opacity:0.9; }
       .footer a:hover { opacity:1.0; text-decoration:underline; }
       .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419; border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
@@ -23,9 +26,9 @@ st.markdown(
       div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
       div[data-testid="stMetricDelta"] { font-size: 12px; }
-      .rowhead { display:flex; align-items:center; justify-content:space-between; margin:6px 0 4px 0; }
-      .infopill { font-size:12px; color:#BED7FF; background:#152033; border:1px solid #2C3E5C; padding:4px 8px; border-radius:999px; }
-      .infopill:hover { filter:brightness(1.1); }
+      .rowhead { display:flex; align-items:center; justify-content:space-between; margin:10px 0 6px 0; }
+      .infopill { font-size:12px; color:#BED7FF; background:#152033; border:1px solid #2C3E5C; padding:2px 8px; border-radius:999px; cursor:help; }
+      .bigsection { font-size:20px; font-weight:700; margin:0; }
     </style>
     """,
     unsafe_allow_html=True
@@ -104,7 +107,17 @@ def chart_by_screen(df):
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
     ).properties(height=230)
 
-st.markdown("## BlackRock ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)")
+# ---------- Header with BlackRock logo ----------
+st.markdown(
+    """
+    <div class="brandrow">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/BlackRock_wordmark.svg"
+           alt="BlackRock" style="height:28px; filter:brightness(0) invert(1);">
+      <h2>ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
 
 tab_dash, tab_report = st.tabs(["Dashboard","Report"])
@@ -120,7 +133,8 @@ with tab_dash:
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='rowhead'><h4 style='margin:0'>2025 Snapshot</h4></div>", unsafe_allow_html=True)
+    # 2025 Overview (bigger section heading)
+    st.markdown("<div class='rowhead'><div class='bigsection'>2025 Overview</div></div>", unsafe_allow_html=True)
     k1,k2,k3,k4,k5 = st.columns([0.18,0.18,0.26,0.19,0.19], gap="small")
     if ctx is not None:
         pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
@@ -139,9 +153,10 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
+    # Composition + Screens with ⓘ info icon (hover/click shows native title tooltip)
     st.markdown(
         "<div class='rowhead'><h4 style='margin:0'>Composition & Screens (2025)</h4>"
-        "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>Info</span></div>",
+        "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>ⓘ</span></div>",
         unsafe_allow_html=True
     )
     cA, cB = st.columns([0.56,0.44], gap="small")
@@ -153,6 +168,7 @@ with tab_dash:
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
+    # Top exposures (single section heading, no extra line)
     st.markdown("<div class='rowhead'><h4 style='margin:0'>Top Exposures (2025)</h4></div>", unsafe_allow_html=True)
     s1,s2 = st.columns(2, gap="small")
     top = read_csv(TOP_SPOTLIGHT)
