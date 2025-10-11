@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 from pathlib import Path
+import re
 
 st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 
@@ -25,10 +26,9 @@ st.markdown(
       div[data-testid="stMetricDelta"] { font-size: 12px; }
       .section-2025 { font-size:34px; font-weight:800; margin:8px 0 6px 0; }
       .minor-h { font-size:18px; font-weight:700; margin:10px 0 6px 0; }
-      .pairhead { display:flex; align-items:center; justify-content:space-between; margin:8px 0 4px 0; }
+      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
       .infopill { font-size:12px; color:#C8DAFF; background:#1A2437; border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
       .infopill:hover { filter:brightness(1.1); }
-      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -60,45 +60,67 @@ def pick(df, fns):
     low = {c.lower(): c for c in df.columns}
     for fn in fns:
         for k, v in low.items():
-            if fn(k):
-                return v
+            try:
+                if fn(k):
+                    return v
+            except Exception:
+                continue
     return None
 
+def _to_number(x):
+    if pd.isna(x):
+        return np.nan
+    if isinstance(x, (int, float, np.number)):
+        return float(x)
+    s = str(x)
+    s = re.sub(r"[^\d.\-eE]", "", s)  # strip $, commas, spaces
+    try:
+        return float(s)
+    except Exception:
+        return np.nan
+
 def get_asof(df):
-    c = pick(df, [lambda s: s in ("as_of_date","as-of date","asof","as_of")])
+    if df is None:
+        return "2025"
+    c = pick(df, [lambda s: s in ("as_of_date","as-of date","asof","as_of","asof_date")])
     return df[c].iloc[0] if c else "2025"
 
 def kpis_from_ctx(df):
     cls = pick(df, [lambda s: s == "classification"])
     share = pick(df, [lambda s: "share_of_total_aum_pct" in s or s in ("share_pct","share")])
     aum_col = pick(df, [lambda s: s in ("total_aum_usd","total_aum","aum_usd")])
+    # parse numbers robustly
     df[share] = pd.to_numeric(df[share], errors="coerce")
+    total_aum = np.nan
     if aum_col:
-        df[aum_col] = pd.to_numeric(df[aum_col], errors="coerce")
+        total_aum = df[aum_col].map(_to_number).dropna()
+        total_aum = float(total_aum.iloc[0]) if len(total_aum) else np.nan
     pct_con = float(df.loc[df[cls].str.lower()=="controversial", share].sum())
     pct_clean = float(df.loc[df[cls].str.lower()=="clean", share].sum())
-    total_aum = float(df[aum_col].iloc[0]) if aum_col else np.nan
     return pct_con, pct_clean, total_aum
 
-def deltas_from_trends(df, weighting_key):
+def deltas_from_trends(df, weighting_key, year_a, year_b):
     ycol = pick(df, [lambda s: s == "year"])
-    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
+    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type","view")])
     clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
     if not all([ycol, clean_col, contro_col]):
         return np.nan, np.nan
-    filt = df
+    d = df.copy()
     if wcol is not None:
-        filt = df[df[wcol].str.lower().str.contains(weighting_key)]
-    y17 = filt.loc[filt[ycol] == 2017]
-    y25 = filt.loc[filt[ycol] == 2025]
-    d_clean = float(y25[clean_col].mean() - y17[clean_col].mean()) if len(y17) and len(y25) else np.nan
-    d_contro = float(y25[contro_col].mean() - y17[contro_col].mean()) if len(y17) and len(y25) else np.nan
+        d = d[d[wcol].fillna("").str.lower().str.contains(weighting_key)]
+    yA = d.loc[d[ycol]==year_a]
+    yB = d.loc[d[ycol]==year_b]
+    d_clean = float(yB[clean_col].mean() - yA[clean_col].mean()) if len(yA) and len(yB) else np.nan
+    d_contro = float(yB[contro_col].mean() - yA[contro_col].mean()) if len(yA) and len(yB) else np.nan
     return d_clean, d_contro
 
 def ensure_0_1(series):
     s = pd.to_numeric(series, errors="coerce")
-    return s/100.0 if s.dropna().max() and s.dropna().max() > 1.5 else s
+    mx = s.dropna().max()
+    if pd.isna(mx):
+        return s
+    return s/100.0 if mx > 1.5 else s
 
 def chart_composition(df):
     cls = pick(df, [lambda s: s == "classification"])
@@ -130,18 +152,18 @@ def chart_by_screen(df):
 
 def chart_trend_agg(df, weighting_key):
     ycol = pick(df, [lambda s: s == "year"])
-    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
+    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type","view")])
     clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
     other_col = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
     if not all([ycol, clean_col, contro_col, other_col]):
         return None
-    d = df if wcol is None else df[df[wcol].str.lower().str.contains(weighting_key)]
+    d = df if wcol is None else df[df[wcol].fillna("").str.lower().str.contains(weighting_key)]
     melt = d[[ycol, clean_col, contro_col, other_col]].rename(columns={clean_col:"Clean", contro_col:"Controversial", other_col:"Other"})
     melt = melt.melt(id_vars=[ycol], var_name="Cohort", value_name="pct")
     melt["_plot"] = ensure_0_1(melt["pct"])
     colors = {"Clean": CLEAN_COLOR, "Controversial": CONTRO_COLOR, "Other": OTHER_COLOR}
-    return alt.Chart(melt).mark_line(point=False).encode(
+    return alt.Chart(melt).mark_line().encode(
         x=alt.X(f"{ycol}:O", title="Year"),
         y=alt.Y("_plot:Q", axis=alt.Axis(format="%", title="Portfolio share")),
         color=alt.Color("Cohort:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title=""))
@@ -155,21 +177,24 @@ def chart_heatmap_by_fund_year(df):
         return None
     d = df[[fund, ycol, pctc]].dropna()
     d["_plot"] = ensure_0_1(d[pctc])
+    # sort ETFs by latest year value desc
+    latest = d.loc[d[ycol]==d[ycol].max()].sort_values("_plot", ascending=False)[fund]
+    order = latest.tolist() + [x for x in d[fund].unique() if x not in latest.tolist()]
     return alt.Chart(d).mark_rect().encode(
         x=alt.X(f"{ycol}:O", title="Year"),
-        y=alt.Y(f"{fund}:N", title="ETF"),
+        y=alt.Y(f"{fund}:N", title="ETF", sort=order),
         color=alt.Color("_plot:Q", scale=alt.Scale(scheme="reds"), legend=alt.Legend(title="% share", format="%"))
-    ).properties(height=380, use_container_width=True)
+    ).properties(height=380)
 
 def chart_year_vs_year(df, weighting_key, year_a, year_b):
     ycol = pick(df, [lambda s: s == "year"])
-    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
+    wcol = pick(df, [lambda s: s in ("weighting","agg_type","type","view")])
     clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
     other_col = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
     if not all([ycol, clean_col, contro_col, other_col]):
         return None
-    d = df if wcol is None else df[df[wcol].str.lower().str.contains(weighting_key)]
+    d = df if wcol is None else df[df[wcol].fillna("").str.lower().str.contains(weighting_key)]
     sub = d[d[ycol].isin([year_a, year_b])][[ycol, clean_col, contro_col, other_col]].rename(columns={clean_col:"Clean", contro_col:"Controversial", other_col:"Other"})
     m = sub.melt(id_vars=[ycol], var_name="Cohort", value_name="pct")
     m["_plot"] = ensure_0_1(m["pct"])
@@ -191,9 +216,9 @@ def chart_screen_trends(df):
     return alt.Chart(d).mark_line().encode(
         x=alt.X(f"{ycol}:O", title=""),
         y=alt.Y("_plot:Q", axis=alt.Axis(format="%", title="AUM-weighted share")),
-        facet=alt.Facet(f"{cat}:N", columns=1, title=None),
+        facet=alt.Facet(f"{cat}:N", columns=2, title=None),
         color=alt.value(CONTRO_COLOR)
-    ).properties(height=140)
+    ).properties(height=130)
 
 def movers_tables(df, year_a, year_b):
     ya = pick(df, [lambda s: s in ("year_a","yeara","start_year","from_year")])
@@ -253,16 +278,18 @@ with tab_dash:
         k2.metric("% Clean", "—")
         k3.metric("Total AUM", "—")
 
-    weighting_key = "aum"
+    # Overview deltas fixed to 2017->2025, AUM-weighted
+    weighting_key_overview = "aum"
     if agg is not None:
-        d_clean, d_contro = deltas_from_trends(agg, weighting_key)
-        k4.metric("Δ Clean since 2017", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
-        k5.metric("Δ Controversial since 2017", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
+        d_clean_o, d_contro_o = deltas_from_trends(agg, weighting_key_overview, 2017, 2025)
+        k4.metric("Δ Clean since 2017", f"{d_clean_o:+.1f} pp" if pd.notna(d_clean_o) else "—")
+        k5.metric("Δ Controversial since 2017", f"{d_contro_o:+.1f} pp" if pd.notna(d_contro_o) else "—")
     else:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
-    left, right = st.columns([0.48, 0.52], gap="small")
+    # Composition pair: narrower left, wider right
+    left, right = st.columns([0.44, 0.56], gap="small")
     with left:
         st.markdown("<div class='minor-h'>Composition & Screens (2025)</div>", unsafe_allow_html=True)
         if ctx is not None:
@@ -305,35 +332,40 @@ with tab_dash:
             with st.expander("Show full list"):
                 st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
 
+    # ---------------- Change since 2017 ----------------
     st.markdown("<div class='section-title'>Change since 2017</div>", unsafe_allow_html=True)
 
     cw1, cw2, cw3 = st.columns([0.25, 0.35, 0.4])
     with cw1:
         weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], horizontal=True, index=0)
-        key = "aum" if "AUM" in weighting else "equal"
+        weighting_key = "aum" if "AUM" in weighting else "equal"
     with cw2:
-        years = sorted(agg["year"].unique().tolist()) if agg is not None and "year" in agg.columns else list(range(2017, 2026))
+        years = []
+        if agg is not None:
+            ycol = pick(agg, [lambda s: s == "year"])
+            if ycol:
+                years = sorted(pd.to_numeric(agg[ycol], errors="coerce").dropna().unique().tolist())
+        if not years:
+            years = list(range(2017, 2026))
         year_a = st.selectbox("Year A", years, index=0)
     with cw3:
         year_b = st.selectbox("Year B", years, index=len(years)-1)
 
     kdc1, kdc2 = st.columns(2)
     if agg is not None:
-        d_clean, d_contro = deltas_from_trends(agg, key)
-        kdc1.metric("Δ Clean (2017 → 2025)", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
-        kdc2.metric("Δ Controversial (2017 → 2025)", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
+        d_clean, d_contro = deltas_from_trends(agg, weighting_key, year_a, year_b)
+        kdc1.metric(f"Δ Clean ({year_a} → {year_b})", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
+        kdc2.metric(f"Δ Controversial ({year_a} → {year_b})", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
     else:
-        kdc1.metric("Δ Clean (2017 → 2025)", "—")
-        kdc2.metric("Δ Controversial (2017 → 2025)", "—")
+        kdc1.metric(f"Δ Clean ({year_a} → {year_b})", "—")
+        kdc2.metric(f"Δ Controversial ({year_a} → {year_b})", "—")
 
     tr1, tr2 = st.columns(2, gap="large")
     if agg is not None:
-        trend = chart_trend_agg(agg, key)
-        if trend is not None:
-            tr1.altair_chart(trend, use_container_width=True)
-
-    if agg is not None:
-        yvy = chart_year_vs_year(agg, key, year_a, year_b)
+        line_trend = chart_trend_agg(agg, weighting_key)
+        if line_trend is not None:
+            tr1.altair_chart(line_trend, use_container_width=True)
+        yvy = chart_year_vs_year(agg, weighting_key, year_a, year_b)
         if yvy is not None:
             tr2.altair_chart(yvy, use_container_width=True)
 
