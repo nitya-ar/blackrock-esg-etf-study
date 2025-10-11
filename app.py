@@ -11,20 +11,20 @@ st.markdown(
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
       html, body, [class*="css"] { font-family: 'Inter', sans-serif; color:#E6E9EF; background:#0B0C10; }
-      .block-container { padding-top: 1.25rem; padding-bottom: 1.25rem; max-width: 1200px; }
+      .block-container { padding-top: 12px; padding-bottom: 10px; max-width: 1200px; }
       h1,h2,h3 { letter-spacing:0.2px; }
-      .footer { margin-top: 18px; padding-top: 12px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
+      .footer { margin-top: 14px; padding-top: 12px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
       .footer a { color:#E6E9EF; text-decoration:none; font-size:13px; margin-right:16px; opacity:0.9; }
       .footer a:hover { opacity:1.0; text-decoration:underline; }
       .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419; border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
       .asof { font-size:12px; color:#9AA4B2; text-align:right; }
       .muted-accent { background:#191c22; border:1px solid #2A2F36; color:#C9D2DF; padding:6px 10px; border-radius:8px; display:inline-block; }
-      .kpi-row { margin-top:-6px; }
-      div[data-testid="stMetric"] { padding: 2px 6px; }
-      div[data-testid="stMetricValue"] { font-size: 28px; }
+      .section-title { margin: 6px 0 4px 0; }
+      div[data-testid="stMetric"] { padding: 0 4px; }
+      div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
-      div[data-testid="stMetricDelta"] { font-size: 13px; }
-      .section-title { margin-top: 8px; margin-bottom: 2px; }
+      div[data-testid="stMetricDelta"] { font-size: 12px; }
+      .df-compact .row-widget.stDataFrame { margin-top: 8px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -39,9 +39,9 @@ CTX_BYSCREEN = AN1 / "context_breakdown_by_screen.csv"
 TOP_SPOTLIGHT = AN1 / "top_holdings_spotlight.csv"
 AGG_TRENDS = AN2 / "aggregate_exposure_trends.csv"
 
-CLEAN_COLOR = "#0A7C5E"
-CONTRO_COLOR = "#9F3535"
-OTHER_COLOR = "#46515C"
+CLEAN_COLOR = "#0A6F56"
+CONTRO_COLOR = "#8F3131"
+OTHER_COLOR = "#414B55"
 
 @st.cache_data
 def read_csv(p: Path):
@@ -88,7 +88,7 @@ def chart_composition(df):
         x=alt.X(f"{share}:Q", stack="normalize", axis=alt.Axis(format="%")),
         color=alt.Color(cls, scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=None),
         tooltip=[alt.Tooltip(cls, title="Category"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=110)
+    ).properties(height=95)
 
 def chart_by_screen(df):
     cat = pick(df, [lambda s: s in ("screen_category","screen_categories","category")])
@@ -101,7 +101,7 @@ def chart_by_screen(df):
         x=alt.X(f"{share}:Q", axis=alt.Axis(format="%")),
         color=alt.Color(f"{cls}:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title="")),
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of AUM", format=".1f")]
-    ).properties(height=170)
+    ).properties(height=150)
 
 st.markdown("## BlackRock ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)")
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
@@ -143,15 +143,11 @@ with tab_dash:
     with cA:
         if ctx is not None:
             st.altair_chart(chart_composition(ctx), use_container_width=True)
-        else:
-            st.empty()
     with cB:
         byscreen = read_csv(CTX_BYSCREEN)
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
             st.caption("Categories can overlap; totals won’t sum to overall controversial exposure.")
-        else:
-            st.empty()
 
     st.markdown("<h4 class='section-title'>Spotlight</h4>", unsafe_allow_html=True)
     s1,s2 = st.columns(2, gap="small")
@@ -168,23 +164,15 @@ with tab_dash:
         rename_map = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
 
         with s1:
-            st.subheader("Top Controversial", divider=False)
+            st.subheader("Top Controversial")
             tc = top[top[cohort].str.lower()=="controversial"][cols].rename(columns=rename_map).copy()
             tc["Share of AUM (%)"] = tc["Share of AUM (%)"].astype(float).round(4)
-            st.dataframe(tc.head(5), use_container_width=True, hide_index=True)
-            with st.expander("View all"):
-                st.dataframe(tc, use_container_width=True, hide_index=True)
-
+            st.dataframe(tc.head(10), use_container_width=True, hide_index=True)
         with s2:
-            st.subheader("Top Clean", divider=False)
+            st.subheader("Top Clean")
             tg = top[top[cohort].str.lower()=="clean"][cols].rename(columns=rename_map).copy()
             tg["Share of AUM (%)"] = tg["Share of AUM (%)"].astype(float).round(4)
-            st.dataframe(tg.head(5), use_container_width=True, hide_index=True)
-            with st.expander("View all"):
-                st.dataframe(tg, use_container_width=True, hide_index=True)
-    else:
-        with s1: st.dataframe(pd.DataFrame(), use_container_width=True)
-        with s2: st.dataframe(pd.DataFrame(), use_container_width=True)
+            st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
 
 with tab_report:
     st.header("Report")
