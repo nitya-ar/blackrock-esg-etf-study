@@ -9,24 +9,46 @@ st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 st.markdown(
     """
     <style>
+      /* Global typography: Avenir family with sensible fallbacks */
       html, body, [class*="css"] {
-        font-family: Avenir, "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: Avenir, "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     Roboto, "Helvetica Neue", Arial, sans-serif;
         color:#E6E9EF; background:#0B0C10;
       }
+
+      /* Page gutters */
       .block-container { padding-top: 32px; padding-bottom: 32px; max-width: 1200px; }
-      .brandrow { display:flex; align-items:center; gap:16px; margin-bottom:4px; }
+
+      /* Brand row (logo + title) */
+      .brandrow { display:flex; align-items:center; gap:16px; margin-bottom:6px; }
       .brandrow h2 { margin:0; font-size:28px; font-weight:700; letter-spacing:.2px; }
-      .footer { margin-top: 18px; padding-top: 14px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
+
+      /* Utility styles */
+      .footer { margin-top: 18px; padding-top: 14px; border-top:1px solid #2A2F36;
+                display:flex; justify-content:space-between; align-items:center; }
       .footer a { color:#E6E9EF; text-decoration:none; font-size:13px; margin-right:16px; opacity:0.9; }
-      .footer a:hover { opacity:1.0; text-decoration:underline; }
-      .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419; border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
+      .footer a:hover { opacity:1; text-decoration:underline; }
+      .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419;
+              border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
+      .muted-accent { background:#191c22; border:1px solid #2A2F36; color:#C9D2DF;
+                      padding:6px 10px; border-radius:8px; display:inline-block; }
       .asof { font-size:12px; color:#9AA4B2; text-align:right; }
-      .muted-accent { background:#191c22; border:1px solid #2A2F36; color:#C9D2DF; padding:6px 10px; border-radius:8px; display:inline-block; }
+
+      /* KPI metrics */
       div[data-testid="stMetric"] { padding: 0 4px; }
       div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
       div[data-testid="stMetricDelta"] { font-size: 12px; }
-      .bigsection { font-size:30px; font-weight:700; margin:6px 0 6px 0; }
+
+      /* Section headings */
+      .section-2025 { font-size:34px; font-weight:800; margin:8px 0 14px 0; } /* bigger title + more space after */
+      .minor-h { font-size:18px; font-weight:700; margin:10px 0 6px 0; }     /* smaller subheads */
+      .pairhead { display:flex; align-items:center; justify-content:space-between; margin:8px 0 4px 0; }
+
+      /* Info icon (top-right, bluish grey) */
+      .infopill { font-size:12px; color:#C8DAFF; background:#1A2437;
+                  border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
+      .infopill:hover { filter:brightness(1.1); }
     </style>
     """,
     unsafe_allow_html=True
@@ -105,6 +127,7 @@ def chart_by_screen(df):
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
     ).properties(height=230)
 
+# ----- Header (logo + title) -----
 st.markdown(
     """
     <div class="brandrow">
@@ -130,7 +153,8 @@ with tab_dash:
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='bigsection'>2025 Overview</div>", unsafe_allow_html=True)
+    # 2025 Overview — larger heading and a little extra space below
+    st.markdown("<div class='section-2025'>2025 Overview</div>", unsafe_allow_html=True)
     k1,k2,k3,k4,k5 = st.columns([0.18,0.18,0.26,0.19,0.19], gap="small")
     if ctx is not None:
         pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
@@ -149,16 +173,25 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
-    st.subheader("Composition & Screens (2025)", help="Categories can overlap; totals won’t sum to overall controversial exposure.")
-    cA, cB = st.columns([0.56,0.44], gap="small")
-    with cA:
+    # Composition & Screens — smaller subhead, info icon top-right above the right chart
+    left, right = st.columns([0.56,0.44], gap="small")
+    with left:
+        st.markdown("<div class='minor-h'>Composition & Screens (2025)</div>", unsafe_allow_html=True)
         if ctx is not None:
             st.altair_chart(chart_composition(ctx), use_container_width=True)
-    with cB:
+    with right:
+        # right-aligned info icon just above chart
+        st.markdown(
+            "<div style='display:flex; justify-content:flex-end; margin:2px 0 4px 0;'>"
+            "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>ⓘ</span>"
+            "</div>",
+            unsafe_allow_html=True
+        )
         byscreen = read_csv(CTX_BYSCREEN)
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
+    # Spotlight tables — smaller subheads
     s1,s2 = st.columns(2, gap="small")
     top = read_csv(TOP_SPOTLIGHT)
     if top is not None:
@@ -173,12 +206,12 @@ with tab_dash:
         rename_map = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
 
         with s1:
-            st.subheader("Top Controversial", divider=False)
+            st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
             tc = top[top[cohort].str.lower()=="controversial"][cols].rename(columns=rename_map).copy()
             tc["Share of AUM (%)"] = tc["Share of AUM (%)"].astype(float).round(4)
             st.dataframe(tc.head(10), use_container_width=True, hide_index=True)
         with s2:
-            st.subheader("Top Clean", divider=False)
+            st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
             tg = top[top[cohort].str.lower()=="clean"][cols].rename(columns=rename_map).copy()
             tg["Share of AUM (%)"] = tg["Share of AUM (%)"].astype(float).round(4)
             st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
