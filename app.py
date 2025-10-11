@@ -9,13 +9,13 @@ st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 st.markdown(
     """
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap');
-      html, body, [class*="css"] { font-family: 'IBM Plex Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:#E6E9EF; background:#0B0C10; }
-      /* bigger top/bottom margins */
+      html, body, [class*="css"] {
+        font-family: Avenir, "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color:#E6E9EF; background:#0B0C10;
+      }
       .block-container { padding-top: 32px; padding-bottom: 32px; max-width: 1200px; }
-      h1,h2,h3 { letter-spacing:0.2px; }
-      .brandrow { display:flex; align-items:center; gap:16px; }
-      .brandrow h2 { margin:0; font-size:28px; font-weight:700; }
+      .brandrow { display:flex; align-items:center; gap:16px; margin-bottom:4px; }
+      .brandrow h2 { margin:0; font-size:28px; font-weight:700; letter-spacing:.2px; }
       .footer { margin-top: 18px; padding-top: 14px; border-top:1px solid #2A2F36; display:flex; justify-content:space-between; align-items:center; }
       .footer a { color:#E6E9EF; text-decoration:none; font-size:13px; margin-right:16px; opacity:0.9; }
       .footer a:hover { opacity:1.0; text-decoration:underline; }
@@ -26,9 +26,7 @@ st.markdown(
       div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
       div[data-testid="stMetricDelta"] { font-size: 12px; }
-      .rowhead { display:flex; align-items:center; justify-content:space-between; margin:10px 0 6px 0; }
-      .infopill { font-size:12px; color:#BED7FF; background:#152033; border:1px solid #2C3E5C; padding:2px 8px; border-radius:999px; cursor:help; }
-      .bigsection { font-size:20px; font-weight:700; margin:0; }
+      .bigsection { font-size:30px; font-weight:700; margin:6px 0 6px 0; }
     </style>
     """,
     unsafe_allow_html=True
@@ -107,12 +105,11 @@ def chart_by_screen(df):
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
     ).properties(height=230)
 
-# ---------- Header with BlackRock logo ----------
 st.markdown(
     """
     <div class="brandrow">
       <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/BlackRock_wordmark.svg"
-           alt="BlackRock" style="height:28px; filter:brightness(0) invert(1);">
+           alt="BlackRock" style="height:32px; filter:brightness(0) invert(1);">
       <h2>ESG ETFs: Evolution, Alignment, and Tradeoffs (2017–2025)</h2>
     </div>
     """,
@@ -133,8 +130,7 @@ with tab_dash:
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
-    # 2025 Overview (bigger section heading)
-    st.markdown("<div class='rowhead'><div class='bigsection'>2025 Overview</div></div>", unsafe_allow_html=True)
+    st.markdown("<div class='bigsection'>2025 Overview</div>", unsafe_allow_html=True)
     k1,k2,k3,k4,k5 = st.columns([0.18,0.18,0.26,0.19,0.19], gap="small")
     if ctx is not None:
         pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
@@ -153,12 +149,7 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", "—")
         k5.metric("Δ Controversial since 2017", "—")
 
-    # Composition + Screens with ⓘ info icon (hover/click shows native title tooltip)
-    st.markdown(
-        "<div class='rowhead'><h4 style='margin:0'>Composition & Screens (2025)</h4>"
-        "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>ⓘ</span></div>",
-        unsafe_allow_html=True
-    )
+    st.subheader("Composition & Screens (2025)", help="Categories can overlap; totals won’t sum to overall controversial exposure.")
     cA, cB = st.columns([0.56,0.44], gap="small")
     with cA:
         if ctx is not None:
@@ -168,8 +159,6 @@ with tab_dash:
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
-    # Top exposures (single section heading, no extra line)
-    st.markdown("<div class='rowhead'><h4 style='margin:0'>Top Exposures (2025)</h4></div>", unsafe_allow_html=True)
     s1,s2 = st.columns(2, gap="small")
     top = read_csv(TOP_SPOTLIGHT)
     if top is not None:
