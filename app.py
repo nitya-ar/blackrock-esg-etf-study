@@ -6,6 +6,7 @@ from pathlib import Path
 
 st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 
+# ---------- THEME / STYLES ----------
 st.markdown(
     """
     <style>
@@ -19,39 +20,47 @@ st.markdown(
       .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#121419; border:1px solid #2A2F36; font-size:12px; color:#9AA4B2; margin-right:8px; }
       .muted-accent { background:#191c22; border:1px solid #2A2F36; color:#C9D2DF; padding:6px 10px; border-radius:8px; display:inline-block; }
       .asof { font-size:12px; color:#9AA4B2; text-align:right; }
+      /* KPIs */
       div[data-testid="stMetric"] { padding: 0 4px; }
       div[data-testid="stMetricValue"] { font-size: 26px; }
       div[data-testid="stMetricLabel"] { font-size: 13px; color:#C9D2DF; }
       div[data-testid="stMetricDelta"] { font-size: 12px; }
+      /* Headings */
       .section-2025 { font-size:34px; font-weight:800; margin:8px 0 6px 0; }
       .minor-h { font-size:18px; font-weight:700; margin:10px 0 6px 0; }
-      .pairhead { display:flex; align-items:center; justify-content:space-between; margin:8px 0 4px 0; }
+      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
+      /* Info icon */
       .infopill { font-size:12px; color:#C8DAFF; background:#1A2437; border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
       .infopill:hover { filter:brightness(1.1); }
-      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
+      /* Tiny right-aligned control above tables */
+      .right-control { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:4px 0 -6px 0; }
+      .right-control label { font-size:12px; color:#9AA4B2; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
+# ---------- PATHS ----------
 BASE = Path("Data") / "Data for Dashboard"
 AN1 = BASE / "Analysis 1"
 AN2 = BASE / "Analysis 2"
 
-CTX_SUMMARY = AN1 / "context_summary_2025.csv"
-CTX_BYSCREEN = AN1 / "context_breakdown_by_screen.csv"
+CTX_SUMMARY   = AN1 / "context_summary_2025.csv"
+CTX_BYSCREEN  = AN1 / "context_breakdown_by_screen.csv"
 TOP_SPOTLIGHT = AN1 / "top_holdings_spotlight.csv"
 
-AGG_TRENDS = AN2 / "aggregate_exposure_trends.csv"
-BY_FUND_YEAR = AN2 / "exposures_by_fund_year.csv"
-YEAR_COMPARE = AN2 / "year_compare_summary.csv"
+AGG_TRENDS    = AN2 / "aggregate_exposure_trends.csv"
+BY_FUND_YEAR  = AN2 / "exposures_by_fund_year.csv"
+YEAR_COMPARE  = AN2 / "year_compare_summary.csv"
 SCREEN_TRENDS = AN2 / "aggregate_screen_trends.csv"
-MOVERS = AN2 / "movers_by_yearpair.csv"
+MOVERS        = AN2 / "movers_by_yearpair.csv"
 
-CLEAN_COLOR = "#0A6F56"
+# ---------- COLORS ----------
+CLEAN_COLOR  = "#0A6F56"
 CONTRO_COLOR = "#8F3131"
-OTHER_COLOR = "#414B55"
+OTHER_COLOR  = "#414B55"
 
+# ---------- HELPERS ----------
 @st.cache_data
 def read_csv(p: Path):
     return pd.read_csv(p) if p.exists() else None
@@ -88,9 +97,8 @@ def deltas_from_trends(df, weighting_key):
     if not all([ycol, clean_col, contro_col]):
         return np.nan, np.nan
     filt = df if wcol is None else df[df[wcol].str.lower().str.contains(weighting_key)]
-    y17 = filt.loc[filt[ycol] == 2017]
-    y25 = filt.loc[filt[ycol] == 2025]
-    d_clean = float(y25[clean_col].mean() - y17[clean_col].mean()) if len(y17) and len(y25) else np.nan
+    y17, y25 = filt.loc[filt[ycol]==2017], filt.loc[filt[ycol]==2025]
+    d_clean  = float(y25[clean_col].mean()  - y17[clean_col].mean())  if len(y17) and len(y25) else np.nan
     d_contro = float(y25[contro_col].mean() - y17[contro_col].mean()) if len(y17) and len(y25) else np.nan
     return d_clean, d_contro
 
@@ -98,6 +106,7 @@ def ensure_0_1(series):
     s = pd.to_numeric(series, errors="coerce")
     return s/100.0 if s.dropna().max() and s.dropna().max() > 1.5 else s
 
+# ---------- CHARTS ----------
 def chart_composition(df):
     cls = pick(df, [lambda s: s == "classification"])
     share = pick(df, [lambda s: "share_of_total_aum_pct" in s or s in ("share_pct","share")])
@@ -121,7 +130,7 @@ def chart_by_screen(df):
     colors = {"Controversial": CONTRO_COLOR, "Clean": CLEAN_COLOR}
     return alt.Chart(d).mark_bar().encode(
         y=alt.Y(f"{cat}:N", sort="-x", title=""),
-        x=alt.X(f"_plot_share:Q", axis=alt.Axis(format="%", title="Share of total AUM")),
+        x=alt.X("_plot_share:Q", axis=alt.Axis(format="%", title="Share of total AUM")),
         color=alt.Color(f"{cls}:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title="")),
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
     ).properties(height=230)
@@ -129,9 +138,9 @@ def chart_by_screen(df):
 def chart_trend_agg(df, weighting_key):
     ycol = pick(df, [lambda s: s == "year"])
     wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
-    clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
+    clean_col  = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
-    other_col = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
+    other_col  = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
     if not all([ycol, clean_col, contro_col, other_col]):
         return None
     d = df if wcol is None else df[df[wcol].str.lower().str.contains(weighting_key)]
@@ -162,9 +171,9 @@ def chart_heatmap_by_fund_year(df):
 def chart_year_vs_year(df, weighting_key, year_a, year_b):
     ycol = pick(df, [lambda s: s == "year"])
     wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
-    clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
+    clean_col  = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
-    other_col = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
+    other_col  = pick(df, [lambda s: ("other" in s and "pct" in s) or s in ("pct_other","other_pct")])
     if not all([ycol, clean_col, contro_col, other_col]):
         return None
     d = df if wcol is None else df[df[wcol].str.lower().str.contains(weighting_key)]
@@ -207,6 +216,7 @@ def movers_tables(df, year_a, year_b):
     dec = d.sort_values(delta, ascending=True).head(10)[[ticker, name, delta]].rename(columns={ticker:"Ticker", name:"Name", delta:"Δ contribution (pp)"})
     return inc, dec
 
+# ---------- TABLE BLOCK (inline expand) ----------
 def render_top_exposures_block(top_df):
     if top_df is None or top_df.empty:
         return
@@ -221,21 +231,33 @@ def render_top_exposures_block(top_df):
     ren  = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
 
     c1, c2 = st.columns(2, gap="small")
+
+    # ---- LEFT: CONTROVERSIAL ----
     with c1:
         st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
         tc = top_df[top_df[cohort].str.lower()=="controversial"][cols].rename(columns=ren).copy()
         tc["Share of AUM (%)"] = pd.to_numeric(tc["Share of AUM (%)"], errors="coerce").round(4)
-        st.dataframe(tc.head(5), use_container_width=True, hide_index=True, height=6*32+24)
-        with st.expander("Show full list"):
-            st.dataframe(tc.head(10), use_container_width=True, hide_index=True)
+
+        # tiny dropdown aligned to the right of the table
+        rc1, rc2 = st.columns([0.7, 0.3])
+        with rc2:
+            st.markdown("<div class='right-control'><label>Rows</label></div>", unsafe_allow_html=True)
+            rows_c = st.selectbox("", [5,10], index=0, key="rows_tc", label_visibility="collapsed")
+        st.dataframe(tc.head(rows_c), use_container_width=True, hide_index=True, height=(rows_c+1)*32+28)
+
+    # ---- RIGHT: CLEAN ----
     with c2:
         st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
         tg = top_df[top_df[cohort].str.lower()=="clean"][cols].rename(columns=ren).copy()
         tg["Share of AUM (%)"] = pd.to_numeric(tg["Share of AUM (%)"], errors="coerce").round(4)
-        st.dataframe(tg.head(5), use_container_width=True, hide_index=True, height=6*32+24)
-        with st.expander("Show full list"):
-            st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
 
+        rc1, rc2 = st.columns([0.7, 0.3])
+        with rc2:
+            st.markdown("<div class='right-control'><label>Rows</label></div>", unsafe_allow_html=True)
+            rows_g = st.selectbox("", [5,10], index=0, key="rows_tg", label_visibility="collapsed")
+        st.dataframe(tg.head(rows_g), use_container_width=True, hide_index=True, height=(rows_g+1)*32+28)
+
+# ---------- HEADER ----------
 st.markdown(
     """
     <div class="brandrow">
@@ -247,17 +269,18 @@ st.markdown(
 )
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
 
+# ---------- LAYOUT ----------
 tab_dash, tab_report = st.tabs(["Dashboard","Report"])
 
 with tab_dash:
-    ctx = read_csv(CTX_SUMMARY)
-    byscreen = read_csv(CTX_BYSCREEN)
-    top = read_csv(TOP_SPOTLIGHT)
-    agg = read_csv(AGG_TRENDS)
-    byfy = read_csv(BY_FUND_YEAR)
-    yearcmp = read_csv(YEAR_COMPARE)
-    screentr = read_csv(SCREEN_TRENDS)
-    movers = read_csv(MOVERS)
+    ctx       = read_csv(CTX_SUMMARY)
+    byscreen  = read_csv(CTX_BYSCREEN)
+    top       = read_csv(TOP_SPOTLIGHT)
+    agg       = read_csv(AGG_TRENDS)
+    byfy      = read_csv(BY_FUND_YEAR)
+    yearcmp   = read_csv(YEAR_COMPARE)
+    screentr  = read_csv(SCREEN_TRENDS)
+    movers    = read_csv(MOVERS)
 
     asof = get_asof(ctx) if ctx is not None else "2025"
 
@@ -267,8 +290,8 @@ with tab_dash:
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
+    # ---- 2025 OVERVIEW ----
     st.markdown("<div class='section-2025'>2025 Overview</div>", unsafe_allow_html=True)
-
     k1, k2, k3, k4, k5 = st.columns([0.18, 0.18, 0.26, 0.19, 0.19], gap="small")
     if ctx is not None:
         pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
@@ -276,9 +299,7 @@ with tab_dash:
         k2.metric("% Clean", f"{pct_clean:.1f}%")
         k3.metric("Total AUM", f"${total_aum:,.0f}" if pd.notna(total_aum) else "—")
     else:
-        k1.metric("% Controversial", "—")
-        k2.metric("% Clean", "—")
-        k3.metric("Total AUM", "—")
+        k1.metric("% Controversial", "—"); k2.metric("% Clean", "—"); k3.metric("Total AUM", "—")
 
     weighting_key = "aum"
     if agg is not None:
@@ -286,8 +307,7 @@ with tab_dash:
         k4.metric("Δ Clean since 2017", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
         k5.metric("Δ Controversial since 2017", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
     else:
-        k4.metric("Δ Clean since 2017", "—")
-        k5.metric("Δ Controversial since 2017", "—")
+        k4.metric("Δ Clean since 2017", "—"); k5.metric("Δ Controversial since 2017", "—")
 
     left, right = st.columns([0.48, 0.52], gap="small")
     with left:
@@ -304,10 +324,11 @@ with tab_dash:
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
+    # ---- TOP EXPOSURES (single table per side with inline row dropdown) ----
     render_top_exposures_block(top)
 
+    # ---- CHANGE SINCE 2017 ----
     st.markdown("<div class='section-title'>Change since 2017</div>", unsafe_allow_html=True)
-
     cw1, cw2, cw3 = st.columns([0.25, 0.35, 0.4])
     with cw1:
         weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], horizontal=True, index=0)
@@ -324,15 +345,13 @@ with tab_dash:
         kdc1.metric("Δ Clean (2017 → 2025)", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
         kdc2.metric("Δ Controversial (2017 → 2025)", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
     else:
-        kdc1.metric("Δ Clean (2017 → 2025)", "—")
-        kdc2.metric("Δ Controversial (2017 → 2025)", "—")
+        kdc1.metric("Δ Clean (2017 → 2025)", "—"); kdc2.metric("Δ Controversial (2017 → 2025)", "—")
 
     tr1, tr2 = st.columns(2, gap="large")
     if agg is not None:
         trend = chart_trend_agg(agg, key)
         if trend is not None:
             tr1.altair_chart(trend, use_container_width=True)
-    if agg is not None:
         yvy = chart_year_vs_year(agg, key, year_a, year_b)
         if yvy is not None:
             tr2.altair_chart(yvy, use_container_width=True)
@@ -362,6 +381,7 @@ with tab_report:
     st.header("Report")
     st.markdown("Context, methods, results highlights, and notes will appear here.")
 
+# ---------- FOOTER ----------
 st.markdown(
     """
     <div class="footer">
