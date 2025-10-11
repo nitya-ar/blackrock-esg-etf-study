@@ -32,8 +32,6 @@ st.markdown(
       /* Info icon */
       .infopill { font-size:12px; color:#C8DAFF; background:#1A2437; border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
       .infopill:hover { filter:brightness(1.1); }
-      /* link-like button under tables */
-      .inline-link { font-size:12px; color:#C8DAFF; background:transparent; border:none; text-decoration:underline; cursor:pointer; padding:0; }
     </style>
     """,
     unsafe_allow_html=True
@@ -85,7 +83,8 @@ def kpis_from_ctx(df):
         df[aum_col] = pd.to_numeric(df[aum_col], errors="coerce")
     pct_con = float(df.loc[df[cls].str.lower()=="controversial", share].sum())
     pct_clean = float(df.loc[df[cls].str.lower()=="clean", share].sum())
-    total_aum = float(df[aum_col].iloc[0]) if aum_col else np.nan
+    # total AUM: prefer a single portfolio total -> take max (these totals are repeated per row)
+    total_aum = float(df[aum_col].max()) if aum_col else np.nan
     return pct_con, pct_clean, total_aum
 
 def deltas_from_trends(df, weighting_key):
@@ -215,59 +214,51 @@ def movers_tables(df, year_a, year_b):
     dec = d.sort_values(delta, ascending=True).head(10)[[ticker, name, delta]].rename(columns={ticker:"Ticker", name:"Name", delta:"Δ contribution (pp)"})
     return inc, dec
 
-# ---------- INLINE EXPAND/COLLAPSE TABLES ----------
-def _init_rows_state(key: str, default: int = 5):
-    if key not in st.session_state:
-        st.session_state[key] = default
+# ---------- SIMPLE TRADEOFF SANDBOX ----------
+def tradeoff_scenarios(ctx_df, scenario: str):
+    """
+    Very lightweight illustrative sandbox:
+      - Baseline: unchanged
+      - Pragmatic Tilt: reduce Controversial by 20% (relative) and move to Other
+      - Strict Exclusion: set Controversial to 0; move to Other
+    Clean left unchanged.
+    """
+    cls = pick(ctx_df, [lambda s: s == "classification"])
+    share = pick(ctx_df, [lambda s: "share_of_total_aum_pct" in s or s in ("share_pct","share")])
+    if not (cls and share):
+        return None
+    m = ctx_df[[cls, share]].groupby(cls, as_index=False).sum().rename(columns={share:"share"})
+    # normalize to 1 if data are in % units
+    shares = ensure_0_1(m["share"]).copy()
+    m["share"] = shares
 
-def _toggle_rows_state(key: str):
-    st.session_state[key] = 10 if st.session_state.get(key, 5) == 5 else 5
+    baseline = {r[cls]: r["share"] for _, r in m.iterrows()}
+    clean = baseline.get("Clean", 0.0)
+    contro = baseline.get("Controversial", 0.0)
+    other = baseline.get("Other", 0.0)
 
-def render_top_exposures_block(top_df):
-    if top_df is None or top_df.empty:
-        return
-    cohort = pick(top_df, [lambda s: s == "cohort"])
-    rank   = pick(top_df, [lambda s: "rank" in s])
-    name   = pick(top_df, [lambda s: s in ("holding_name","name")])
-    ticker = pick(top_df, [lambda s: s == "ticker"])
-    share  = pick(top_df, [lambda s: "share_of_total_aum_pct" in s or s == "share_pct"])
-    etfsn  = pick(top_df, [lambda s: s in ("num_etfs","#etfs","count_etfs")])
-    tags   = pick(top_df, [lambda s: "screen_categories" in s or s == "tags"])
-    cols = [rank, ticker, name, share, etfsn, tags]
-    ren  = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
+    if scenario == "Baseline":
+        adj = dict(Clean=clean, Controversial=contro, Other=other)
+    elif scenario == "Pragmatic Tilt":
+        cut = 0.20 * contro
+        adj = dict(Clean=clean, Controversial=contro - cut, Other=other + cut)
+    else:  # Strict Exclusion
+        adj = dict(Clean=clean, Controversial=0.0, Other=other + contro)
 
-    c1, c2 = st.columns(2, gap="small")
+    out = pd.DataFrame({"classification": ["Clean","Controversial","Other"],
+                        "share": [adj["Clean"], adj["Controversial"], adj["Other"]]})
+    return out
 
-    # ---- LEFT: CONTROVERSIAL ----
-    with c1:
-        st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
-        tc = top_df[top_df[cohort].str.lower()=="controversial"][cols].rename(columns=ren).copy()
-        tc["Share of AUM (%)"] = pd.to_numeric(tc["Share of AUM (%)"], errors="coerce").round(4)
-        _init_rows_state("rows_tc", 5)
-        rows_c = st.session_state["rows_tc"]
-        st.dataframe(tc.head(rows_c), use_container_width=True, hide_index=True,
-                     height=(rows_c+1)*32+28)
-        # inline link under table (right-aligned)
-        col_sp, col_btn = st.columns([0.75, 0.25])
-        with col_btn:
-            label = "Show more ▾" if rows_c == 5 else "Show less ▴"
-            if st.button(label, key="btn_tc", help="Expand/collapse list", type="secondary"):
-                _toggle_rows_state("rows_tc")
-
-    # ---- RIGHT: CLEAN ----
-    with c2:
-        st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
-        tg = top_df[top_df[cohort].str.lower()=="clean"][cols].rename(columns=ren).copy()
-        tg["Share of AUM (%)"] = pd.to_numeric(tg["Share of AUM (%)"], errors="coerce").round(4)
-        _init_rows_state("rows_tg", 5)
-        rows_g = st.session_state["rows_tg"]
-        st.dataframe(tg.head(rows_g), use_container_width=True, hide_index=True,
-                     height=(rows_g+1)*32+28)
-        col_sp2, col_btn2 = st.columns([0.75, 0.25])
-        with col_btn2:
-            label2 = "Show more ▾" if rows_g == 5 else "Show less ▴"
-            if st.button(label2, key="btn_tg", help="Expand/collapse list", type="secondary"):
-                _toggle_rows_state("rows_tg")
+def chart_tradeoff_bar(df):
+    colors = {"Clean": CLEAN_COLOR, "Controversial": CONTRO_COLOR, "Other": OTHER_COLOR}
+    return alt.Chart(df).mark_bar().encode(
+        x=alt.X("share:Q", stack="normalize", axis=alt.Axis(format="%", title="Share of total AUM")),
+        color=alt.Color("classification:N",
+                        scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())),
+                        legend=None),
+        tooltip=[alt.Tooltip("classification", title="Category"),
+                 alt.Tooltip("share", title="Share", format=".1%")]
+    ).properties(height=140)
 
 # ---------- HEADER ----------
 st.markdown(
@@ -281,10 +272,11 @@ st.markdown(
 )
 st.caption("We built a tool where anyone can explore how BlackRock’s ESG ETFs align with clean/controversial classifications, see how that changed since 2017, and test tradeoff scenarios.")
 
-# ---------- LAYOUT ----------
-tab_dash, tab_report = st.tabs(["Dashboard","Report"])
+# ---------- TOP-LEVEL NAV ----------
+tab_explore, tab_report = st.tabs(["Explore","Report"])
 
-with tab_dash:
+with tab_explore:
+    # Load once for all subpanels
     ctx       = read_csv(CTX_SUMMARY)
     byscreen  = read_csv(CTX_BYSCREEN)
     top       = read_csv(TOP_SPOTLIGHT)
@@ -296,98 +288,160 @@ with tab_dash:
 
     asof = get_asof(ctx) if ctx is not None else "2025"
 
+    # Shared header strip
     c1, c2 = st.columns([0.65, 0.35])
     with c1:
         st.markdown("<span class='muted-accent'>All ESG ETFs</span>", unsafe_allow_html=True)
     with c2:
         st.markdown(f"<div class='asof'>As of: {asof}</div>", unsafe_allow_html=True)
 
-    # ---- 2025 OVERVIEW ----
-    st.markdown("<div class='section-2025'>2025 Overview</div>", unsafe_allow_html=True)
-    k1, k2, k3, k4, k5 = st.columns([0.18, 0.18, 0.26, 0.19, 0.19], gap="small")
-    if ctx is not None:
-        pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
-        k1.metric("% Controversial", f"{pct_con:.1f}%")
-        k2.metric("% Clean", f"{pct_clean:.1f}%")
-        k3.metric("Total AUM", f"${total_aum:,.0f}" if pd.notna(total_aum) else "—")
-    else:
-        k1.metric("% Controversial", "—"); k2.metric("% Clean", "—"); k3.metric("Total AUM", "—")
+    panel_overview, panel_change, panel_tradeoffs = st.tabs(["2025 Overview","Change since 2017","Tradeoffs"])
 
-    weighting_key = "aum"
-    if agg is not None:
-        d_clean, d_contro = deltas_from_trends(agg, weighting_key)
-        k4.metric("Δ Clean since 2017", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
-        k5.metric("Δ Controversial since 2017", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
-    else:
-        k4.metric("Δ Clean since 2017", "—"); k5.metric("Δ Controversial since 2017", "—")
+    # ===== 2025 OVERVIEW =====
+    with panel_overview:
+        st.markdown("<div class='section-2025'>2025 Overview</div>", unsafe_allow_html=True)
 
-    left, right = st.columns([0.48, 0.52], gap="small")
-    with left:
-        st.markdown("<div class='minor-h'>Composition & Screens (2025)</div>", unsafe_allow_html=True)
+        k1, k2, k3, k4, k5 = st.columns([0.18, 0.18, 0.26, 0.19, 0.19], gap="small")
         if ctx is not None:
-            st.altair_chart(chart_composition(ctx), use_container_width=True)
-    with right:
-        st.markdown(
-            "<div style='display:flex; justify-content:flex-end; margin:2px 0 4px 0;'>"
-            "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>ⓘ</span>"
-            "</div>",
-            unsafe_allow_html=True
-        )
-        if byscreen is not None:
-            st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
+            pct_con, pct_clean, total_aum = kpis_from_ctx(ctx)
+            k1.metric("% Controversial", f"{pct_con:.1f}%")
+            k2.metric("% Clean", f"{pct_clean:.1f}%")
+            k3.metric("Total AUM", f"${total_aum:,.0f}" if pd.notna(total_aum) else "—")
+        else:
+            k1.metric("% Controversial", "—"); k2.metric("% Clean", "—"); k3.metric("Total AUM", "—")
 
-    # ---- TOP EXPOSURES (single table per side; inline expand link) ----
-    render_top_exposures_block(top)
+        weighting_key = "aum"
+        if agg is not None:
+            d_clean, d_contro = deltas_from_trends(agg, weighting_key)
+            k4.metric("Δ Clean since 2017", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
+            k5.metric("Δ Controversial since 2017", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
+        else:
+            k4.metric("Δ Clean since 2017", "—"); k5.metric("Δ Controversial since 2017", "—")
 
-    # ---- CHANGE SINCE 2017 ----
-    st.markdown("<div class='section-title'>Change since 2017</div>", unsafe_allow_html=True)
-    cw1, cw2, cw3 = st.columns([0.25, 0.35, 0.4])
-    with cw1:
-        weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], horizontal=True, index=0)
-        key = "aum" if "AUM" in weighting else "equal"
-    with cw2:
-        years = sorted(agg["year"].unique().tolist()) if agg is not None and "year" in agg.columns else list(range(2017, 2026))
-        year_a = st.selectbox("Year A", years, index=0)
-    with cw3:
-        year_b = st.selectbox("Year B", years, index=len(years)-1)
+        left, right = st.columns([0.48, 0.52], gap="small")
+        with left:
+            st.markdown("<div class='minor-h'>Composition & Screens (2025)</div>", unsafe_allow_html=True)
+            if ctx is not None:
+                st.altair_chart(chart_composition(ctx), use_container_width=True)
+        with right:
+            st.markdown(
+                "<div style='display:flex; justify-content:flex-end; margin:2px 0 4px 0;'>"
+                "<span class='infopill' title='Categories can overlap; totals won’t sum to overall controversial exposure.'>ⓘ</span>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+            if byscreen is not None:
+                st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
-    kdc1, kdc2 = st.columns(2)
-    if agg is not None:
-        d_clean, d_contro = deltas_from_trends(agg, key)
-        kdc1.metric("Δ Clean (2017 → 2025)", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
-        kdc2.metric("Δ Controversial (2017 → 2025)", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
-    else:
-        kdc1.metric("Δ Clean (2017 → 2025)", "—"); kdc2.metric("Δ Controversial (2017 → 2025)", "—")
+        # Top tables — always 10 rows
+        st.markdown("<div class='section-title'>Top Exposures (2025)</div>", unsafe_allow_html=True)
+        if top is not None and not top.empty:
+            cohort = pick(top, [lambda s: s == "cohort"])
+            rank   = pick(top, [lambda s: "rank" in s])
+            name   = pick(top, [lambda s: s in ("holding_name","name")])
+            ticker = pick(top, [lambda s: s == "ticker"])
+            share  = pick(top, [lambda s: "share_of_total_aum_pct" in s or s == "share_pct"])
+            etfsn  = pick(top, [lambda s: s in ("num_etfs","#etfs","count_etfs")])
+            tags   = pick(top, [lambda s: "screen_categories" in s or s == "tags"])
+            cols = [rank, ticker, name, share, etfsn, tags]
+            ren  = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
 
-    tr1, tr2 = st.columns(2, gap="large")
-    if agg is not None:
-        trend = chart_trend_agg(agg, key)
-        if trend is not None:
-            tr1.altair_chart(trend, use_container_width=True)
-        yvy = chart_year_vs_year(agg, key, year_a, year_b)
-        if yvy is not None:
-            tr2.altair_chart(yvy, use_container_width=True)
+            s1, s2 = st.columns(2, gap="small")
+            with s1:
+                st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
+                tc = top[top[cohort].str.lower()=="controversial"][cols].rename(columns=ren).copy()
+                tc["Share of AUM (%)"] = pd.to_numeric(tc["Share of AUM (%)"], errors="coerce").round(4)
+                st.dataframe(tc.head(10), use_container_width=True, hide_index=True)
+            with s2:
+                st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
+                tg = top[top[cohort].str.lower()=="clean"][cols].rename(columns=ren).copy()
+                tg["Share of AUM (%)"] = pd.to_numeric(tg["Share of AUM (%)"], errors="coerce").round(4)
+                st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
 
-    st.markdown("<div class='minor-h'>Heatmap: % Controversial by ETF × Year</div>", unsafe_allow_html=True)
-    if byfy is not None:
-        hm = chart_heatmap_by_fund_year(byfy)
-        if hm is not None:
-            st.altair_chart(hm, use_container_width=True)
+    # ===== CHANGE SINCE 2017 =====
+    with panel_change:
+        st.markdown("<div class='section-title'>Change since 2017</div>", unsafe_allow_html=True)
 
-    with st.expander("Screen trends (AUM-weighted)"):
-        if screentr is not None:
-            st.altair_chart(chart_screen_trends(screentr), use_container_width=True)
+        cw1, cw2, cw3 = st.columns([0.25, 0.35, 0.4])
+        with cw1:
+            weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], horizontal=True, index=0)
+            key = "aum" if "AUM" in weighting else "equal"
+        with cw2:
+            years = sorted(agg["year"].unique().tolist()) if agg is not None and "year" in agg.columns else list(range(2017, 2026))
+            year_a = st.selectbox("Year A", years, index=0)
+        with cw3:
+            year_b = st.selectbox("Year B", years, index=len(years)-1)
 
-    if movers is not None:
-        inc, dec = movers_tables(movers, year_a, year_b)
-        st.markdown("<div class='minor-h'>Top movers (Year A → Year B)</div>", unsafe_allow_html=True)
-        mv1, mv2 = st.columns(2, gap="large")
-        with mv1:
-            st.subheader("Largest increases")
-            st.dataframe(inc, use_container_width=True, hide_index=True)
-        with mv2:
-            st.subheader("Largest decreases")
-            st.dataframe(dec, use_container_width=True, hide_index=True)
+        kdc1, kdc2 = st.columns(2)
+        if agg is not None:
+            d_clean, d_contro = deltas_from_trends(agg, key)
+            kdc1.metric("Δ Clean (2017 → 2025)", f"{d_clean:+.1f} pp" if pd.notna(d_clean) else "—")
+            kdc2.metric("Δ Controversial (2017 → 2025)", f"{d_contro:+.1f} pp" if pd.notna(d_contro) else "—")
+        else:
+            kdc1.metric("Δ Clean (2017 → 2025)", "—"); kdc2.metric("Δ Controversial (2017 → 2025)", "—")
+
+        tr1, tr2 = st.columns(2, gap="large")
+        if agg is not None:
+            tchart = chart_trend_agg(agg, key)
+            if tchart is not None:
+                tr1.altair_chart(tchart, use_container_width=True)
+            yvy = chart_year_vs_year(agg, key, year_a, year_b)
+            if yvy is not None:
+                tr2.altair_chart(yvy, use_container_width=True)
+
+        st.markdown("<div class='minor-h'>Heatmap: % Controversial by ETF × Year</div>", unsafe_allow_html=True)
+        if byfy is not None:
+            hm = chart_heatmap_by_fund_year(byfy)
+            if hm is not None:
+                st.altair_chart(hm, use_container_width=True)
+
+        with st.expander("Screen trends (AUM-weighted)"):
+            if screentr is not None:
+                st.altair_chart(chart_screen_trends(screentr), use_container_width=True)
+
+        if movers is not None:
+            inc, dec = movers_tables(movers, year_a, year_b)
+            st.markdown("<div class='minor-h'>Top movers (Year A → Year B)</div>", unsafe_allow_html=True)
+            mv1, mv2 = st.columns(2, gap="large")
+            with mv1:
+                st.subheader("Largest increases")
+                st.dataframe(inc, use_container_width=True, hide_index=True)
+            with mv2:
+                st.subheader("Largest decreases")
+                st.dataframe(dec, use_container_width=True, hide_index=True)
+
+    # ===== TRADEOFFS =====
+    with panel_tradeoffs:
+        st.markdown("<div class='section-title'>Tradeoffs</div>", unsafe_allow_html=True)
+        st.caption("Illustrative sandbox: applies simple portfolio-wide scenarios to 2025 composition. Categories overlap; screen totals aren’t meant to sum to overall controversial exposure.")
+
+        if ctx is not None:
+            scenario = st.radio("Scenario", ["Baseline","Pragmatic Tilt","Strict Exclusion"], horizontal=True)
+            base_df = ctx
+            sim = tradeoff_scenarios(base_df, scenario)
+            baseline = tradeoff_scenarios(base_df, "Baseline")
+
+            if sim is not None and baseline is not None:
+                c_a, c_b = st.columns(2)
+                with c_a:
+                    st.markdown("<div class='minor-h'>Current (2025)</div>", unsafe_allow_html=True)
+                    st.altair_chart(chart_tradeoff_bar(baseline), use_container_width=True)
+                with c_b:
+                    st.markdown(f"<div class='minor-h'>{scenario}</div>", unsafe_allow_html=True)
+                    st.altair_chart(chart_tradeoff_bar(sim), use_container_width=True)
+
+                # quick diffs
+                def pct(x, lab): 
+                    v = float(sim.loc[sim["classification"]==lab,"share"])
+                    b = float(baseline.loc[baseline["classification"]==lab,"share"])
+                    return (v-b)*100
+
+                kx1, kx2, kx3 = st.columns(3)
+                kx1.metric("Δ Clean", f"{pct(sim,'Clean'):+.1f} pp")
+                kx2.metric("Δ Controversial", f"{pct(sim,'Controversial'):+.1f} pp")
+                kx3.metric("Δ Other", f"{pct(sim,'Other'):+.1f} pp")
+        else:
+            st.info("No context data loaded.")
 
 with tab_report:
     st.header("Report")
