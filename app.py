@@ -1,6 +1,4 @@
 import streamlit as st
-import smtplib, ssl
-from email.mime.text import MIMEText
 
 st.set_page_config(page_title="BlackRock ESG ETFs Dashboard", layout="wide")
 
@@ -51,9 +49,9 @@ with tab_dash:
     st.markdown("### 2025 Composition")
     cA, cB = st.columns([0.55,0.45])
     with cA:
-        st.placeholder()
+        st.empty()
     with cB:
-        st.placeholder()
+        st.empty()
 
     st.markdown("### Spotlight")
     s1,s2 = st.columns(2)
@@ -68,15 +66,15 @@ with tab_dash:
     st.markdown("### Change since 2017")
     t1,t2 = st.columns(2)
     with t1:
-        st.placeholder()
+        st.empty()
     with t2:
-        st.placeholder()
+        st.empty()
     st.markdown("#### Fund × Year")
-    st.placeholder()
+    st.empty()
     st.markdown("#### Year vs Year")
     y1,y2 = st.columns([0.5,0.5])
     with y1:
-        st.placeholder()
+        st.empty()
     with y2:
         st.dataframe(data=None, use_container_width=True)
 
@@ -90,9 +88,9 @@ with tab_dash:
     m5.metric("Sector/Region Drift", "—")
     b1,b2 = st.columns([0.5,0.5])
     with b1:
-        st.placeholder()
+        st.empty()
     with b2:
-        st.placeholder()
+        st.empty()
     st.dataframe(data=None, use_container_width=True)
 
 with tab_report:
@@ -100,48 +98,6 @@ with tab_report:
     st.markdown("Context, methods, results highlights, and notes will appear here.")
     st.markdown("#### Methodology", anchor="methodology")
     st.markdown("Will be added here when you share the copy.")
-
-st.markdown("<div id='feedback'></div>", unsafe_allow_html=True)
-st.markdown("### Share Feedback")
-with st.form("feedback_form", clear_on_submit=True):
-    c1,c2 = st.columns(2)
-    with c1:
-        name = st.text_input("Name (optional)")
-    with c2:
-        email = st.text_input("Email (optional)")
-    message = st.text_area("Your feedback")
-    submitted = st.form_submit_button("Send")
-
-def send_email_via_smtp(sender, pwd, host, port, to_addr, subject, body):
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = to_addr
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(host, port, context=context) as server:
-        server.login(sender, pwd)
-        server.sendmail(sender, [to_addr], msg.as_string())
-
-if submitted:
-    if message.strip():
-        sent = False
-        try:
-            host = st.secrets["SMTP_HOST"]
-            port = int(st.secrets.get("SMTP_PORT", 465))
-            user = st.secrets["SMTP_USER"]
-            pwd = st.secrets["SMTP_PASS"]
-            to_addr = st.secrets.get("FEEDBACK_TO", user)
-            body = f"Name: {name or '(not provided)'}\nEmail: {email or '(not provided)'}\n\nMessage:\n{message}"
-            send_email_via_smtp(user, pwd, host, port, to_addr, "ESG Dashboard Feedback", body)
-            sent = True
-        except Exception as e:
-            st.session_state["fb_error"] = str(e)
-        if sent:
-            st.success("Thanks for sharing your thoughts. Appreciated.")
-        else:
-            st.info("Couldn’t send email from this environment. You can also reach me at: nityaarya20@gmail.com")
-    else:
-        st.warning("Please add a short message before sending.")
 
 st.markdown(
     """
@@ -154,7 +110,7 @@ st.markdown(
       <div>
         <a href="https://github.com/nitya-ar/blackrock-esg-etf-study" target="_blank">GitHub</a>
         <a href="#methodology">Methodology</a>
-        <a href="#feedback">Feedback</a>
+        <a href="https://forms.gle/1fFm9cXQfx9fbD2u5" target="_blank">Feedback</a>
       </div>
     </div>
     """,
