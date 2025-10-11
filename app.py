@@ -1,10 +1,7 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-# Clean dark UI, single file, no emojis. As-of date shows only if we have day+month+year.
+# Clean dark UI, single file. No emojis. Title & description span full width.
 # "Dashboard / Report" switch appears after the description and before the tabs.
 
-import os
-import re
-import pandas as pd
 import streamlit as st
 
 # --------------------------------
@@ -16,8 +13,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
-CONTEXT_SUMMARY_PATH = "/mnt/data/context_summary_2025.csv"  # update if needed
 
 COLORS = {
     "bg": "#0A0B0D",
@@ -71,78 +66,33 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --------------------------------
-# HELPERS
-# --------------------------------
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-def read_as_of_display():
-    """
-    Try to read an as-of date from context_summary_2025.csv.
-    Only return a formatted date if the original string clearly includes day+month+year.
-    Otherwise return None (we hide the as-of).
-    """
-    if not os.path.exists(CONTEXT_SUMMARY_PATH):
-        return None
-    try:
-        df = pd.read_csv(CONTEXT_SUMMARY_PATH)
-        cols = {c.lower(): c for c in df.columns}
-        src_col = cols.get("as_of_date") or cols.get("as_of") or cols.get("asof")
-        if not src_col:
-            return None
-        raw = str(df[src_col].dropna().astype(str).iloc[0]).strip()
-        # Require pattern that contains day + month + year
-        if not re.search(r"\b\d{{4}}[-/]\d{{1,2}}[-/]\d{{1,2}}\b", raw) and not re.search(r"\b\d{{1,2}}[-/]\d{{1,2}}[-/]\d{{2,4}}\b", raw):
-            return None
-        dt = pd.to_datetime(raw, errors="coerce")
-        if pd.isna(dt):
-            return None
-        return dt.strftime("%d %b %Y")  # e.g., 12 Oct 2025
-    except Exception:
-        return None
-
 # --------------------------------
-# HEADER
+# HEADER (full-width)
 # --------------------------------
-as_of_display = read_as_of_display()
-
-hdr_left, hdr_right = st.columns([0.72, 0.28], gap="large")
-with hdr_left:
-    st.markdown(
-        """
-        <div style="display:flex; flex-direction:column; gap:6px;">
-          <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
-            BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-          </h2>
-          <div class="blx-muted" style="max-width:1100px;">
-            This application analyzes 20 BlackRock ESG-labelled ETFs using a single 2025 ESG map (Clean200 plus controversial screens).
-            It provides a 2025 point-in-time snapshot of Clean vs Controversial vs Other exposure, a retroactive view of how those exposures
-            evolved from 2017 to 2025, and a tradeoff experiment that simulates cleaner portfolios and quantifies the cost in tracking error,
-            active share, and diversification relative to current benchmarks.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-with hdr_right:
-    if as_of_display:
-        st.markdown(
-            f"""
-            <div style="text-align:right; margin-bottom:8px;">
-              <span class="blx-muted">As of:&nbsp;</span>
-              <span style="font-weight:600;">{as_of_display}</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
+        BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
+      </h2>
+      <div class="blx-muted" style="max-width:1400px;">
+        Study of 20 BlackRock ESG-labelled ETFs. One 2025 ESG map (Clean200 plus controversial screens) is applied consistently
+        to every fund and every year. The dashboard shows three things: (1) a 2025 snapshot of how ETF dollars are split across
+        Clean, Controversial, and Other; (2) how those exposures changed from 2017 to 2025; and (3) a tradeoff experiment that
+        pushes the portfolios cleaner and reports the cost in tracking error, active share, and diversification relative to the benchmark.
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 divider()
 
 # --------------------------------
-# VIEW SWITCH (moved here: after description, before tabs)
+# VIEW SWITCH (below description, before tabs)
 # --------------------------------
 mode = st.segmented_control(
     "View",
@@ -210,7 +160,7 @@ else:
     st.markdown(
         """
 **Purpose**  
-Assess how BlackRock’s ESG-labelled ETFs align with a consistent 2025 ESG classification, how that alignment has **changed from 2017 to 2025**, and what it **costs to push portfolios cleaner**.
+Assess how BlackRock’s ESG-labelled ETFs align with a consistent 2025 ESG classification, how that alignment **changed from 2017 to 2025**, and what it **costs to push portfolios cleaner**.
 
 **Method (high level)**  
 1) Standardize 2025 holdings for 20 ETFs; tag Clean200 and controversial screens.  
