@@ -32,9 +32,8 @@ st.markdown(
       /* Info icon */
       .infopill { font-size:12px; color:#C8DAFF; background:#1A2437; border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
       .infopill:hover { filter:brightness(1.1); }
-      /* Tiny right-aligned control above tables */
-      .right-control { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:4px 0 -6px 0; }
-      .right-control label { font-size:12px; color:#9AA4B2; }
+      /* link-like button under tables */
+      .inline-link { font-size:12px; color:#C8DAFF; background:transparent; border:none; text-decoration:underline; cursor:pointer; padding:0; }
     </style>
     """,
     unsafe_allow_html=True
@@ -92,7 +91,7 @@ def kpis_from_ctx(df):
 def deltas_from_trends(df, weighting_key):
     ycol = pick(df, [lambda s: s == "year"])
     wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
-    clean_col = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
+    clean_col  = pick(df, [lambda s: ("clean" in s and "pct" in s) or s in ("pct_clean","clean_pct","clean_percent")])
     contro_col = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
     if not all([ycol, clean_col, contro_col]):
         return np.nan, np.nan
@@ -216,7 +215,14 @@ def movers_tables(df, year_a, year_b):
     dec = d.sort_values(delta, ascending=True).head(10)[[ticker, name, delta]].rename(columns={ticker:"Ticker", name:"Name", delta:"Δ contribution (pp)"})
     return inc, dec
 
-# ---------- TABLE BLOCK (inline expand) ----------
+# ---------- INLINE EXPAND/COLLAPSE TABLES ----------
+def _init_rows_state(key: str, default: int = 5):
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+def _toggle_rows_state(key: str):
+    st.session_state[key] = 10 if st.session_state.get(key, 5) == 5 else 5
+
 def render_top_exposures_block(top_df):
     if top_df is None or top_df.empty:
         return
@@ -237,25 +243,31 @@ def render_top_exposures_block(top_df):
         st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
         tc = top_df[top_df[cohort].str.lower()=="controversial"][cols].rename(columns=ren).copy()
         tc["Share of AUM (%)"] = pd.to_numeric(tc["Share of AUM (%)"], errors="coerce").round(4)
-
-        # tiny dropdown aligned to the right of the table
-        rc1, rc2 = st.columns([0.7, 0.3])
-        with rc2:
-            st.markdown("<div class='right-control'><label>Rows</label></div>", unsafe_allow_html=True)
-            rows_c = st.selectbox("", [5,10], index=0, key="rows_tc", label_visibility="collapsed")
-        st.dataframe(tc.head(rows_c), use_container_width=True, hide_index=True, height=(rows_c+1)*32+28)
+        _init_rows_state("rows_tc", 5)
+        rows_c = st.session_state["rows_tc"]
+        st.dataframe(tc.head(rows_c), use_container_width=True, hide_index=True,
+                     height=(rows_c+1)*32+28)
+        # inline link under table (right-aligned)
+        col_sp, col_btn = st.columns([0.75, 0.25])
+        with col_btn:
+            label = "Show more ▾" if rows_c == 5 else "Show less ▴"
+            if st.button(label, key="btn_tc", help="Expand/collapse list", type="secondary"):
+                _toggle_rows_state("rows_tc")
 
     # ---- RIGHT: CLEAN ----
     with c2:
         st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
         tg = top_df[top_df[cohort].str.lower()=="clean"][cols].rename(columns=ren).copy()
         tg["Share of AUM (%)"] = pd.to_numeric(tg["Share of AUM (%)"], errors="coerce").round(4)
-
-        rc1, rc2 = st.columns([0.7, 0.3])
-        with rc2:
-            st.markdown("<div class='right-control'><label>Rows</label></div>", unsafe_allow_html=True)
-            rows_g = st.selectbox("", [5,10], index=0, key="rows_tg", label_visibility="collapsed")
-        st.dataframe(tg.head(rows_g), use_container_width=True, hide_index=True, height=(rows_g+1)*32+28)
+        _init_rows_state("rows_tg", 5)
+        rows_g = st.session_state["rows_tg"]
+        st.dataframe(tg.head(rows_g), use_container_width=True, hide_index=True,
+                     height=(rows_g+1)*32+28)
+        col_sp2, col_btn2 = st.columns([0.75, 0.25])
+        with col_btn2:
+            label2 = "Show more ▾" if rows_g == 5 else "Show less ▴"
+            if st.button(label2, key="btn_tg", help="Expand/collapse list", type="secondary"):
+                _toggle_rows_state("rows_tg")
 
 # ---------- HEADER ----------
 st.markdown(
@@ -324,7 +336,7 @@ with tab_dash:
         if byscreen is not None:
             st.altair_chart(chart_by_screen(byscreen), use_container_width=True)
 
-    # ---- TOP EXPOSURES (single table per side with inline row dropdown) ----
+    # ---- TOP EXPOSURES (single table per side; inline expand link) ----
     render_top_exposures_block(top)
 
     # ---- CHANGE SINCE 2017 ----
