@@ -25,9 +25,10 @@ st.markdown(
       div[data-testid="stMetricDelta"] { font-size: 12px; }
       .section-2025 { font-size:34px; font-weight:800; margin:8px 0 6px 0; }
       .minor-h { font-size:18px; font-weight:700; margin:10px 0 6px 0; }
-      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
+      .pairhead { display:flex; align-items:center; justify-content:space-between; margin:8px 0 4px 0; }
       .infopill { font-size:12px; color:#C8DAFF; background:#1A2437; border:1px solid #334a78; padding:2px 8px; border-radius:999px; cursor:help; }
       .infopill:hover { filter:brightness(1.1); }
+      .section-title { font-size:28px; font-weight:800; margin:26px 0 12px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -120,7 +121,7 @@ def chart_by_screen(df):
     colors = {"Controversial": CONTRO_COLOR, "Clean": CLEAN_COLOR}
     return alt.Chart(d).mark_bar().encode(
         y=alt.Y(f"{cat}:N", sort="-x", title=""),
-        x=alt.X("_plot_share:Q", axis=alt.Axis(format="%", title="Share of total AUM")),
+        x=alt.X(f"_plot_share:Q", axis=alt.Axis(format="%", title="Share of total AUM")),
         color=alt.Color(f"{cls}:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title="")),
         tooltip=[alt.Tooltip(cat, title="Screen"), alt.Tooltip(cls, title="Cohort"), alt.Tooltip(share, title="Share of total AUM (%)", format=".1f")]
     ).properties(height=230)
@@ -144,6 +145,20 @@ def chart_trend_agg(df, weighting_key):
         color=alt.Color("Cohort:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title=""))
     ).properties(height=220)
 
+def chart_heatmap_by_fund_year(df):
+    fund = pick(df, [lambda s: s in ("etf","etf_ticker","fund","ticker","etf_symbol")])
+    ycol = pick(df, [lambda s: s == "year"])
+    pctc = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
+    if not all([fund, ycol, pctc]):
+        return None
+    d = df[[fund, ycol, pctc]].dropna()
+    d["_plot"] = ensure_0_1(d[pctc])
+    return alt.Chart(d).mark_rect().encode(
+        x=alt.X(f"{ycol}:O", title="Year"),
+        y=alt.Y(f"{fund}:N", title="ETF"),
+        color=alt.Color("_plot:Q", scale=alt.Scale(scheme="reds"), legend=alt.Legend(title="% share", format="%"))
+    ).properties(height=380)
+
 def chart_year_vs_year(df, weighting_key, year_a, year_b):
     ycol = pick(df, [lambda s: s == "year"])
     wcol = pick(df, [lambda s: s in ("weighting","agg_type","type")])
@@ -162,20 +177,6 @@ def chart_year_vs_year(df, weighting_key, year_a, year_b):
         y=alt.Y("_plot:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
         color=alt.Color("Cohort:N", scale=alt.Scale(domain=list(colors.keys()), range=list(colors.values())), legend=alt.Legend(title=""))
     ).properties(height=220)
-
-def chart_heatmap_by_fund_year(df):
-    fund = pick(df, [lambda s: s in ("etf","etf_ticker","fund","ticker","etf_symbol")])
-    ycol = pick(df, [lambda s: s == "year"])
-    pctc = pick(df, [lambda s: ("controversial" in s and "pct" in s) or s in ("pct_controversial","controversial_pct")])
-    if not all([fund, ycol, pctc]):
-        return None
-    d = df[[fund, ycol, pctc]].dropna()
-    d["_plot"] = ensure_0_1(d[pctc])
-    return alt.Chart(d).mark_rect().encode(
-        x=alt.X(f"{ycol}:O", title="Year"),
-        y=alt.Y(f"{fund}:N", title="ETF"),
-        color=alt.Color("_plot:Q", scale=alt.Scale(scheme="reds"), legend=alt.Legend(title="% share", format="%"))
-    ).properties(height=380, use_container_width=True)
 
 def chart_screen_trends(df):
     ycol = pick(df, [lambda s: s == "year"])
@@ -218,28 +219,22 @@ def render_top_exposures_block(top_df):
     tags   = pick(top_df, [lambda s: "screen_categories" in s or s == "tags"])
     cols = [rank, ticker, name, share, etfsn, tags]
     ren  = {rank:"Rank", ticker:"Ticker", name:"Name", share:"Share of AUM (%)", etfsn:"#ETFs", tags:"Screens"}
-    st.markdown("<div class='section-title'>Top Exposures (2025)</div>", unsafe_allow_html=True)
+
     c1, c2 = st.columns(2, gap="small")
     with c1:
-        h1, h2 = st.columns([0.65, 0.35])
-        with h1:
-            st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
-        with h2:
-            show_all_tc = st.toggle("Show full list", value=False, key="toggle_tc")
+        st.markdown("<div class='minor-h'>Top Controversial</div>", unsafe_allow_html=True)
         tc = top_df[top_df[cohort].str.lower()=="controversial"][cols].rename(columns=ren).copy()
         tc["Share of AUM (%)"] = pd.to_numeric(tc["Share of AUM (%)"], errors="coerce").round(4)
-        rows_tc = 10 if show_all_tc else 5
-        st.dataframe(tc.head(rows_tc), use_container_width=True, hide_index=True, height=(rows_tc+1)*32 + 24)
+        st.dataframe(tc.head(5), use_container_width=True, hide_index=True, height=6*32+24)
+        with st.expander("Show full list"):
+            st.dataframe(tc.head(10), use_container_width=True, hide_index=True)
     with c2:
-        h3, h4 = st.columns([0.65, 0.35])
-        with h3:
-            st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
-        with h4:
-            show_all_tg = st.toggle("Show full list", value=False, key="toggle_tg")
+        st.markdown("<div class='minor-h'>Top Clean</div>", unsafe_allow_html=True)
         tg = top_df[top_df[cohort].str.lower()=="clean"][cols].rename(columns=ren).copy()
         tg["Share of AUM (%)"] = pd.to_numeric(tg["Share of AUM (%)"], errors="coerce").round(4)
-        rows_tg = 10 if show_all_tg else 5
-        st.dataframe(tg.head(rows_tg), use_container_width=True, hide_index=True, height=(rows_tg+1)*32 + 24)
+        st.dataframe(tg.head(5), use_container_width=True, hide_index=True, height=6*32+24)
+        with st.expander("Show full list"):
+            st.dataframe(tg.head(10), use_container_width=True, hide_index=True)
 
 st.markdown(
     """
@@ -318,7 +313,7 @@ with tab_dash:
         weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], horizontal=True, index=0)
         key = "aum" if "AUM" in weighting else "equal"
     with cw2:
-        years = sorted(agg["year"].unique().tolist()) if agg is not None and "year" in agg.columns else list(range(2017, 2025+1))
+        years = sorted(agg["year"].unique().tolist()) if agg is not None and "year" in agg.columns else list(range(2017, 2026))
         year_a = st.selectbox("Year A", years, index=0)
     with cw3:
         year_b = st.selectbox("Year B", years, index=len(years)-1)
@@ -337,6 +332,7 @@ with tab_dash:
         trend = chart_trend_agg(agg, key)
         if trend is not None:
             tr1.altair_chart(trend, use_container_width=True)
+    if agg is not None:
         yvy = chart_year_vs_year(agg, key, year_a, year_b)
         if yvy is not None:
             tr2.altair_chart(yvy, use_container_width=True)
