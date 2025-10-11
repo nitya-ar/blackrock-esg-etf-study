@@ -110,7 +110,7 @@ st.markdown(
       </div>
       <div>
         <a href="https://github.com/nitya-ar/blackrock-esg-etf-study" target="_blank">GitHub</a>
-        <a href="#methodology">Methodology</a>
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
         <a href="https://forms.gle/1fFm9cXQfx9fbD2u5" target="_blank">Feedback</a>
       </div>
     </div>
