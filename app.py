@@ -315,10 +315,6 @@ def usd_fmt(x):
         return f"${x:,.0f}"
     except: return "-"
 
-# Alphabet class-name fix for tables only
-ALPHABET_NAME_BY_TICKER = {
-    "GOOG":  "ALPHABET INC CLASS C",
-    "GOOGL": "ALPHABET INC CLASS A",
 }
 def apply_class_names(df):
     if {"Ticker","Holding"}.issubset(df.columns):
