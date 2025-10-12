@@ -1,35 +1,21 @@
-ticker,logo_url
-MSFT,https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg
-GOOG,https://commons.wikimedia.org/wiki/File:Alphabet_Inc_Logo_2015.svg 
-AMZN,https://logo.clearbit.com/amazon.com
-JPM,https://logo.clearbit.com/jpmorganchase.com
-PG,https://logo.clearbit.com/pg.com
-CRM,https://logo.clearbit.com/salesforce.com
-COST,https://logo.clearbit.com/costco.com
-JNJ,https://logo.clearbit.com/jnj.com
-MS,https://logo.clearbit.com/morganstanley.com
-BRKB,https://logo.clearbit.com/berkshirehathaway.com
-BRK.B,https://logo.clearbit.com/berkshirehathaway.com
-AAPL,https://logo.clearbit.com/apple.com
-TSLA,https://logo.clearbit.com/tesla.com
-AVGO,https://logo.clearbit.com/broadcom.com
-2330,https://logo.clearbit.com/tsmc.com
-AMD,https://logo.clearbit.com/amd.com
-ABBV,https://logo.clearbit.com/abbvie.com
-CSCO,https://logo.clearbit.com/cisco.com
-IBE,https://logo.clearbit.com/iberdrola.com
-FSLR,https://logo.clearbit.com/firstsolar.com
-MRK,https://logo.clearbit.com/merck.com
-META,https://logo.clearbit.com/meta.com
-NVDA,https://logo.clearbit.com/nvidia.com
-V,https://logo.clearbit.com/visa.com
-MA,https://logo.clearbit.com/mastercard.com
-HD,https://logo.clearbit.com/homedepot.com
-WMT,https://logo.clearbit.com/walmart.com
-KO,https://logo.clearbit.com/coca-colacompany.com
-PEP,https://logo.clearbit.com/pepsico.com
-UNH,https://logo.clearbit.com/unitedhealthgroup.com
-XOM,https://logo.clearbit.com/exxonmobil.com
-CVX,https://logo.clearbit.com/chevron.com
-SHEL,https://logo.clearbit.com/shell.com
-BP,https://logo.clearbit.com/bp.com
+Ticker,Company,Full Logo URL
+MSFT,Microsoft,https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg
+GOOG,Alphabet ,https://commons.wikimedia.org/wiki/File%3AAlphabet_Inc_Logo_2015.svg?utm_source=chatgpt.com
+AMZN,Amazon,https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg
+JPM,JPMorgan Chase,https://upload.wikimedia.org/wikipedia/commons/5/55/JPMorgan_Chase_Logo_2008_1.svg
+PG,Procter & Gamble,https://upload.wikimedia.org/wikipedia/commons/f/fd/Procter_%26_Gamble_logo.svg
+CRM,Salesforce,https://upload.wikimedia.org/wikipedia/commons/6/6e/Salesforce.com_logo.svg
+COST,Costco Wholesale,https://upload.wikimedia.org/wikipedia/commons/5/5f/Costco_Wholesale_logo_2010-10-26.svg
+JNJ,Johnson & Johnson,https://upload.wikimedia.org/wikipedia/commons/a/a6/Johnson_%26_Johnson_logo.svg
+MS,Morgan Stanley,https://upload.wikimedia.org/wikipedia/commons/2/20/Morgan_Stanley_logo.svg
+BRKB,Berkshire Hathaway,https://upload.wikimedia.org/wikipedia/commons/5/5a/Berkshire_Hathaway_Logo.svg
+AAPL,Apple,https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg
+TSLA,Tesla,https://upload.wikimedia.org/wikipedia/commons/b/bd/Tesla_Motors.svg
+AVGO,Broadcom,https://upload.wikimedia.org/wikipedia/commons/6/6d/Broadcom_Inc._Logo.svg
+2330,Taiwan Semiconductor (TSMC),https://upload.wikimedia.org/wikipedia/commons/0/07/Tsmc-text.svg
+AMD,Advanced Micro Devices,https://upload.wikimedia.org/wikipedia/commons/7/7c/AMD_Logo.svg
+ABBV,AbbVie,https://upload.wikimedia.org/wikipedia/commons/5/57/AbbVie_logo.svg
+CSCO,Cisco Systems,https://upload.wikimedia.org/wikipedia/commons/6/64/Cisco_logo.svg
+IBE,Iberdrola,https://upload.wikimedia.org/wikipedia/commons/1/1c/Iberdrola_logo.svg
+FSLR,First Solar,https://upload.wikimedia.org/wikipedia/commons/f/f8/First_Solar_logo.svg
+MRK,Merck & Co.,https://upload.wikimedia.org/wikipedia/commons/4/4a/Merck_Logo.svg
