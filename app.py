@@ -1,6 +1,6 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Layout locked. Inter font + refined dark palette.
-# This version:
+# his version:
 # - KPI cards support subtle tinted variants (red/green/neutral)
 # - Logos in Top 10 tables via logos.csv (ticker,logo_url) + thumbnail sizing
 # - Alphabet class names (GOOG/GOOGL) shown correctly in tables
