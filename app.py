@@ -580,7 +580,7 @@ st.markdown(
         display:flex; align-items:center; justify-content:space-between; width:100%;
       }
       .footer-left {
-        color: var(--other); font-size: 14px; white-space: nowrap;
+        color: var(--muted); font-size: 14px; white-space: nowrap;
       }
       .footer-links {
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
