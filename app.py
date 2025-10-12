@@ -7,7 +7,7 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-# ===================
+# ====================
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
     page_icon=None,
@@ -30,9 +30,9 @@ COLORS = {
     "text": "#E7EBF0",
     "muted": "#97A2B0",
     "primary": "#00A3FF",
-    "clean": "#0E8F66",   # darker emerald, still vivid
-    "contro": "#C63C41",  # darker bright red
-    "other": "#768397",   # deeper blue-grey
+    "clean": "#0E8F66",
+    "contro": "#C63C41",
+    "other": "#768397",
 }
 
 # =========================
@@ -83,7 +83,7 @@ st.markdown(
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
-      /* KPI tone variants (subtle tinted gradients) */
+      /* KPI tone variants */
       .kpi.kpi-red {{
         background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0));
         border-color: rgba(198,60,65,0.45);
@@ -102,7 +102,7 @@ st.markdown(
         border-color: var(--primary) !important;
       }}
 
-      /* Dataframe: denser rows, darker header */
+      /* Dataframe: header + rows */
       div[data-testid="stDataframe"] thead tr th {{
         background: #0C0E13 !important;
         color: var(--text) !important;
@@ -129,7 +129,6 @@ st.markdown(
         font-size: 12px; user-select:none; cursor: default;
         background: #0B0D12; padding: 0 8px;
       }}
-      /* pure CSS tooltip */
       .has-tip {{ position: relative; }}
       .has-tip::after {{
         content: attr(data-tip);
@@ -143,19 +142,7 @@ st.markdown(
       }}
       .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
 
-      /* Footer */
-      .footer-wrap {{
-        display:flex; align-items:center; justify-content:space-between;
-        width: 100%;
-      }}
-      .footer-left {{ color: var(--muted); font-size: 13px; }}
-      .footer-links {{ display:flex; gap: 24px; align-items:center; }}
-      .footer-links a {{
-        color: var(--text) !important; text-decoration: none; font-size: 15px; opacity: .9;
-      }}
-      .footer-links a:hover {{ opacity: 1; text-decoration: underline; }}
-
-      /* Make logos compact & consistent inside dataframes */
+      /* Compact logos in dataframes */
       div[data-testid="stDataframe"] img {{
         max-height: 22px !important;
         width: auto !important;
@@ -251,7 +238,7 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# Logos map (thumbnail sized + specific fixes)
+# Logos map
 @st.cache_data(show_spinner=False)
 def load_logos_map():
     """Expect 'logos.csv' with columns: ticker,logo_url. Append ?size=26 for neat thumbnails."""
@@ -290,7 +277,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# KPI helper (tinted variants)
+# KPI helper
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","primary":"kpi-primary","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
@@ -311,20 +298,6 @@ def usd_fmt(x):
         if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
     except: return "-"
-
-# --- Alphabet display helper (no data changes; just presentation) ---
-ALPHABET_NAME_BY_TICKER = {
-    "GOOG":  "ALPHABET INC CLASS C",
-    "GOOGL": "ALPHABET INC CLASS A",
-}
-def apply_class_names(df: pd.DataFrame) -> pd.DataFrame:
-    if {"Ticker","Holding"}.issubset(df.columns):
-        df = df.copy()
-        df["Holding"] = df.apply(
-            lambda r: ALPHABET_NAME_BY_TICKER.get(str(r["Ticker"]).upper(), r["Holding"]),
-            axis=1
-        )
-    return df
 
 divider()
 
@@ -356,7 +329,7 @@ if mode == "Dashboard":
         scr = load_by_screen()
         spot = load_spotlight()
 
-        # KPIs (tinted)
+        # KPIs
         k1, k2, k3, k4 = st.columns(4)
         if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
             clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
@@ -460,7 +433,7 @@ if mode == "Dashboard":
 
             st.altair_chart(chart2, use_container_width=True)
 
-        # Top 10 tables (with Logo column + Alphabet class names)
+        # Top 10 tables (with Logo column)
         logos = load_logos_map()
         s1, s2 = st.columns([0.5, 0.5])
 
@@ -474,7 +447,6 @@ if mode == "Dashboard":
                     "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
                     "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-                cont_disp = apply_class_names(cont_disp)
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 if "Ticker" in cont_disp.columns and logos:
@@ -501,7 +473,6 @@ if mode == "Dashboard":
                     "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
                     "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-                clean_disp = apply_class_names(clean_disp)
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 if "Ticker" in clean_disp.columns and logos:
@@ -518,7 +489,7 @@ if mode == "Dashboard":
                 else:
                     st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
-        # --- Holdings Explorer (always show all rows) ---
+        # --- Holdings Explorer ---
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
 
@@ -634,7 +605,7 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 # =========================
 # FOOTER
 # =========================
-gap(28)   # push footer down a bit
+gap(28)
 divider()
 st.markdown(
     """
