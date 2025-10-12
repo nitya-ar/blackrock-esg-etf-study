@@ -249,7 +249,7 @@ st.markdown(
       <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
         BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
       </h2>
-      <div class="blx-muted" style="max-width:1400px;">
+      <div class="blx-muted" style="max-width:1400px; text-align:justify; text-justify:inter-word;">
         This project analyzes 20 BlackRock ESG-labelled ETFs to examine how their holdings align with key ESG themes from 2017 to 2025. Using a unified 2025 ESG classification map that combines the Clean200 and five controversial screens covering fossil fuels, weapons, tobacco, prisons, and deforestation, each fund’s holdings were classified and compared over time. The dashboard presents three perspectives: a 2025 Overview of current exposures, Change since 2017 showing how those exposures evolved, and Tradeoff Scenarios that simulate cleaner portfolio versions to explore the balance between ESG alignment and performance.
       </div>
     </div>
