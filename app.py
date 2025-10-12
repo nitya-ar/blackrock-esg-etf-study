@@ -1,5 +1,3 @@
-#have i done something ?
-
 import os
 from io import StringIO
 import urllib.parse
@@ -8,7 +6,6 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
-
 
 # ====================
 st.set_page_config(
@@ -315,9 +312,14 @@ def usd_fmt(x):
         return f"${x:,.0f}"
     except: return "-"
 
+# --- Alphabet display helper (no data changes; just presentation) ---
+ALPHABET_NAME_BY_TICKER = {
+    "GOOG":  "ALPHABET INC CLASS C",
+    "GOOGL": "ALPHABET INC CLASS A",
 }
-def apply_class_names(df):
+def apply_class_names(df: pd.DataFrame) -> pd.DataFrame:
     if {"Ticker","Holding"}.issubset(df.columns):
+        df = df.copy()
         df["Holding"] = df.apply(
             lambda r: ALPHABET_NAME_BY_TICKER.get(str(r["Ticker"]).upper(), r["Holding"]),
             axis=1
