@@ -1,8 +1,12 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-# Layout locked. Inter font + refined dark palette. 2025 Overview wired:
-# KPI cards, 100% stacked composition, by-screen (incl. Clean200 + info badge),
-# spotlight tables, and filter-first Explorer (no helper column exposed).
-# Data loader: local -> GitHub raw -> GitHub API (token).
+# Layout locked. Inter font + refined dark palette.
+# 2025 Overview:
+# - KPI cards (restyled)
+# - Composition chart with title and Clean200 pill (value from breakdown file)
+# - By-screen chart incl. Clean200 + dark "?" help badge with overlap note
+# - Spotlight Top 10 tables (denser, darker headers)
+# - Filter-first Explorer (helper column hidden)
+# Loader: local -> GitHub raw -> GitHub API (token)
 
 import os
 from io import StringIO
@@ -23,26 +27,25 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Repo / path settings (overridable via Secrets or env)
+# Repo / path settings (override via Secrets/env if needed)
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
 DASH_BASE_PATH   = st.secrets.get("ESG_DASH_PATH", os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard"))
 LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", ""))  # e.g., "/path/.../Data/Data for Dashboard"
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))      # optional for private repos
-
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-# Brand colors
+# Palette (slightly darker, still readable)
 COLORS = {
     "bg": "#0A0B0D",
-    "card": "#111318",
-    "border": "#1E2228",
+    "card": "#0F1116",
+    "border": "#1C2027",
     "text": "#E7EBF0",
-    "muted": "#9AA4B2",
+    "muted": "#97A2B0",
     "primary": "#00A3FF",
-    "clean": "#19C37D",
-    "contro": "#F2555A",
-    "other": "#94A3B8",
+    "clean": "#16A370",      # darker clean
+    "contro": "#E0474D",     # darker contro
+    "other": "#7E8A99",      # darker blue-grey
 }
 
 # =========================
@@ -60,6 +63,9 @@ st.markdown(
         --text: {COLORS['text']};
         --muted: {COLORS['muted']};
         --primary: {COLORS['primary']};
+        --clean: {COLORS['clean']};
+        --contro: {COLORS['contro']};
+        --other: {COLORS['other']};
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
@@ -79,23 +85,59 @@ st.markdown(
         padding: 14px 16px;
       }}
 
+      /* KPI cards (more premium) */
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
         border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 16px 18px;
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
-      .kpi .value {{ font-size: 28px; font-weight: 700; line-height: 1.1; }}
+      .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
+      /* Tabs underline */
       .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
         border-color: var(--primary) !important;
       }}
 
-      /* Dataframe font + density */
+      /* Dataframe: denser rows, darker header */
+      div[data-testid="stDataframe"] thead tr th {{
+        background: #0C0E13 !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid var(--border) !important;
+      }}
+      div[data-testid="stDataframe"] tbody tr {{
+        background: #0E1015 !important;
+      }}
       div[data-testid="stDataframe"] * {{
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
         font-size: 13px !important;
+      }}
+
+      /* Chart titles row with helper badge */
+      .chart-head {{
+        display:flex; align-items:center; justify-content:space-between;
+        margin: 4px 2px 8px 2px;
+      }}
+      .chart-title {{
+        font-weight: 600; color: var(--text); letter-spacing:.1px;
+      }}
+      .help-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width: 22px; height: 22px; border-radius: 999px;
+        border: 1px solid #2A2F36; color: #9AA4B2; font-weight: 700;
+        font-size: 12px; user-select:none; cursor: default;
+        background: #0B0D12;
+      }}
+      .pill {{
+        display:inline-flex; align-items:center; gap:8px;
+        padding: 4px 10px; border-radius: 999px;
+        border: 1px solid var(--border); color: var(--text);
+        background: #0B0D12; font-size: 12px;
+      }}
+      .pill .swatch {{
+        width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px;
       }}
     </style>
     """,
@@ -104,6 +146,9 @@ st.markdown(
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+def gap(px=6):
+    st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 # =========================
 # DATA LOADER
@@ -127,33 +172,27 @@ def local_path(analysis: int, filename: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def load_csv(analysis: int, filename: str) -> pd.DataFrame:
-    # 1) Local
+    # 1) local
     lp = local_path(analysis, filename)
     if lp and os.path.exists(lp):
         return pd.read_csv(lp)
-
-    # 2) Public raw
+    # 2) public raw
     raw_url = github_raw_url(analysis, filename)
     try:
         return pd.read_csv(raw_url)
     except Exception as e_raw:
-        # 3) Private API (needs token)
+        # 3) private API (token)
         api_url = github_api_url(analysis, filename)
         headers = {"Accept": "application/vnd.github.v3.raw"}
-        tok = GITHUB_TOKEN
-        if tok:
-            headers["Authorization"] = f"token {tok}"
+        if GITHUB_TOKEN:
+            headers["Authorization"] = f"token {GITHUB_TOKEN}"
         try:
             r = requests.get(api_url, headers=headers, timeout=25)
             r.raise_for_status()
             return pd.read_csv(StringIO(r.text))
         except Exception as e_api:
             raise FileNotFoundError(
-                f"Failed to load {filename}. Tried:\n"
-                f"- Local: {lp or '(not set)'}\n"
-                f"- Public: {raw_url}\n"
-                f"- Private API: {api_url}\n"
-                f"Last errors: raw={e_raw}; api={e_api}"
+                f"Failed to load {filename}. Tried local, public raw, and API.\nraw={e_raw}; api={e_api}"
             )
 
 # Analysis 1 loaders
@@ -172,15 +211,13 @@ def load_spotlight():
 @st.cache_data(show_spinner=False)
 def load_explorer():
     df = load_csv(1, "holdings_explorer_2025.csv")
-    # normalize
-    for col in ["classification", "sector", "region", "screen_categories"]:
+    for col in ["classification","sector","region","screen_categories"]:
         if col in df.columns:
             df[col] = df[col].fillna("")
-    # internal normalized tag list (not displayed)
+    # internal normalized tags
     if "screen_categories" in df.columns:
         scn = (
-            df["screen_categories"]
-            .astype(str)
+            df["screen_categories"].astype(str)
             .str.split(r"\s*\|\s*")
             .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
         )
@@ -188,35 +225,32 @@ def load_explorer():
         scn = [[] for _ in range(len(df))]
     df["_screen_categories_norm"] = scn
 
+    # display columns
     rename_map = {
-        "etf_ticker": "ETF",
-        "etf_name": "ETF Name",
-        "ticker": "Ticker",
-        "holding_name": "Holding",
-        "sector": "Sector",
-        "region": "Region",
-        "classification": "Class",
-        "screen_categories": "Screens",
-        "weight_pct_in_etf": "Weight % in ETF",
-        "aum_usd": "ETF AUM (USD)",
-        "weight_usd_in_agg": "$ Contribution (Agg)",
-        "as_of_date": "As-of",
+        "etf_ticker":"ETF",
+        "etf_name":"ETF Name",
+        "ticker":"Ticker",
+        "holding_name":"Holding",
+        "sector":"Sector",
+        "region":"Region",
+        "classification":"Class",
+        "screen_categories":"Screens",
+        "weight_pct_in_etf":"Weight % in ETF",
+        "aum_usd":"ETF AUM (USD)",
+        "weight_usd_in_agg":"$ Contribution (Agg)",
+        "as_of_date":"As-of",
     }
-    df_disp = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
-
-    # Fixed, clean column order
-    cols = [c for c in [
-        "ETF", "ETF Name", "Ticker", "Holding", "Sector", "Region",
-        "Class", "Screens", "Weight % in ETF", "ETF AUM (USD)",
-        "$ Contribution (Agg)", "As-of"
+    df_disp = df.rename(columns={k:v for k,v in rename_map.items() if k in df.columns})
+    ordered = [c for c in [
+        "ETF","ETF Name","Ticker","Holding","Sector","Region","Class","Screens",
+        "Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)","As-of"
     ] if c in df_disp.columns]
-    df_disp = df_disp[cols]
-
+    df_disp = df_disp[ordered]
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
 # =========================
-# HEADER (full-width)
+# HEADER (full width)
 # =========================
 st.markdown(
     """
@@ -235,19 +269,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-def divider_small(px=6):
-    st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
-
 def kpi_card(label: str, value: str):
-    st.markdown(
-        f"""
+    st.markdown(f"""
         <div class="kpi">
           <div class="label">{label}</div>
           <div class="value">{value}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
 def pct_fmt(x):
     try: return f"{float(x):.1f}%"
@@ -259,8 +287,7 @@ def usd_fmt(x):
         if abs(x) >= 1e9: return f"${x/1e9:.1f}B"
         if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
-    except:
-        return "-"
+    except: return "-"
 
 divider()
 
@@ -288,16 +315,16 @@ if mode == "Dashboard":
         st.subheader("2025 Overview")
         st.caption("Today’s composition and the names/screens that drive it.")
 
-        # Load all data for this tab
+        # Load data
         ctx = load_context_summary()
         scr = load_by_screen()
         spot = load_spotlight()
 
         # KPI cards
         k1, k2, k3, k4 = st.columns(4)
-        if "classification" in ctx.columns and "share_of_total_aum_pct" in ctx.columns:
-            clean_pct = ctx.loc[ctx["classification"].str.lower()=="clean", "share_of_total_aum_pct"].sum()
-            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial", "share_of_total_aum_pct"].sum()
+        if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+            clean_pct = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
+            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"].sum()
         else:
             clean_pct = contro_pct = None
 
@@ -309,21 +336,46 @@ if mode == "Dashboard":
             num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0])
 
         with k1: kpi_card("% Controversial", pct_fmt(contro_pct))
-        with k2: kpi_card("% Clean", pct_fmt(clean_pct))
-        with k3: kpi_card("Total AUM", usd_fmt(total_aum))
-        with k4: kpi_card("ETFs in scope", f"{num_etfs:,}" if num_etfs is not None else "-")
+        with k2: kpi_card("% Clean",         pct_fmt(clean_pct))
+        with k3: kpi_card("Total AUM",       usd_fmt(total_aum))
+        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-")
 
-        divider_small(6)
+        gap(6)
 
-        # Charts row
+        # Chart row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # Composition — 100% stacked bar
+        # 1) Composition — add title and Clean200 pill (value from breakdown)
         with c1:
+            # Clean200 from breakdown file (authoritative)
+            clean200_from_breakdown = None
+            if {"screen_category","share_of_total_aum_pct"}.issubset(scr.columns):
+                _row = scr.loc[scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                               "share_of_total_aum_pct"]
+                if len(_row):
+                    clean200_from_breakdown = float(_row.sum())
+
+            pill_html = ""
+            if clean200_from_breakdown is not None:
+                pill_html = f"""
+                <span class="pill" title="From context_breakdown_by_screen.csv">
+                  <span class="swatch" style="background: var(--clean);"></span>
+                  Clean200: {clean200_from_breakdown:.1f}%
+                </span>
+                """
+
+            st.markdown(
+                f"""<div class="chart-head">
+                      <div class="chart-title">2025 Composition — Clean vs Controversial vs Other</div>
+                      <div>{pill_html}</div>
+                    </div>""",
+                unsafe_allow_html=True,
+            )
+
             if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
                 comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
                 comp["classification"] = comp["classification"].map({
-                    "Clean": "Clean", "Controversial":"Controversial", "Other":"Other",
+                    "Clean":"Clean","Controversial":"Controversial","Other":"Other",
                     "clean":"Clean","controversial":"Controversial","other":"Other"
                 })
                 comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
@@ -335,9 +387,11 @@ if mode == "Dashboard":
                 )
 
                 chart = alt.Chart(comp).mark_bar().encode(
-                    x=alt.X("sum(share):Q", stack="normalize", axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
+                    x=alt.X("sum(share):Q", stack="normalize",
+                            axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
                     y=alt.Y("o:O", title=None, axis=None),
-                    color=alt.Color("classification:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
+                    color=alt.Color("classification:N", scale=color_scale,
+                                    legend=alt.Legend(orient="top", title=None)),
                     tooltip=[alt.Tooltip("classification:N"),
                              alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
                 ).properties(height=120)
@@ -346,10 +400,17 @@ if mode == "Dashboard":
             else:
                 st.warning("composition columns missing in context_summary_2025.csv")
 
-        # By-screen bars — includes Clean200 + info badge
+        # 2) By-screen bars — include Clean200 + dark help badge right of title
         with c2:
-            show_parts = []
+            st.markdown(
+                """<div class="chart-head">
+                      <div class="chart-title">By-screen exposures — share of total AUM</div>
+                      <div class="help-badge" title="Categories can overlap; not intended to sum to overall controversial exposure.">?</div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
 
+            show_parts = []
             if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
                 s2 = scr.copy()
                 s2["classification"] = s2["classification"].str.title()
@@ -357,42 +418,44 @@ if mode == "Dashboard":
                 s2 = s2.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
                 show_parts.append(s2)
 
-            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-                clean_share = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
-                show_parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean_share]}))
+                # Clean200 authoritative from the same file
+                clean200 = s2.loc[s2["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                                  "share_of_total_aum_pct"].sum()
+                if clean200 == 0:
+                    # If it was filtered out, look in raw 'scr'
+                    c2_row = scr.loc[scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                                     "share_of_total_aum_pct"].sum()
+                    clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
+            else:
+                s2 = pd.DataFrame(columns=["screen_category","share_of_total_aum_pct"])
+                clean200 = 0.0
 
-            if show_parts:
-                scr_all = pd.concat(show_parts, ignore_index=True)
-                scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
-                scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
-                scr_all["color"] = scr_all["screen_category"].apply(
-                    lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
-                )
+            # Add/ensure Clean200 row
+            show_parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
 
-                info_html = """
-                <div style="display:flex; justify-content:flex-end; margin-bottom:-18px;">
-                  <span title="Categories can overlap; not intended to sum to overall controversial exposure."
-                        style="border:1px solid #2B2F36; color:#9AA4B2; border-radius:999px; padding:2px 8px; font-size:12px;">
-                    info
-                  </span>
-                </div>
-                """
-                st.markdown(info_html, unsafe_allow_html=True)
+            scr_all = pd.concat(show_parts, ignore_index=True)
+            scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
+            scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
+            scr_all["color"] = scr_all["screen_category"].apply(
+                lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
+            )
 
-                chart2 = alt.Chart(scr_all).mark_bar().encode(
-                    x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
-                    y=alt.Y("screen_category:N", sort="-x", title=None),
-                    color=alt.Color("color:N", legend=None, scale=None),
-                    tooltip=[alt.Tooltip("screen_category:N", title="Category"),
-                             alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
-                ).properties(height=240)
+            chart2 = alt.Chart(scr_all).mark_bar().encode(
+                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)",
+                        axis=alt.Axis(format=".1f")),
+                y=alt.Y("screen_category:N", sort="-x", title=None),
+                color=alt.Color("color:N", legend=None, scale=None),
+                tooltip=[alt.Tooltip("screen_category:N", title="Category"),
+                         alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
+            ).properties(height=240)
 
-                st.altair_chart(chart2, use_container_width=True)
+            st.altair_chart(chart2, use_container_width=True)
 
         # Spotlights
         s1, s2 = st.columns([0.5, 0.5])
 
         with s1:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Spotlight — Top 10 Controversial</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
                 cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
                 if "rank_within_cohort" in cont.columns:
@@ -409,12 +472,12 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.markdown("**Spotlight — Top 10 Controversial**")
                 st.dataframe(cont_disp, use_container_width=True, hide_index=True)
             else:
                 st.warning("Missing 'cohort' in top_holdings_spotlight.csv")
 
         with s2:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Spotlight — Top 10 Clean</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
                 clean = spot[spot["cohort"].str.lower()=="clean"].copy()
                 if "rank_within_cohort" in clean.columns:
@@ -431,12 +494,11 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.markdown("**Spotlight — Top 10 Clean**")
                 st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
         # Explorer
-        divider_small(8)
-        st.markdown("### Holdings Explorer")
+        gap(8)
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
         st.caption("Filter and search across ETF × holding rows. Download the filtered view below.")
 
         df_raw, df_disp, all_tags = load_explorer()
@@ -501,13 +563,17 @@ if mode == "Dashboard":
         st.caption("How exposures moved over time, by fund and in aggregate.")
         c1, c2 = st.columns([0.5, 0.5])
         with c1:
-            st.markdown('<div class="blx-card">Trend — % Clean over time (EW/AUM)</div>', unsafe_allow_html=True)
-            divider_small(10)
-            st.markdown('<div class="blx-card">Heatmap — Fund × Year by % Controversial (toggle % Clean)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Trend — % Clean over time (EW/AUM)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
+            gap(10)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Heatmap — Fund × Year by % Controversial (toggle % Clean)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
         with c2:
-            st.markdown('<div class="blx-card">Trend — % Controversial over time (EW/AUM)</div>', unsafe_allow_html=True)
-            divider_small(10)
-            st.markdown('<div class="blx-card">Two stacked bars — 2017 vs 2025 (Clean/Controversial/Other) + Movers table</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Trend — % Controversial over time (EW/AUM)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
+            gap(10)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">2017 vs 2025 — stacked Clean/Controversial/Other + Movers</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
@@ -515,13 +581,17 @@ if mode == "Dashboard":
         st.caption("Baseline vs cleaner scenarios, measuring cost (TE) vs benefit (% Clean).")
         c1, c2 = st.columns([0.5, 0.5])
         with c1:
-            st.markdown('<div class="blx-card">Scenario KPIs — % Clean, % Controversial, TE, Active Share, Drift</div>', unsafe_allow_html=True)
-            divider_small(10)
-            st.markdown('<div class="blx-card">Side-by-side 100% bars — Baseline vs Scenario composition</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Scenario KPIs — % Clean, % Controversial, TE, Active Share, Drift</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
+            gap(10)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Baseline vs Scenario — Composition (100% bars)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
         with c2:
-            st.markdown('<div class="blx-card">Mini frontier — x: TE, y: % Clean (point = ETF)</div>', unsafe_allow_html=True)
-            divider_small(10)
-            st.markdown('<div class="blx-card">Movers — adds/drops/ups/downs vs baseline</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Mini frontier — x: TE, y: % Clean (point = ETF)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
+            gap(10)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Movers — adds/drops/ups/downs vs baseline</div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Table coming</div>', unsafe_allow_html=True)
 
 else:
     # ---------------- REPORT ----------------
