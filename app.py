@@ -1,5 +1,3 @@
-
-
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Logos removed. Subtle shaded bar charts. Original footer (right-aligned, bold blue links).
 
@@ -267,7 +265,6 @@ def load_movers():                       return load_csv(2, "movers_by_yearpair.
 @st.cache_data(show_spinner=False)
 def load_screen_trends():                return load_csv(2, "aggregate_screen_trends.csv")
 
-
 # =========================
 # HEADER
 # =========================
@@ -531,7 +528,7 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-       # ---------- CHANGE SINCE 2017 ----------
+    # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("Concise, one-screen read: where exposures went, which funds moved, and what drove it. (MV = total market value; not official AUM)")
@@ -543,21 +540,42 @@ if mode == "Dashboard":
         movers  = load_movers()
         scr_tr  = load_screen_trends()
 
-        # --- columns helper (case-insensitive) ---
-        def pick(df, *names):
-            cols = {c.lower(): c for c in df.columns}
-            for n in names:
-                if n in df.columns: return n
-                if n.lower() in cols: return cols[n.lower()]
+        # --- robust column resolver ---
+        def pick(df: pd.DataFrame, *cands):
+            cols = list(df.columns)
+            lower = {c.lower(): c for c in cols}
+            for cand in cands:
+                if cand in cols:
+                    return cand
+                if cand.lower() in lower:
+                    return lower[cand.lower()]
+            def norm(s): return "".join(ch for ch in s.lower() if ch.isalnum())
+            norm_map = {norm(c): c for c in cols}
+            for cand in cands:
+                n = norm(cand)
+                if n in norm_map:
+                    return norm_map[n]
+            for cand in cands:
+                key = cand.lower()
+                for c in cols:
+                    if key in c.lower():
+                        return c
             return None
 
-        # Canonical column names
-        c_etf   = pick(exp_fy, "etf_ticker","ETF","fund","etf")
-        c_year  = pick(exp_fy, "year","Year")
-        c_pc    = pick(exp_fy, "pct_clean","pct_clean_pct","clean_pct")
-        c_pv    = pick(exp_fy, "pct_controversial","pct_contro","contro_pct")
-        c_po    = pick(exp_fy, "pct_other","other_pct")
-        c_mv    = pick(exp_fy, "market_total_value_usd","total_market_value_usd","aum_proxy_usd")
+        # Canonical column names (try lots of aliases)
+        c_etf  = pick(exp_fy, "ETF_Ticker","ETF","Fund","etf","fund_ticker","fund")
+        c_year = pick(exp_fy, "Year","year","report_year")
+        c_pc   = pick(exp_fy, "pct_clean","clean_pct","pct_clean_pct","clean")
+        c_pv   = pick(exp_fy, "pct_controversial","contro_pct","pct_contro","controversial")
+        c_po   = pick(exp_fy, "pct_other","other_pct","other")
+        c_mv   = pick(exp_fy, "market_total_value_usd","total_market_value_usd","aum_proxy_usd","total_mv_usd")
+
+        missing = [("ETF",c_etf),("Year",c_year),("%Clean",c_pc),("%Contro",c_pv),("MV",c_mv)]
+        missing = [k for k,v in missing if v is None]
+        if missing:
+            st.error(f"Missing expected columns in exposures_by_fund_year.csv: {', '.join(missing)}")
+            st.caption(f"Found columns: {list(exp_fy.columns)}")
+            st.stop()
 
         # ----- Filters (single thin row) -----
         all_years = sorted(exp_fy[c_year].dropna().unique().tolist())
@@ -587,8 +605,8 @@ if mode == "Dashboard":
                 s["weighting"] = "EW"
             else:
                 w = df[[c_year, col_pct, c_mv]].dropna()
-                w["value"] = (w[col_pct] * w[c_mv])
-                s = w.groupby(c_year, as_index=False).agg(value=("value","sum"), mv=("market_total_value_usd","sum"))
+                w["value"] = w[col_pct] * w[c_mv]
+                s = w.groupby(c_year, as_index=False).agg(value=("value","sum"), mv=(c_mv,"sum"))
                 s["value"] = s["value"] / s["mv"]
                 s["weighting"] = "MV"
             return s[[c_year,"value","weighting"]]
@@ -599,13 +617,14 @@ if mode == "Dashboard":
         agg_now = s_clean.merge(s_contr, on=[c_year,"weighting"], how="outer").fillna(0)
 
         # KPI deltas (year_b - year_a)
-        def pick_year(df, y): 
+        def pick_year_vals(df, y):
             row = df.loc[df[c_year]==y]
-            return row["clean"].values[0] if not row.empty else None, row["contro"].values[0] if not row.empty else None
-        cA, vA = pick_year(agg_now, year_a)
-        cB, vB = pick_year(agg_now, year_b)
+            return (row["clean"].values[0], row["contro"].values[0]) if not row.empty else (None, None)
 
-        mv_by_year = exp_sel.groupby(c_year, as_index=False)[c_mv].sum() if c_mv else pd.DataFrame({c_year:[], c_mv:[]})
+        cA, vA = pick_year_vals(agg_now, year_a)
+        cB, vB = pick_year_vals(agg_now, year_b)
+
+        mv_by_year = exp_sel.groupby(c_year, as_index=False)[c_mv].sum()
         mvA = float(mv_by_year.loc[mv_by_year[c_year]==year_a, c_mv].sum()) if not mv_by_year.empty else None
         mvB = float(mv_by_year.loc[mv_by_year[c_year]==year_b, c_mv].sum()) if not mv_by_year.empty else None
 
@@ -613,7 +632,7 @@ if mode == "Dashboard":
         with k1: kpi_card("Δ % Clean", f"{(cB - cA):.1f}%" if cA is not None and cB is not None else "-", tone="green" if (cB or 0) >= (cA or 0) else "red")
         with k2: kpi_card("Δ % Controversial", f"{(vB - vA):.1f}%" if vA is not None and vB is not None else "-", tone="red" if (vB or 0) > (vA or 0) else "green")
         with k3:
-            if weighting=="MV" and mvA and mvB:
+            if weighting=="MV" and (mvA is not None) and (mvB is not None):
                 kpi_card("Δ Total Market Value", usd_fmt(mvB - mvA), tone="neutral")
             else:
                 kpi_card("Δ Total Market Value", "-", tone="neutral")
@@ -688,11 +707,11 @@ if mode == "Dashboard":
                 d = exp_sel[exp_sel[c_year]==y]
                 if d.empty: return {"year":y, "Clean":0, "Controversial":0, "Other":0}
                 if weighting=="EW":
-                    vals = d[[c_pc,c_pv,c_po]].mean()
+                    vals = d[[c_pc,c_pv,c_po]].mean(numeric_only=True)
                 else:
                     w = d[[c_pc,c_pv,c_po,c_mv]].dropna()
                     if w.empty:
-                        vals = d[[c_pc,c_pv,c_po]].mean()
+                        vals = d[[c_pc,c_pv,c_po]].mean(numeric_only=True)
                     else:
                         vals = (w[[c_pc,c_pv,c_po]].multiply(w[c_mv], axis=0).sum()/w[c_mv].sum())
                 return {"year":y, "Clean":float(vals[c_pc]), "Controversial":float(vals[c_pv]), "Other":float(vals[c_po])}
@@ -713,12 +732,10 @@ if mode == "Dashboard":
 
         with r2c2:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Movers (2017 → 2025)</div>', unsafe_allow_html=True)
-            # Try to filter movers if ETF column exists; else show global
             mv = movers.copy()
             etf_col = pick(mv, "etf_ticker","ETF")
             if etf_col and sel_etf:
                 mv = mv[mv[etf_col].isin(sel_etf)]
-            # Expect columns like: holding_name, ticker, delta_contribution_pct, screen_categories
             h_name = pick(mv, "holding_name","company_name","name")
             h_tic  = pick(mv, "ticker","symbol")
             h_dc   = pick(mv, "delta_contribution_pct","delta_pct","delta")
@@ -759,7 +776,6 @@ if mode == "Dashboard":
             ).properties(height=120)
             st.altair_chart(sm, use_container_width=True)
 
-        # Tiny muted footnote
         st.markdown(
             '<div class="blx-muted" style="margin-top:4px;">2025 classifications applied retroactively. MV = sum of holdings market values; screen categories overlap and do not sum to total controversial.</div>',
             unsafe_allow_html=True
@@ -819,7 +835,7 @@ st.markdown(
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
       }
       .footer-links a {
-        color: var(--text) !important;        /* no blue */
+        color: {text} !important;        /* no blue */
         text-decoration: none;
         font-size: 15.5px;                      /* slightly larger */
         font-weight: 500;                     /* not bold by default */
@@ -836,6 +852,6 @@ st.markdown(
         <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
       </div>
     </div>
-    """,
+    """.format(text=COLORS["text"]),
     unsafe_allow_html=True,
 )
