@@ -269,7 +269,7 @@ def load_logos_map():
     except Exception:
         return {}
 
-# =========================
+# ========================
 # HEADER
 # =========================
 st.markdown(
