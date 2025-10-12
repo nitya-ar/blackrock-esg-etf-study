@@ -688,7 +688,7 @@ if mode == "Dashboard":
                 x=alt.X(f"{c_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
                 y=alt.Y(f"{c_etf}:N", sort=latest, title=None),
                 color=alt.Color("value:Q",
-                                scale=alt.Scale(range=["(#172026)", COLORS["contro"] if metric.startswith("% Con") else COLORS["clean"]]),
+                                scale=alt.Scale(range=["#172026", COLORS["contro"] if metric.startswith("% Con") else COLORS["clean"]]),
                                 legend=alt.Legend(title="%", orient="right")),
                 tooltip=[alt.Tooltip(f"{c_etf}:N", title="ETF"),
                          alt.Tooltip(f"{c_year}:O", title="Year"),
@@ -874,25 +874,25 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 gap(28)
 divider()
 st.markdown(
-    """
+    f"""
     <style>
-      .footer-wrap {
+      .footer-wrap {{
         display:flex; align-items:center; justify-content:space-between; width:100%;
-      }
-      .footer-left {
+      }}
+      .footer-left {{
         color: var(--muted); font-size: 14px; white-space: nowrap;
-      }
-      .footer-links {
+      }}
+      .footer-links {{
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
-      }
-      .footer-links a {
-        color: {text} !important;        /* no blue */
+      }}
+      .footer-links a {{
+        color: {COLORS["text"]} !important;        /* no blue */
         text-decoration: none;
-        font-size: 15.5px;                      /* slightly larger */
-        font-weight: 500;                     /* not bold by default */
+        font-size: 15.5px;                       /* slightly larger */
+        font-weight: 500;                        /* not bold by default */
         opacity: .9;
-      }
-      .footer-links a:hover { opacity: 1; text-decoration: underline; }
+      }}
+      .footer-links a:hover {{ opacity: 1; text-decoration: underline; }}
     </style>
 
     <div class="footer-wrap">
@@ -903,6 +903,6 @@ st.markdown(
         <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
       </div>
     </div>
-    """.format(text=COLORS["text"]),
+    """,
     unsafe_allow_html=True,
 )
