@@ -251,7 +251,7 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# -------- Analysis 2 loaders (NEW, minimal) --------
+# Analysis 2 loaders (for Change since 2017)
 @st.cache_data(show_spinner=False)
 def load_exposures_by_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
 @st.cache_data(show_spinner=False)
@@ -282,7 +282,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# KPI helper (tinted variants)
+# KPI helpers
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
@@ -355,7 +355,7 @@ if mode == "Dashboard":
         # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition — shaded bars (opacity + stroke)
+        # 1) Composition — shaded bars
         with c1:
             st.markdown(
                 """<div class="chart-head">
@@ -478,7 +478,7 @@ if mode == "Dashboard":
         fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
         with fc1:
             etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
-            sel_etfs = st.multiselect("ETF", etfs, placeholder="All")
+            sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
         with fc2:
             classes = ["Clean","Controversial","Other"]
             sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
@@ -494,7 +494,7 @@ if mode == "Dashboard":
         q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
 
         mask = pd.Series(True, index=df_raw.index)
-        if sel_etfs:   mask &= df_disp["ETF"].isin(sel_etfs)
+        if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
         if sel_class:  mask &= df_disp["Class"].isin(sel_class)
         if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
         if sel_region: mask &= df_disp["Region"].isin(sel_region)
@@ -528,12 +528,12 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-        # ---------- CHANGE SINCE 2017 ----------
+    # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures moved over time, by fund and in aggregate. Note: some ETFs launched after 2017; early years may be blank.")
 
-        # ---------- Load data
+        # Load data
         exp_fy  = load_exposures_by_fund_year()
         agg_tr  = load_aggregate_trends()
         disp    = load_dispersion_stats()
@@ -541,7 +541,7 @@ if mode == "Dashboard":
         yearcmp = load_year_compare()
         _mby    = load_movers_by_yearpair()
 
-        # ---------- Helpers
+        # Helpers
         def col_like(df, *keys):
             if df is None or df.empty:
                 return None
@@ -552,7 +552,7 @@ if mode == "Dashboard":
                     return c
             return None
 
-        # ---------- Normalize exp_fy (be forgiving)
+        # Normalize exp_fy
         if exp_fy is None or exp_fy.empty:
             st.error("exposures_by_fund_year.csv is empty or missing.")
             st.stop()
@@ -561,7 +561,6 @@ if mode == "Dashboard":
         col_view = col_like(exp_fy, "view")
         col_etf  = col_like(exp_fy, "etf_ticker", "etf", "fund")
         col_name = col_like(exp_fy, "etf_name", "name")
-
         m_clean  = col_like(exp_fy, "clean")
         m_contro = col_like(exp_fy, "contro")
         m_other  = col_like(exp_fy, "other")
@@ -571,35 +570,29 @@ if mode == "Dashboard":
             m_clean:"pct_clean", m_contro:"pct_controversial", m_other:"pct_other"
         }.items() if k})
 
-        # Required minimums
         if "etf_ticker" not in exp_fy.columns:
             st.error("Could not find an ETF ticker column in exposures_by_fund_year.csv.")
             st.stop()
         if "year" not in exp_fy.columns:
             st.error("Could not find a year column in exposures_by_fund_year.csv.")
             st.stop()
-
-        # Fallbacks
         if "etf_name" not in exp_fy.columns:
             exp_fy["etf_name"] = exp_fy["etf_ticker"]
         if "view" not in exp_fy.columns:
             exp_fy["view"] = "AUM"
 
-        # Ensure numeric types
         exp_fy["year"] = pd.to_numeric(exp_fy["year"], errors="coerce")
         for c in ["pct_clean","pct_controversial","pct_other"]:
             if c in exp_fy.columns:
                 exp_fy[c] = pd.to_numeric(exp_fy[c], errors="coerce")
 
-        # Years limits
         year_min = int(exp_fy["year"].min())
         year_max = int(exp_fy["year"].max())
 
-        # ---------- Controls row
+        # Controls
         cc1, cc2, cc3, cc4, cc5 = st.columns([0.28, 0.16, 0.2, 0.24, 0.12])
         with cc1:
-            all_etfs_df = exp_fy[["etf_ticker","etf_name"]].drop_duplicates()
-            all_etfs_df = all_etfs_df.sort_values("etf_ticker")
+            all_etfs_df = exp_fy[["etf_ticker","etf_name"]].drop_duplicates().sort_values("etf_ticker")
             all_etfs = all_etfs_df["etf_ticker"].tolist()
             sel_etfs = st.multiselect("ETF(s)", options=all_etfs, default=[], help="Leave empty for All funds")
         with cc2:
@@ -613,28 +606,23 @@ if mode == "Dashboard":
         with cc5:
             show_disp = st.checkbox("Show dispersion", value=True, help="P10–P90 band (All funds only)")
 
-        # Filter by view/years/ETFs
         view_key = "AUM" if "AUM" in sel_view else "EW"
         dfv = exp_fy[exp_fy["view"].astype(str).str.upper().str.contains(view_key)].copy()
         dfv = dfv[(dfv["year"]>=sel_years[0]) & (dfv["year"]<=sel_years[1])]
 
-        # ---------- Small helpers for aggregates & KPIs
         def aggregate_series(df, col):
             if not sel_etfs:
                 base = agg_tr.copy()
-                if not base.empty:
+                if base is not None and not base.empty:
                     cy = col_like(base, "year"); cv = col_like(base, "view")
                     met = col_like(base, col.replace("pct_",""))
                     base = base.rename(columns={cy:"year", cv:"view"})
                     if met: base = base.rename(columns={met:col})
                     base = base[base["view"].astype(str).str.upper().str.contains(view_key)]
                     return base[["year", col]].dropna()
-                # fallback: aggregate from df
-                tmp = df.groupby("year", as_index=False)[col].mean()
-                return tmp
+                return df.groupby("year", as_index=False)[col].mean()
             else:
-                d = df[df["etf_ticker"].isin(sel_etfs)].groupby("year", as_index=False)[col].mean()
-                return d
+                return df[df["etf_ticker"].isin(sel_etfs)].groupby("year", as_index=False)[col].mean()
 
         def kpi_vals(col):
             s = aggregate_series(dfv, col)
@@ -645,7 +633,7 @@ if mode == "Dashboard":
             v1 = float(s.loc[s["year"]==y1, col].iloc[0])
             return v0, v1, v1 - v0
 
-        # ---------- KPI row
+        # KPI row
         k1, k2, k3, k4 = st.columns(4)
         v0, v1, dv = kpi_vals(sel_metric)
         tone_delta = ("green" if (sel_metric=="pct_clean" and (dv or 0)>0) or (sel_metric=="pct_controversial" and (dv or 0)<0)
@@ -661,7 +649,7 @@ if mode == "Dashboard":
 
         gap(6)
 
-        # ---------- Trend (left) + 2017/first vs 2025/last (right)
+        # Trend (left) + Composition & slope (right)
         lc, rc = st.columns([0.58, 0.42])
 
         with lc:
@@ -755,10 +743,8 @@ if mode == "Dashboard":
                              alt.Tooltip("pct:Q", title="%", format=".1f")]
                 ).properties(height=140)
 
-                slope_df = comp[["year", "Clean" if sel_metric=="pct_clean"
-                                          else "Controversial" if sel_metric=="pct_controversial"
-                                          else "Other"]].rename(columns={ "Clean" if sel_metric=="pct_clean"
-                                          else "Controversial" if sel_metric=="pct_controversial" else "Other":"value"})
+                target_col = "Clean" if sel_metric=="pct_clean" else ("Controversial" if sel_metric=="pct_controversial" else "Other")
+                slope_df = comp[["year", target_col]].rename(columns={target_col:"value"})
                 slope = alt.Chart(slope_df).mark_line(point=True).encode(
                     x=alt.X("year:N", title=None),
                     y=alt.Y("value:Q", title=sel_metric_label, axis=alt.Axis(format=".1f")),
@@ -770,7 +756,7 @@ if mode == "Dashboard":
 
         gap(8)
 
-        # ---------- Heatmap + Movers + Screen trends
+        # Heatmap + Movers + Screen trends
         hcol, rcol = st.columns([0.58, 0.42])
 
         with hcol:
@@ -846,7 +832,7 @@ if mode == "Dashboard":
 
         gap(8)
 
-        # ---------- Small-multiples: Screen trends (aggregate)
+        # Small-multiples: Screen trends (aggregate)
         st.markdown(
             f"""<div class="chart-head">
                     <div class="chart-title">Screen Trends — Aggregate over time (overlapping categories)</div>
@@ -876,14 +862,13 @@ if mode == "Dashboard":
             ).properties(height=130)
             st.altair_chart(small, use_container_width=True)
 
-        # ---------- Downloads
+        # Downloads
         dl1, dl2, dl3 = st.columns([0.34, 0.33, 0.33])
         with dl1:
             ts = aggregate_series(dfv, sel_metric)
             st.download_button("Download current trend series (CSV)", data=ts.to_csv(index=False).encode("utf-8"),
                                file_name="trend_series.csv", mime="text/csv")
         with dl2:
-            # use last-built heat_df if exists; else safe fallback
             try:
                 st.download_button("Download heatmap data (CSV)", data=heat_df.to_csv(index=False).encode("utf-8"),
                                    file_name="heatmap_dataset.csv", mime="text/csv")
@@ -893,7 +878,6 @@ if mode == "Dashboard":
         with dl3:
             st.download_button("Download movers table (CSV)", data=show.to_csv(index=False).encode("utf-8"),
                                file_name="top_movers.csv", mime="text/csv")
-
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
@@ -945,25 +929,14 @@ st.markdown(
       .footer-left {
         color: var(--muted); font-size: 14px; white-space: nowrap;
       }
-      .footer-links {
-        display:flex; gap:28px; align-items:center; justify-content:flex-end;
-      }
-      .footer-links a {
-        color: var(--text) !important;        /* no blue */
-        text-decoration: none;
-        font-size: 15.5px;                      /* slightly larger */
-        font-weight: 500;                     /* not bold by default */
-        opacity: .9;
-      }
-      .footer-links a:hover { opacity: 1; text-decoration: underline; }
-    </style>
+      </style>
 
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
-      <div class="footer-links">
-        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
-        <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
-        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
+      <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">LinkedIn</a>
+        <a href="https://github.com/nitya-ar" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">GitHub</a>
+        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500;"><strong>Send Feedback</strong></a>
       </div>
     </div>
     """,
