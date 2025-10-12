@@ -355,7 +355,7 @@ if mode == "Dashboard":
         # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition — shaded bars
+        # 1) Composition — shaded bars (opacity + stroke)
         with c1:
             st.markdown(
                 """<div class="chart-head">
@@ -770,15 +770,19 @@ if mode == "Dashboard":
             heat_df = dfv.copy()
             if sel_etfs:
                 heat_df = heat_df[heat_df["etf_ticker"].isin(sel_etfs)]
+
             if heat_df.empty:
                 st.info("No data for the selected filters.")
             else:
-                grid = pd.MultiIndex.from_product(
-                    [sorted(heat_df["etf_ticker"].unique().tolist()),
-                     list(range(sel_years[0], sel_years[1]+1]))],
-                    names=["etf_ticker","year"]
-                ).to_frame(index=False)
-                heat_df = grid.merge(heat_df[["etf_ticker","year",sel_metric]], on=["etf_ticker","year"], how="left")
+                # Build complete grid (robust, easy to read — avoids bracket mismatch)
+                tickers = sorted(heat_df["etf_ticker"].dropna().unique().tolist())
+                years = list(range(int(sel_years[0]), int(sel_years[1]) + 1))
+                grid = pd.DataFrame([(t, y) for t in tickers for y in years], columns=["etf_ticker", "year"])
+
+                heat_df = grid.merge(
+                    heat_df[["etf_ticker", "year", sel_metric]],
+                    on=["etf_ticker", "year"], how="left"
+                )
                 names = exp_fy[["etf_ticker","etf_name"]].drop_duplicates()
                 heat_df = heat_df.merge(names, on="etf_ticker", how="left")
                 heat_df["etf_label"] = heat_df["etf_name"].fillna(heat_df["etf_ticker"])
@@ -869,12 +873,8 @@ if mode == "Dashboard":
             st.download_button("Download current trend series (CSV)", data=ts.to_csv(index=False).encode("utf-8"),
                                file_name="trend_series.csv", mime="text/csv")
         with dl2:
-            try:
-                st.download_button("Download heatmap data (CSV)", data=heat_df.to_csv(index=False).encode("utf-8"),
-                                   file_name="heatmap_dataset.csv", mime="text/csv")
-            except Exception:
-                st.download_button("Download heatmap data (CSV)", data=dfv.to_csv(index=False).encode("utf-8"),
-                                   file_name="heatmap_dataset.csv", mime="text/csv")
+            st.download_button("Download heatmap data (CSV)", data=heat_df.to_csv(index=False).encode("utf-8"),
+                               file_name="heatmap_dataset.csv", mime="text/csv")
         with dl3:
             st.download_button("Download movers table (CSV)", data=show.to_csv(index=False).encode("utf-8"),
                                file_name="top_movers.csv", mime="text/csv")
@@ -917,20 +917,15 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 
 # =========================
 # FOOTER (replacement)
-# ========================
+# =========================
 gap(28)
 divider()
 st.markdown(
     """
     <style>
-      .footer-wrap {
-        display:flex; align-items:center; justify-content:space-between; width:100%;
-      }
-      .footer-left {
-        color: var(--muted); font-size: 14px; white-space: nowrap;
-      }
-      </style>
-
+      .footer-wrap { display:flex; align-items:center; justify-content:space-between; width:100%; }
+      .footer-left { color: var(--muted); font-size: 14px; white-space: nowrap; }
+    </style>
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
       <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
