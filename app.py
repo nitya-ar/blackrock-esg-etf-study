@@ -1,17 +1,19 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-# Layout locked. Loads CSVs from local path → public GitHub raw → private GitHub API (with token).
-# No emojis. Title + description full-width. Dashboard/Report switch below description.
+# Layout locked. Adds KPI cards, charts, and cleaned Explorer for 2025 Overview.
+# Loads CSVs from local -> public GitHub raw -> private GitHub API (with token).
 
 import os
-import re
 import urllib.parse
 from io import StringIO
 
 import requests
 import pandas as pd
+import altair as alt
 import streamlit as st
 
-
+# =========================
+# CONFIG
+# =========================
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
     page_icon=None,
@@ -40,7 +42,6 @@ COLORS = {
     "other": "#7B8A9A",
     "focus": "#1F6FEB",
 }
-
 
 # =========================
 # STYLES
@@ -74,15 +75,21 @@ st.markdown(
       }}
       .blx-footer a {{ color: var(--text) !important; opacity: 0.9; text-decoration: none; }}
       .blx-footer a:hover {{ opacity: 1; text-decoration: underline; }}
+      .kpi {{
+        background: {COLORS['card']};
+        border: 1px solid {COLORS['border']};
+        border-radius: 14px;
+        padding: 14px 16px;
+      }}
+      .kpi .label {{ font-size: 12px; color: {COLORS['muted']}; margin-bottom: 6px; }}
+      .kpi .value {{ font-size: 24px; font-weight: 700; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
-
 
 # =========================
 # DATA LOADER
@@ -97,7 +104,6 @@ def github_raw_url(analysis: int, filename: str) -> str:
     return f"https://raw.githubusercontent.com/{GITHUB_USER_REPO}/{GITHUB_BRANCH}/{rel}"
 
 def github_api_url(analysis: int, filename: str) -> str:
-    # GitHub Contents API (works for private repos with token)
     rel = _url_join(DASH_BASE_PATH, ANALYSIS_DIRS[analysis], filename)
     return f"https://api.github.com/repos/{GITHUB_USER_REPO}/contents/{rel}?ref={GITHUB_BRANCH}"
 
@@ -142,8 +148,7 @@ def load_csv(analysis: int, filename: str) -> pd.DataFrame:
                 f"Last errors: raw={e_raw}; api={e_api}"
             )
 
-
-# Convenience wrappers for Analysis 1 (2025 Overview)
+# Analysis 1 (2025 Overview) loaders
 @st.cache_data(show_spinner=False)
 def load_context_summary():
     return load_csv(1, "context_summary_2025.csv")
@@ -163,21 +168,18 @@ def load_explorer():
     for col in ["classification", "sector", "region", "screen_categories"]:
         if col in df.columns:
             df[col] = df[col].fillna("")
-    # Build screen tags
-    tags = set()
+    # Build screen tags (internal only; DO NOT display)
     if "screen_categories" in df.columns:
-        df["screen_categories_norm"] = (
+        scn = (
             df["screen_categories"]
             .astype(str)
             .str.split(r"\s*\|\s*")
             .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
         )
-        for xs in df["screen_categories_norm"]:
-            tags.update(xs)
     else:
-        df["screen_categories_norm"] = [[] for _ in range(len(df))]
-    tag_list = sorted([t for t in tags if t])
+        scn = [[] for _ in range(len(df))]
 
+    df["_screen_categories_norm"] = scn  # internal helper; never expose
     # Rename for display
     rename_map = {
         "etf_ticker": "ETF",
@@ -194,8 +196,18 @@ def load_explorer():
         "as_of_date": "As-of",
     }
     df_disp = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
-    return df, df_disp, tag_list
 
+    # Standard column order (drops any dup/stray columns automatically)
+    cols = [c for c in [
+        "ETF", "ETF Name", "Ticker", "Holding", "Sector", "Region",
+        "Class", "Screens", "Weight % in ETF", "ETF AUM (USD)",
+        "$ Contribution (Agg)", "As-of"
+    ] if c in df_disp.columns]
+    df_disp = df_disp[cols]
+
+    # Unique tag list for filters
+    tags = sorted({t for xs in scn for t in xs if t})
+    return df, df_disp, tags
 
 # =========================
 # HEADER (full-width)
@@ -217,6 +229,30 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+def kpi_card(label: str, value: str):
+    st.markdown(f"""
+        <div class="kpi">
+          <div class="label">{label}</div>
+          <div class="value">{value}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+def pct_fmt(x):
+    try:
+        return f"{float(x):.1f}%"
+    except Exception:
+        return "-"
+
+def usd_fmt(x):
+    try:
+        x = float(x)
+        # compact billions/millions
+        if abs(x) >= 1e9: return f"${x/1e9:.1f}B"
+        if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
+        return f"${x:,.0f}"
+    except Exception:
+        return "-"
+
 divider()
 
 # =========================
@@ -232,7 +268,6 @@ mode = st.segmented_control(
 
 divider()
 
-
 # =========================
 # BODY
 # =========================
@@ -244,120 +279,207 @@ if mode == "Dashboard":
         st.subheader("2025 Overview")
         st.caption("Today’s composition and the names/screens that drive it.")
 
+        # Load all Analysis 1 data up front
+        ctx = load_context_summary()
+        scr = load_by_screen()
+        spot = load_spotlight()
+
+        # ---- KPI CARDS ----
+        # ctx expected columns: classification, share_of_total_aum_pct, total_aum_usd, num_etfs_in_scope, ...
+        k1, k2, k3, k4 = st.columns(4)
+        if "classification" in ctx.columns and "share_of_total_aum_pct" in ctx.columns:
+            clean_pct = ctx.loc[ctx["classification"].str.lower()=="clean", "share_of_total_aum_pct"].sum()
+            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial", "share_of_total_aum_pct"].sum()
+        else:
+            clean_pct = contro_pct = None
+
+        total_aum = ctx.get("total_aum_usd")
+        total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
+        num_etfs = None
+        if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()):
+            num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0])
+
+        with k1: kpi_card("% Controversial", pct_fmt(contro_pct))
+        with k2: kpi_card("% Clean", pct_fmt(clean_pct))
+        with k3: kpi_card("Total AUM", usd_fmt(total_aum))
+        with k4: kpi_card("ETFs in scope", f"{num_etfs:,}" if num_etfs is not None else "-")
+
+        st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+
+        # ---- CHARTS ROW ----
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition
+        # 1) 100% stacked bar — 2025 composition
         with c1:
-            try:
-                ctx = load_context_summary()
-                st.markdown('<div class="blx-card">100% stacked bar — 2025 composition (context_summary_2025.csv)</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Could not load context_summary_2025.csv: {e}")
+            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+                comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
+                comp["classification"] = comp["classification"].map({
+                    "Clean": "Clean", "Controversial":"Controversial", "Other":"Other",
+                    "clean":"Clean","controversial":"Controversial","other":"Other"
+                })
+                comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
+                comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
 
-            st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
+                color_scale = alt.Scale(
+                    domain=["Clean","Controversial","Other"],
+                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+                )
 
-            # 2) By-screen bars
-            try:
-                scr = load_by_screen()
-                st.markdown('<div class="blx-card">By-screen bars — Fossil, Weapons, Tobacco, Prisons, Deforestation (context_breakdown_by_screen.csv)</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Could not load context_breakdown_by_screen.csv: {e}")
+                chart = alt.Chart(comp).mark_bar().encode(
+                    x=alt.X("sum(share):Q", stack="normalize", axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
+                    y=alt.Y("o:O", title=None, axis=None),  # single bar
+                    color=alt.Color("classification:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
+                    tooltip=[alt.Tooltip("classification:N"), alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
+                ).properties(height=120)
 
-        # 3–4) Spotlights
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.warning("composition columns missing in context_summary_2025.csv")
+
+        # 2) By-screen bars — Controversial share by category
         with c2:
-            try:
-                spot = load_spotlight()
-                st.markdown('<div class="blx-card">Spotlight — Top 10 Controversial (top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Could not load top_holdings_spotlight.csv: {e}")
+            if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
+                scr2 = scr.copy()
+                scr2["classification"] = scr2["classification"].str.title()
+                scr2 = scr2[scr2["classification"]=="Controversial"]
+                scr2 = scr2.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
+                scr2 = scr2.sort_values("share_of_total_aum_pct", ascending=True)
 
-            st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Spotlight — Top 10 Clean (top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
+                chart = alt.Chart(scr2).mark_bar().encode(
+                    x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
+                    y=alt.Y("screen_category:N", sort="-x", title=None),
+                    tooltip=[alt.Tooltip("screen_category:N", title="Category"),
+                             alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
+                    color=alt.value(COLORS["contro"])
+                ).properties(height=220)
+                st.altair_chart(chart, use_container_width=True)
+                st.caption("Note: Categories can overlap; not intended to sum to overall controversial exposure.")
+            else:
+                st.warning("by-screen columns missing in context_breakdown_by_screen.csv")
 
-        # 5) Holdings Explorer — filters + table
-        st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="blx-card">Holdings Explorer — filterable ETF × holding table</div>', unsafe_allow_html=True)
+        # ---- SPOTLIGHTS ROW ----
+        s1, s2 = st.columns([0.5, 0.5])
 
-        try:
-            df_raw, df_disp, all_tags = load_explorer()
+        # Top 10 Controversial
+        with s1:
+            if "cohort" in spot.columns:
+                cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
+                cols = [c for c in ["rank_within_cohort","ticker","holding_name","share_of_total_aum_pct","num_etfs","screen_categories"] if c in cont.columns]
+                if "share_of_total_aum_pct" in cols:
+                    cont = cont.sort_values("rank_within_cohort" if "rank_within_cohort" in cont.columns else "share_of_total_aum_pct", ascending=True).head(10)
+                cont_disp = cont.rename(columns={
+                    "rank_within_cohort":"Rank",
+                    "ticker":"Ticker",
+                    "holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)",
+                    "num_etfs":"#ETFs",
+                    "screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                # numeric formatting
+                if "Share of AUM (%)" in cont_disp.columns:
+                    cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                st.markdown("**Spotlight — Top 10 Controversial**")
+                st.dataframe(cont_disp, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Missing 'cohort' in top_holdings_spotlight.csv")
 
-            fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
+        # Top 10 Clean
+        with s2:
+            if "cohort" in spot.columns:
+                clean = spot[spot["cohort"].str.lower()=="clean"].copy()
+                if "rank_within_cohort" in clean.columns:
+                    clean = clean.sort_values("rank_within_cohort").head(10)
+                cols = ["rank_within_cohort","ticker","holding_name","share_of_total_aum_pct","num_etfs","screen_categories"]
+                cols = [c for c in cols if c in clean.columns]
+                clean_disp = clean.rename(columns={
+                    "rank_within_cohort":"Rank",
+                    "ticker":"Ticker",
+                    "holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)",
+                    "num_etfs":"#ETFs",
+                    "screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                if "Share of AUM (%)" in clean_disp.columns:
+                    clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                st.markdown("**Spotlight — Top 10 Clean**")
+                st.dataframe(clean_disp, use_container_width=True, hide_index=True)
+            else:
+                st.warning("Missing 'cohort' in top_holdings_spotlight.csv")
 
-            with fc1:
-                etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
-                sel_etfs = st.multiselect("ETF", etfs, placeholder="All")
+        # ---- HOLDINGS EXPLORER ----
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        st.markdown("### Holdings Explorer")
+        st.caption("Filter and search across ETF × holding rows. Download the filtered view below.")
 
-            with fc2:
-                classes = ["Clean", "Controversial", "Other"]
-                sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
+        df_raw, df_disp, all_tags = load_explorer()
 
-            with fc3:
-                sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
+        # Filters
+        fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
+        with fc1:
+            etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
+            sel_etfs = st.multiselect("ETF", etfs, placeholder="All")
+        with fc2:
+            classes = ["Clean","Controversial","Other"]
+            sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
+        with fc3:
+            sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
+        with fc4:
+            sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
+            sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
+        with fc5:
+            regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
+            sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
 
-            with fc4:
-                sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
-                sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
+        q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
 
-            with fc5:
-                regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
-                sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
+        # Apply filters (using df_raw for tag membership; df_disp for display)
+        mask = pd.Series(True, index=df_raw.index)
+        # map df_disp mask to raw via index alignment (same order by construction)
+        if sel_etfs:   mask &= df_disp["ETF"].isin(sel_etfs)
+        if sel_class:  mask &= df_disp["Class"].isin(sel_class)
+        if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
+        if sel_region: mask &= df_disp["Region"].isin(sel_region)
+        if sel_tags:   mask &= df_raw["_screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
+        if q:
+            qcols = [c for c in ["Ticker","Holding","ETF Name"] if c in df_disp.columns]
+            if qcols:
+                qmask = False
+                for c in qcols:
+                    qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
+                mask &= qmask
 
-            q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
+        df_f = df_disp.loc[mask].copy()
 
-            mask = pd.Series(True, index=df_raw.index)
+        # Sort defaults
+        default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
+        if default_sort:
+            df_f = df_f.sort_values(by=default_sort, ascending=False)
 
-            if sel_etfs:
-                mask &= df_disp["ETF"].isin(sel_etfs)
-            if sel_class:
-                mask &= df_disp["Class"].isin(sel_class)
-            if sel_sector:
-                mask &= df_disp["Sector"].isin(sel_sector)
-            if sel_region:
-                mask &= df_disp["Region"].isin(sel_region)
-            if sel_tags:
-                mask &= df_raw["screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
-            if q:
-                qcols = []
-                if "Ticker" in df_disp.columns: qcols.append("Ticker")
-                if "Holding" in df_disp.columns: qcols.append("Holding")
-                if "ETF Name" in df_disp.columns: qcols.append("ETF Name")
-                if qcols:
-                    qmask = False
-                    for c in qcols:
-                        qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
-                    mask &= qmask
+        # Preview limiter
+        show_all = st.toggle("Show all rows", value=False, help="Turn off to preview the first 500 rows for speed.")
+        df_view = df_f if show_all else df_f.head(500)
 
-            df_f = df_disp.loc[mask].copy()
-            default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else (
-                "Weight % in ETF" if "Weight % in ETF" in df_f.columns else None
-            )
-            if default_sort:
-                df_f = df_f.sort_values(by=default_sort, ascending=False)
+        # Numeric formatting (kept numeric for sorting; Streamlit shows raw, which is fine for now)
+        for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
+            if c in df_view.columns:
+                df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
 
-            show_all = st.toggle("Show all rows", value=False, help="Turn off to preview the first 500 rows for speed.")
-            df_view = df_f if show_all else df_f.head(500)
+        st.dataframe(df_view, use_container_width=True, hide_index=True)
 
-            # Formatting
-            for c in ("Weight % in ETF", "ETF AUM (USD)", "$ Contribution (Agg)"):
-                if c in df_view.columns:
-                    df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-
-            st.dataframe(df_view, use_container_width=True, hide_index=True)
-
-            csv_bytes = df_f.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "Download filtered rows (CSV)",
-                data=csv_bytes,
-                file_name="holdings_explorer_filtered.csv",
-                mime="text/csv",
-            )
-        except Exception as e:
-            st.error(f"Could not load holdings_explorer_2025.csv: {e}")
+        # Download filtered CSV
+        csv_bytes = df_f.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Download filtered rows (CSV)",
+            data=csv_bytes,
+            file_name="holdings_explorer_filtered.csv",
+            mime="text/csv",
+        )
 
     # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures moved over time, by fund and in aggregate.")
+        # placeholders (we'll wire these next without changing layout)
         c1, c2 = st.columns([0.5, 0.5])
         with c1:
             st.markdown('<div class="blx-card">Trend — % Clean over time (EW/AUM)</div>', unsafe_allow_html=True)
@@ -399,7 +521,6 @@ Assess how BlackRock’s ESG-labelled ETFs align with a consistent 2025 ESG clas
 Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, and *Tradeoff Lab*.
         """
     )
-
 
 # =========================
 # FOOTER
