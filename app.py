@@ -351,7 +351,7 @@ if mode == "Dashboard":
 
         with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
         with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
-        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="primary")
+        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="neutral")
         with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-", tone="neutral")
 
         gap(6)
