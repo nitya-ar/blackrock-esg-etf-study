@@ -569,12 +569,32 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
     )
 
 # =========================
-# FOOTER
+# FOOTER (replacement)
 # =========================
-gap(28)   # push footer down a bit
+gap(28)
 divider()
 st.markdown(
     """
+    <style>
+      .footer-wrap {
+        display:flex; align-items:center; justify-content:space-between; width:100%;
+      }
+      .footer-left {
+        color: var(--muted); font-size: 14px; white-space: nowrap;
+      }
+      .footer-links {
+        display:flex; gap:28px; align-items:center; justify-content:flex-end;
+      }
+      .footer-links a {
+        color: var(--text) !important;        /* no blue */
+        text-decoration: none;
+        font-size: 16px;                      /* slightly larger */
+        font-weight: 500;                     /* not bold by default */
+        opacity: .9;
+      }
+      .footer-links a:hover { opacity: 1; text-decoration: underline; }
+    </style>
+
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
       <div class="footer-links">
