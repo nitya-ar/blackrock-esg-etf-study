@@ -265,6 +265,7 @@ def load_movers():                       return load_csv(2, "movers_by_yearpair.
 @st.cache_data(show_spinner=False)
 def load_screen_trends():                return load_csv(2, "aggregate_screen_trends.csv")
 
+
 # =========================
 # HEADER
 # =========================
@@ -687,7 +688,7 @@ if mode == "Dashboard":
                 x=alt.X(f"{c_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
                 y=alt.Y(f"{c_etf}:N", sort=latest, title=None),
                 color=alt.Color("value:Q",
-                                scale=alt.Scale(range=["#172026", COLORS["contro"] if metric.startswith("% Con") else COLORS["clean"]]),
+                                scale=alt.Scale(range=["(#172026)", COLORS["contro"] if metric.startswith("% Con") else COLORS["clean"]]),
                                 legend=alt.Legend(title="%", orient="right")),
                 tooltip=[alt.Tooltip(f"{c_etf}:N", title="ETF"),
                          alt.Tooltip(f"{c_year}:O", title="Year"),
@@ -759,22 +760,72 @@ if mode == "Dashboard":
 
         # ===== Optional: Screen trends mini-multiples (compact) =====
         st.markdown('<div class="chart-title" style="margin:8px 0 6px;">Screen Trends (MV-weighted; categories overlap)</div>', unsafe_allow_html=True)
-        if not scr_tr.empty:
-            sc_cat = pick(scr_tr, "screen_category","category")
-            sc_year= pick(scr_tr, "year","Year")
-            sc_val = pick(scr_tr, "share_of_total_mv_pct","share_of_total_aum_pct","value_pct")
-            keep = scr_tr[[sc_cat, sc_year, sc_val]].dropna()
-            cats = ["FossilFuel","Weapons","Tobacco","Prisons","Deforestation"]
-            keep[sc_cat] = keep[sc_cat].astype(str)
-            keep = keep[keep[sc_cat].isin(cats)]
-            sm = alt.Chart(keep).mark_line().encode(
-                x=alt.X(f"{sc_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                y=alt.Y(f"{sc_val}:Q", title="%", scale=alt.Scale(zero=True)),
-                facet=alt.Facet(f"{sc_cat}:N", columns=5, title=None, sort=cats),
-                tooltip=[alt.Tooltip(f"{sc_year}:O", title="Year"),
-                         alt.Tooltip(f"{sc_val}:Q", title="%", format=".1f")]
-            ).properties(height=120)
-            st.altair_chart(sm, use_container_width=True)
+
+        if scr_tr is None or scr_tr.empty:
+            st.caption("No screen trend data available.")
+        else:
+            sc_cat  = pick(scr_tr, "screen_category","category","screen","screen_cat")
+            sc_year = pick(scr_tr, "year","report_year")
+            sc_val  = pick(
+                scr_tr,
+                "share_of_total_mv_pct",
+                "share_of_total_aum_pct",
+                "share_of_total_market_value_pct",
+                "share_pct",
+                "value_pct",
+                "pct_share",
+                "pct"
+            )
+            if sc_val is None:
+                numeric_cols = [c for c in scr_tr.columns if pd.api.types.is_numeric_dtype(scr_tr[c])]
+                guess = [c for c in numeric_cols if ("pct" in c.lower() or "share" in c.lower())]
+                sc_val = guess[0] if guess else None
+
+            if sc_cat is None or sc_year is None or sc_val is None:
+                st.caption(
+                    f"Screen trend dataset has unexpected columns. "
+                    f"Found: {list(scr_tr.columns)}. "
+                    f"Expected category/year/value (%). Skipping chart."
+                )
+            else:
+                keep = scr_tr[[sc_cat, sc_year, sc_val]].dropna()
+
+                def normcat(x: str) -> str:
+                    t = str(x).strip().lower().replace(" ", "").replace("-", "").replace("_", "")
+                    mapping = {
+                        "fossil": "FossilFuel",
+                        "fossilfuel": "FossilFuel",
+                        "fossilfuels": "FossilFuel",
+                        "weapons": "Weapons",
+                        "weapon": "Weapons",
+                        "tobacco": "Tobacco",
+                        "prisons": "Prisons",
+                        "prison": "Prisons",
+                        "deforestation": "Deforestation",
+                    }
+                    return mapping.get(t, str(x))
+
+                keep[sc_cat] = keep[sc_cat].map(normcat)
+
+                ordered = ["FossilFuel","Weapons","Tobacco","Prisons","Deforestation"]
+                present = [c for c in ordered if c in keep[sc_cat].unique().tolist()]
+                if not present:
+                    st.caption("Screen trend categories not found (FossilFuel/Weapons/Tobacco/Prisons/Deforestation). Skipping chart.")
+                else:
+                    keep = keep[keep[sc_cat].isin(present)]
+
+                    sm = alt.Chart(keep).mark_line().encode(
+                        x=alt.X(f"{sc_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
+                        y=alt.Y(f"{sc_val}:Q", title="%", scale=alt.Scale(zero=True)),
+                        facet=alt.Facet(f"{sc_cat}:N", columns=len(present), title=None, sort=present),
+                        tooltip=[
+                            alt.Tooltip(f"{sc_year}:O", title="Year"),
+                            alt.Tooltip(f"{sc_val}:Q", title="%", format=".1f"),
+                            alt.Tooltip(f"{sc_cat}:N", title="Screen")
+                        ]
+                    ).properties(height=120)
+
+                    st.altair_chart(sm, use_container_width=True)
 
         st.markdown(
             '<div class="blx-muted" style="margin-top:4px;">2025 classifications applied retroactively. MV = sum of holdings market values; screen categories overlap and do not sum to total controversial.</div>',
