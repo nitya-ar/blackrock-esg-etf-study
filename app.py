@@ -1,10 +1,9 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Layout locked. Inter font + refined dark palette.
 # This version:
-# - CSS tooltip for info icon beside by-screen chart title
-# - Footer: subtle "Built by Nitya Arya" (left) + right-aligned links
-# - Darker-but-bright data colors
-# - Explorer always shows ALL filtered rows (no toggle)
+# - KPI cards now support subtle tinted variants (red/green/primary/neutral)
+# - Optional company logos in Top 10 tables via logos.csv (ticker,logo_url)
+# - Everything else remains exactly as before
 
 import os
 from io import StringIO
@@ -92,6 +91,24 @@ st.markdown(
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
+
+      /* KPI tone variants (subtle tinted gradients) */
+      .kpi.kpi-red {{
+        background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0));
+        border-color: rgba(198,60,65,0.45);
+      }}
+      .kpi.kpi-green {{
+        background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0));
+        border-color: rgba(14,143,102,0.45);
+      }}
+      .kpi.kpi-primary {{
+        background: linear-gradient(180deg, rgba(0,163,255,0.16), rgba(255,255,255,0));
+        border-color: rgba(0,163,255,0.45);
+      }}
+      .kpi.kpi-neutral {{
+        background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+        border-color: rgba(255,255,255,0.08);
+      }}
 
       /* Tabs underline */
       .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
@@ -240,6 +257,18 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
+# NEW: optional logos map for Top-10 tables
+@st.cache_data(show_spinner=False)
+def load_logos_map():
+    """Expect a small file 'logos.csv' in Analysis 1 with columns: ticker,logo_url"""
+    try:
+        df = load_csv(1, "logos.csv")
+        df = df.dropna(subset=["ticker", "logo_url"])
+        df["ticker"] = df["ticker"].astype(str).str.upper().str.strip()
+        return dict(zip(df["ticker"], df["logo_url"]))
+    except Exception:
+        return {}
+
 # =========================
 # HEADER
 # =========================
@@ -257,9 +286,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-def kpi_card(label: str, value: str):
+# KPI helper (now supports tinted variants)
+def kpi_card(label: str, value: str, tone: str = "neutral"):
+    tone_class = {"red":"kpi-red","green":"kpi-green","primary":"kpi-primary","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
-        <div class="kpi">
+        <div class="kpi {tone_class}">
           <div class="label">{label}</div>
           <div class="value">{value}</div>
         </div>
@@ -273,7 +304,7 @@ def usd_fmt(x):
     try:
         x = float(x)
         if abs(x) >= 1e9: return f"${x/1e9:.1f}B"
-        if abs(x) >= 1e6: return f"${x/1e6:.1fM}"
+        if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
     except: return "-"
 
@@ -307,7 +338,7 @@ if mode == "Dashboard":
         scr = load_by_screen()
         spot = load_spotlight()
 
-        # KPIs
+        # KPIs (tinted)
         k1, k2, k3, k4 = st.columns(4)
         if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
             clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
@@ -318,10 +349,10 @@ if mode == "Dashboard":
         total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
         num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0]) if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()) else None
 
-        with k1: kpi_card("% Controversial", pct_fmt(contro_pct))
-        with k2: kpi_card("% Clean",         pct_fmt(clean_pct))
-        with k3: kpi_card("Total AUM",       usd_fmt(total_aum))
-        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-")
+        with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
+        with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
+        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="primary")
+        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-", tone="neutral")
 
         gap(6)
 
@@ -411,7 +442,8 @@ if mode == "Dashboard":
 
             st.altair_chart(chart2, use_container_width=True)
 
-        # Top 10 tables
+        # Top 10 tables (now with optional Logo column)
+        logos = load_logos_map()
         s1, s2 = st.columns([0.5, 0.5])
 
         with s1:
@@ -426,7 +458,20 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(cont_disp, use_container_width=True, hide_index=True)
+                # Insert Logo column if mapping exists
+                if "Ticker" in cont_disp.columns and logos:
+                    cont_disp.insert(1, "Logo", cont_disp["Ticker"].astype(str).str.upper().map(logos))
+                    st.dataframe(
+                        cont_disp,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Logo": st.column_config.ImageColumn("Logo", width="small"),
+                            "Share of AUM (%)": st.column_config.NumberColumn("Share of AUM (%)", format="%.2f")
+                        }
+                    )
+                else:
+                    st.dataframe(cont_disp, use_container_width=True, hide_index=True)
 
         with s2:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
@@ -440,7 +485,19 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(clean_disp, use_container_width=True, hide_index=True)
+                if "Ticker" in clean_disp.columns and logos:
+                    clean_disp.insert(1, "Logo", clean_disp["Ticker"].astype(str).str.upper().map(logos))
+                    st.dataframe(
+                        clean_disp,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Logo": st.column_config.ImageColumn("Logo", width="small"),
+                            "Share of AUM (%)": st.column_config.NumberColumn("Share of AUM (%)", format="%.2f")
+                        }
+                    )
+                else:
+                    st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
         # --- Holdings Explorer (always show all rows) ---
         gap(8)
@@ -485,7 +542,6 @@ if mode == "Dashboard":
         if default_sort:
             df_f = df_f.sort_values(by=default_sort, ascending=False)
 
-        # Always show ALL filtered rows
         df_view = df_f
 
         for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
@@ -522,7 +578,7 @@ if mode == "Dashboard":
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
-        st.subheader("Tradeoff Lab")
+        st.subheader("Tradeoff Scenarios")
         st.caption("Baseline vs cleaner scenarios, measuring cost (TE) vs benefit (% Clean).")
         c1, c2 = st.columns([0.5, 0.5])
         with c1:
@@ -552,7 +608,7 @@ Assess how BlackRock’s ESG-labelled ETFs align with a consistent 2025 ESG clas
 3) Simulate cleaner portfolios (tilt and exclusion) and estimate tracking error with a covariance matrix.
 
 **How to read this app**  
-Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, and *Tradeoff Lab*.
+Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, and *Tradeoff Scenarios*.
         """
     )
 
