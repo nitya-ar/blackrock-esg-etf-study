@@ -481,7 +481,6 @@ if mode == "Dashboard":
         # Explorer
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
-        st.caption("Filter and search across ETF × holding rows. Download the filtered view below.")
 
         df_raw, df_disp, all_tags = load_explorer()
 
