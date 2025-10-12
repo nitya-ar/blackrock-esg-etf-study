@@ -1,9 +1,10 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Layout locked. Inter font + refined dark palette.
-# Changes in this version:
-# - CSS tooltip for the info icon (overlap note) beside the by-screen chart title
-# - Footer: subtle "Built by Nitya Arya" (left) + right-aligned links, larger, non-blue
-# - Darker-but-bright data colors for charts
+# This version:
+# - CSS tooltip for info icon beside by-screen chart title
+# - Footer: subtle "Built by Nitya Arya" (left) + right-aligned links
+# - Darker-but-bright data colors
+# - Explorer always shows ALL filtered rows (no toggle)
 
 import os
 from io import StringIO
@@ -202,7 +203,8 @@ def load_csv(analysis: int, filename: str) -> pd.DataFrame:
                 f"Failed to load {filename}. Tried local, public raw, and API.\nraw={e_raw}; api={e_api}"
             )
 
-@st.cache_data(show_spinner=False)  # A1 loaders
+# Analysis 1 loaders
+@st.cache_data(show_spinner=False)
 def load_context_summary():   return load_csv(1, "context_summary_2025.csv")
 @st.cache_data(show_spinner=False)
 def load_by_screen():         return load_csv(1, "context_breakdown_by_screen.csv")
@@ -274,7 +276,7 @@ def usd_fmt(x):
     try:
         x = float(x)
         if abs(x) >= 1e9: return f"${x/1e9:.1f}B"
-        if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
+        if abs(x) >= 1e6: return f"${x/1e6:.1fM}"
         return f"${x:,.0f}"
     except: return "-"
 
@@ -377,7 +379,7 @@ if mode == "Dashboard":
                 unsafe_allow_html=True,
             )
 
-            show_parts = []
+            parts = []
             clean200 = 0.0
             if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
                 s2 = scr.copy()
@@ -385,16 +387,16 @@ if mode == "Dashboard":
                 s_con = s2[s2["classification"]=="Controversial"].groupby(
                     "screen_category", as_index=False
                 )["share_of_total_aum_pct"].sum()
-                show_parts.append(s_con)
+                parts.append(s_con)
                 c2_row = scr.loc[
                     scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
                     "share_of_total_aum_pct"
                 ].sum()
                 clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
 
-            show_parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
+            parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
 
-            scr_all = pd.concat(show_parts, ignore_index=True)
+            scr_all = pd.concat(parts, ignore_index=True)
             scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
             scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
             scr_all["color"] = scr_all["screen_category"].apply(
@@ -443,9 +445,10 @@ if mode == "Dashboard":
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
-        # Explorer
+        # --- Holdings Explorer (always show all rows) ---
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
+        st.caption("Filter and search across ETF × holding rows. Download the filtered view below.")
 
         df_raw, df_disp, all_tags = load_explorer()
 
@@ -486,8 +489,8 @@ if mode == "Dashboard":
         if default_sort:
             df_f = df_f.sort_values(by=default_sort, ascending=False)
 
-        show_all = st.toggle("Show all rows", value=False, help="Turn off to preview the first 500 rows for speed.")
-        df_view = df_f if show_all else df_f.head(500)
+        # Always show ALL filtered rows
+        df_view = df_f
 
         for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
             if c in df_view.columns:
