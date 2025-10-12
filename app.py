@@ -580,13 +580,13 @@ st.markdown(
         display:flex; align-items:center; justify-content:space-between; width:100%;
       }
       .footer-left {
-        color: var(--muted); font-size: 14px; white-space: nowrap;
+        color: var(--other); font-size: 14px; white-space: nowrap;
       }
       .footer-links {
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
       }
       .footer-links a {
-        color: var(--other) !important;        /* no blue */
+        color: var(--muted) !important;        /* no blue */
         text-decoration: none;
         font-size: 15px;                      /* slightly larger */
         font-weight: 500;                     /* not bold by default */
