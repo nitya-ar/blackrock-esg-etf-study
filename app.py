@@ -251,6 +251,20 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
+# --------- Analysis 2 loaders (ADDED; safe additions) ----------
+@st.cache_data(show_spinner=False)
+def load_trends():                return load_csv(2, "aggregate_exposure_trends.csv")
+@st.cache_data(show_spinner=False)
+def load_dispersion():            return load_csv(2, "exposure_dispersion_stats.csv")
+@st.cache_data(show_spinner=False)
+def load_exposures_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
+@st.cache_data(show_spinner=False)
+def load_year_compare():          return load_csv(2, "year_compare_summary.csv")
+@st.cache_data(show_spinner=False)
+def load_movers():                return load_csv(2, "movers_by_yearpair.csv")
+@st.cache_data(show_spinner=False)
+def load_screen_trends():         return load_csv(2, "aggregate_screen_trends.csv")
+
 # =========================
 # HEADER
 # =========================
@@ -514,23 +528,234 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-    # ---------- CHANGE SINCE 2017 ----------
+    # ---------- CHANGE SINCE 2017 (IMPLEMENTED) ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures moved over time, by fund and in aggregate.")
-        c1, c2 = st.columns([0.5, 0.5])
-        with c1:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Trend — % Clean over time (EW/AUM)</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
-            gap(10)
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Heatmap — Fund × Year by % Controversial (toggle % Clean)</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Trend — % Controversial over time (EW/AUM)</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
-            gap(10)
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">2017 vs 2025 — stacked Clean/Controversial/Other + Movers</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Chart coming</div>', unsafe_allow_html=True)
+
+        # --- Controls (local to tab) ---
+        colx, coly, colz = st.columns([0.28, 0.36, 0.36])
+        with colx:
+            weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], index=0, horizontal=True)
+        with coly:
+            metric_for_heatmap = st.radio("Heatmap metric", ["% Controversial", "% Clean"], index=0, horizontal=True)
+        with colz:
+            topN = st.slider("Top movers to show", 5, 30, 10, step=5)
+
+        # --- Load data ---
+        trends = load_trends()
+        disp   = load_dispersion()
+        fundyr = load_exposures_fund_year()
+        ycomp  = load_year_compare()
+        movers = load_movers()
+        scr_tr = load_screen_trends()
+
+        # --- Helper: column names for trends ---
+        wcol = "aum" if "AUM" in weighting else "ew"
+        clean_col = f"pct_clean_{wcol}" if f"pct_clean_{wcol}" in trends.columns else "pct_clean"
+        contro_col = f"pct_contro_{wcol}" if f"pct_contro_{wcol}" in trends.columns else "pct_controversial"
+        year_col = "year"
+
+        # --- KPI deltas ---
+        k1, k2, k3, k4 = st.columns(4)
+        try:
+            t2017 = trends.loc[trends[year_col]==2017].iloc[0]
+            t2025 = trends.loc[trends[year_col]==2025].iloc[0]
+            d_clean  = float(t2025[clean_col])  - float(t2017[clean_col])
+            d_contro = float(t2025[contro_col]) - float(t2017[contro_col])
+            # total AUM if present (AUM rows only)
+            if wcol == "aum":
+                a_col = "total_aum_usd" if "total_aum_usd" in trends.columns else None
+                if a_col:
+                    d_aum = float(t2025[a_col]) - float(t2017[a_col])
+                else:
+                    d_aum = None
+            else:
+                d_aum = None
+        except Exception:
+            d_clean = d_contro = d_aum = None
+
+        with k1: kpi_card("Δ % Clean (pp)", f"{d_clean:+.1f} pp" if d_clean is not None else "-", tone="green" if (d_clean or 0)>0 else "neutral")
+        with k2: kpi_card("Δ % Controversial (pp)", f"{d_contro:+.1f} pp" if d_contro is not None else "-", tone="red" if (d_contro or 0)<0 else "neutral")
+        with k3: kpi_card("Δ Total AUM", usd_fmt(d_aum) if d_aum is not None else "—", tone="neutral")
+        with k4:
+            # Attempt count of ETFs from fund-year file
+            try:
+                n_etfs = fundyr["etf_ticker"].nunique()
+            except Exception:
+                n_etfs = None
+            kpi_card("ETFs in scope", f"{n_etfs:,}" if n_etfs else "—", tone="neutral")
+
+        gap(6)
+
+        # --- Row: Trends (Clean & Contro) ---
+        t1, t2 = st.columns([0.5, 0.5])
+
+        # Clean trend
+        with t1:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">% Clean over time</div>', unsafe_allow_html=True)
+            if {year_col, clean_col}.issubset(trends.columns):
+                base = alt.Chart(trends).encode(x=alt.X(f"{year_col}:O", title="Year"))
+                clean_line = base.mark_line(point=False, strokeWidth=2, color=COLORS["clean"]).encode(
+                    y=alt.Y(f"{clean_col}:Q", title="% Clean")
+                )
+                chart = clean_line
+
+                # Ribbon (p10–p90) when available
+                if not disp.empty and {"metric","p10","p90",year_col}.issubset(disp.columns):
+                    dd = disp[disp["metric"].str.lower().isin(["clean","pct_clean","clean_pct"])].copy()
+                    rib = alt.Chart(dd).mark_area(opacity=0.18, color=COLORS["clean"]).encode(
+                        x=alt.X(f"{year_col}:O"),
+                        y="p10:Q",
+                        y2="p90:Q",
+                    )
+                    chart = rib + clean_line
+
+                st.altair_chart(chart.properties(height=260), use_container_width=True)
+            else:
+                st.warning("Trend columns for % Clean not found.")
+
+        # Controversial trend
+        with t2:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">% Controversial over time</div>', unsafe_allow_html=True)
+            if {year_col, contro_col}.issubset(trends.columns):
+                base = alt.Chart(trends).encode(x=alt.X(f"{year_col}:O", title="Year"))
+                c_line = base.mark_line(point=False, strokeWidth=2, color=COLORS["contro"]).encode(
+                    y=alt.Y(f"{contro_col}:Q", title="% Controversial")
+                )
+                chart = c_line
+
+                if not disp.empty and {"metric","p10","p90",year_col}.issubset(disp.columns):
+                    dd = disp[disp["metric"].str.lower().str.contains("contro")].copy()
+                    rib = alt.Chart(dd).mark_area(opacity=0.18, color=COLORS["contro"]).encode(
+                        x=alt.X(f"{year_col}:O"),
+                        y="p10:Q",
+                        y2="p90:Q",
+                    )
+                    chart = rib + c_line
+
+                st.altair_chart(chart.properties(height=260), use_container_width=True)
+            else:
+                st.warning("Trend columns for % Controversial not found.")
+
+        gap(6)
+
+        # --- Heatmap Fund × Year ---
+        st.markdown(f'<div class="chart-title" style="margin-bottom:6px;">Heatmap — Fund × Year by {metric_for_heatmap}</div>', unsafe_allow_html=True)
+        # Try to detect column names
+        fy_year  = "year" if "year" in fundyr.columns else "Year"
+        fy_etf   = "etf_ticker" if "etf_ticker" in fundyr.columns else "ETF_Ticker"
+        col_clean  = "pct_clean" if "pct_clean" in fundyr.columns else ("clean_pct" if "clean_pct" in fundyr.columns else None)
+        col_contro = "pct_controversial" if "pct_controversial" in fundyr.columns else ("controversial_pct" if "controversial_pct" in fundyr.columns else None)
+
+        if fy_year in fundyr.columns and fy_etf in fundyr.columns and (col_clean or col_contro):
+            if metric_for_heatmap.startswith("% Clean"):
+                val_col = col_clean
+                cmap = alt.Scale(scheme="greens")
+            else:
+                val_col = col_contro
+                cmap = alt.Scale(scheme="oranges")
+
+            heat = alt.Chart(fundyr).mark_rect().encode(
+                x=alt.X(f"{fy_year}:O", title="Year"),
+                y=alt.Y(f"{fy_etf}:O", title="ETF", sort="-x"),
+                color=alt.Color(f"{val_col}:Q", title=metric_for_heatmap, scale=cmap),
+                tooltip=[fy_etf, fy_year, alt.Tooltip(f"{val_col}:Q", format=".1f")]
+            ).properties(height=420)
+            st.altair_chart(heat, use_container_width=True)
+        else:
+            st.warning("Heatmap columns not found in exposures_by_fund_year.csv")
+
+        gap(6)
+
+        # --- Year vs Year & Movers ---
+        yy_left, yy_right = st.columns([0.5, 0.5])
+
+        with yy_left:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">2017 vs 2025 — composition</div>', unsafe_allow_html=True)
+            # try to pivot a tidy format: year, classification, pct
+            if not ycomp.empty:
+                # try to detect tidy columns
+                ycol = "year" if "year" in ycomp.columns else "Year"
+                ccol = "classification" if "classification" in ycomp.columns else "Classification"
+                vcol = "share_pct" if "share_pct" in ycomp.columns else (
+                    "share_of_total_aum_pct" if "share_of_total_aum_pct" in ycomp.columns else None
+                )
+                if ycol in ycomp.columns and ccol in ycomp.columns and vcol:
+                    yy = ycomp.copy()
+                    yy[ccol] = yy[ccol].str.title()
+                    yy = yy[yy[ccol].isin(["Clean","Controversial","Other"])]
+                    yy = yy[yy[ycol].isin([2017, 2025])]
+
+                    color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
+                    bars = alt.Chart(yy).mark_bar().encode(
+                        x=alt.X(f"{vcol}:Q", title="Share (%)", axis=alt.Axis(format=".1f"), stack="normalize"),
+                        y=alt.Y(f"{ycol}:O", title=None),
+                        color=alt.Color(f"{ccol}:N", scale=color_scale, legend=alt.Legend(title=None, orient="top")),
+                        tooltip=[ycol, ccol, alt.Tooltip(vcol, title="Share (%)", format=".1f")]
+                    ).properties(height=180)
+                    st.altair_chart(bars, use_container_width=True)
+                else:
+                    st.info("year_compare_summary.csv not in tidy format; expecting year / classification / share_pct.")
+            else:
+                st.info("year_compare_summary.csv not found or empty.")
+
+        with yy_right:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top movers (2017 → 2025)</div>', unsafe_allow_html=True)
+            if not movers.empty:
+                mv = movers.copy()
+                # Try to find the delta column
+                delta_col_candidates = [c for c in mv.columns if "delta" in c.lower() and ("contrib" in c.lower() or "share" in c.lower() or "pct" in c.lower())]
+                delta_col = delta_col_candidates[0] if delta_col_candidates else None
+                name_col = "holding_name" if "holding_name" in mv.columns else ("company_name" if "company_name" in mv.columns else "name")
+                ticker_col = "ticker" if "ticker" in mv.columns else ("company_ticker" if "company_ticker" in mv.columns else None)
+                screens_col = "screen_categories" if "screen_categories" in mv.columns else None
+
+                if delta_col and name_col:
+                    mv = mv.sort_values(delta_col, ascending=False)
+                    top_up = mv.head(topN).copy()
+                    top_dn = mv.tail(topN).copy().iloc[::-1]
+                    top_up["Direction"] = "↑"
+                    top_dn["Direction"] = "↓"
+                    out = pd.concat([top_up, top_dn], ignore_index=True)
+
+                    cols = []
+                    if ticker_col: cols.append(("Ticker", ticker_col))
+                    cols.append(("Holding", name_col))
+                    if screens_col: cols.append(("Screens", screens_col))
+                    cols.append(("Δ contribution (pp)", delta_col))
+                    cols.append(("Dir", "Direction"))
+
+                    df_show = pd.DataFrame({
+                        new: (out[old] if old in out.columns else "") for new, old in cols
+                    })
+                    # format delta nicely
+                    if "Δ contribution (pp)" in df_show.columns:
+                        df_show["Δ contribution (pp)"] = pd.to_numeric(df_show["Δ contribution (pp)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                    st.dataframe(df_show, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Could not detect movers delta column.")
+            else:
+                st.info("movers_by_yearpair.csv not found or empty.")
+
+        # --- Optional: Screen trends (small multiples) ---
+        with st.expander("Screen trends over time (AUM-weighted)"):
+            if not scr_tr.empty and {"screen_category","year","share_of_total_aum_pct"}.issubset(scr_tr.columns):
+                scr_tr["screen_category"] = scr_tr["screen_category"].astype(str)
+                base = alt.Chart(scr_tr).encode(
+                    x=alt.X("year:O", title="Year"),
+                    y=alt.Y("share_of_total_aum_pct:Q", title="Share (%)", axis=alt.Axis(format=".1f")),
+                    tooltip=["screen_category","year",alt.Tooltip("share_of_total_aum_pct:Q", format=".1f")]
+                )
+                sm = base.mark_line().encode(
+                    color=alt.Color("screen_category:N", legend=None)
+                ).properties(height=120).facet(
+                    row=alt.Row("screen_category:N", header=alt.Header(labelColor=COLORS["muted"]))
+                )
+                st.altair_chart(sm, use_container_width=True)
+            else:
+                st.info("aggregate_screen_trends.csv not found or missing columns.")
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
