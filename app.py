@@ -586,9 +586,9 @@ st.markdown(
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
       }
       .footer-links a {
-        color: var(--muted) !important;        /* no blue */
+        color: var(--text) !important;        /* no blue */
         text-decoration: none;
-        font-size: 15px;                      /* slightly larger */
+        font-size: 15.5px;                      /* slightly larger */
         font-weight: 500;                     /* not bold by default */
         opacity: .9;
       }
