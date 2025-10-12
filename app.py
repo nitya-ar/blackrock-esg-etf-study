@@ -1,9 +1,10 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Layout locked. Inter font + refined dark palette.
 # This version:
-# - KPI cards now support subtle tinted variants (red/green/primary/neutral)
-# - Optional company logos in Top 10 tables via logos.csv (ticker,logo_url)
-# - Everything else remains exactly as before
+# - KPI cards support subtle tinted variants (red/green/neutral)
+# - Logos in Top 10 tables via logos.csv (ticker,logo_url) + thumbnail sizing
+# - Alphabet class names (GOOG/GOOGL) shown correctly in tables
+# - Everything else remains the same; Change/Tradeoff/Report still placeholders
 
 import os
 from io import StringIO
@@ -14,7 +15,7 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-# ========================
+# =========================
 # CONFIG
 # =========================
 st.set_page_config(
@@ -101,10 +102,6 @@ st.markdown(
         background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0));
         border-color: rgba(14,143,102,0.45);
       }}
-      .kpi.kpi-primary {{
-        background: linear-gradient(180deg, rgba(0,163,255,0.16), rgba(255,255,255,0));
-        border-color: rgba(0,163,255,0.45);
-      }}
       .kpi.kpi-neutral {{
         background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
         border-color: rgba(255,255,255,0.08);
@@ -167,6 +164,13 @@ st.markdown(
         color: var(--text) !important; text-decoration: none; font-size: 15px; opacity: .9;
       }}
       .footer-links a:hover {{ opacity: 1; text-decoration: underline; }}
+
+      /* Make logos compact & consistent inside dataframes */
+      div[data-testid="stDataframe"] img {{
+        max-height: 22px !important;
+        width: auto !important;
+        object-fit: contain !important;
+      }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -257,19 +261,29 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# NEW: optional logos map for Top-10 tables
+# Logos map (thumbnail sized + specific fixes)
 @st.cache_data(show_spinner=False)
 def load_logos_map():
-    """Expect a small file 'logos.csv' in Analysis 1 with columns: ticker,logo_url"""
+    """Expect 'logos.csv' with columns: ticker,logo_url. Append ?size=26 for neat thumbnails."""
     try:
-        df = load_csv(1, "logos.csv")
-        df = df.dropna(subset=["ticker", "logo_url"])
+        df = load_csv(1, "logos.csv").dropna(subset=["ticker", "logo_url"]).copy()
         df["ticker"] = df["ticker"].astype(str).str.upper().str.strip()
+
+        def with_size(u):
+            u = str(u).strip()
+            return u if "?" in u else f"{u}?size=26"
+
+        df["logo_url"] = df["logo_url"].apply(with_size)
+
+        # Specific nits
+        df.loc[df["ticker"].isin(["BRKB","BRK.B"]), "logo_url"] = "https://logo.clearbit.com/berkshirehathaway.com?size=26"
+        df.loc[df["ticker"].isin(["GOOG","GOOGL"]), "logo_url"] = "https://logo.clearbit.com/google.com?size=26"
+
         return dict(zip(df["ticker"], df["logo_url"]))
     except Exception:
         return {}
 
-# ========================
+# =========================
 # HEADER
 # =========================
 st.markdown(
@@ -286,7 +300,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# KPI helper (now supports tinted variants)
+# KPI helper (tinted variants)
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","primary":"kpi-primary","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
@@ -307,6 +321,19 @@ def usd_fmt(x):
         if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
     except: return "-"
+
+# Alphabet class-name fix for tables only
+ALPHABET_NAME_BY_TICKER = {
+    "GOOG":  "ALPHABET INC CLASS C",
+    "GOOGL": "ALPHABET INC CLASS A",
+}
+def apply_class_names(df):
+    if {"Ticker","Holding"}.issubset(df.columns):
+        df["Holding"] = df.apply(
+            lambda r: ALPHABET_NAME_BY_TICKER.get(str(r["Ticker"]).upper(), r["Holding"]),
+            axis=1
+        )
+    return df
 
 divider()
 
@@ -359,7 +386,7 @@ if mode == "Dashboard":
         # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition (title only)
+        # 1) Composition
         with c1:
             st.markdown(
                 """<div class="chart-head">
@@ -397,7 +424,7 @@ if mode == "Dashboard":
             else:
                 st.warning("composition columns missing in context_summary_2025.csv")
 
-        # 2) By-screen bars — include Clean200 + CSS tooltip note
+        # 2) By-screen bars
         with c2:
             st.markdown(
                 """<div class="chart-head">
@@ -442,7 +469,7 @@ if mode == "Dashboard":
 
             st.altair_chart(chart2, use_container_width=True)
 
-        # Top 10 tables (now with optional Logo column)
+        # Top 10 tables (with Logo column + Alphabet class names)
         logos = load_logos_map()
         s1, s2 = st.columns([0.5, 0.5])
 
@@ -456,9 +483,9 @@ if mode == "Dashboard":
                     "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
                     "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                cont_disp = apply_class_names(cont_disp)
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                # Insert Logo column if mapping exists
                 if "Ticker" in cont_disp.columns and logos:
                     cont_disp.insert(1, "Logo", cont_disp["Ticker"].astype(str).str.upper().map(logos))
                     st.dataframe(
@@ -483,6 +510,7 @@ if mode == "Dashboard":
                     "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
                     "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                clean_disp = apply_class_names(clean_disp)
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 if "Ticker" in clean_disp.columns and logos:
