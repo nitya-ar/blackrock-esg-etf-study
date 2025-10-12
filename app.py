@@ -250,10 +250,7 @@ st.markdown(
         BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
       </h2>
       <div class="blx-muted" style="max-width:1400px;">
-        Study of 20 BlackRock ESG-labelled ETFs. One 2025 ESG map (Clean200 plus controversial screens) is applied consistently
-        to every fund and every year. The dashboard shows three things: (1) a 2025 snapshot of how ETF dollars are split across
-        Clean, Controversial, and Other; (2) how those exposures changed from 2017 to 2025; and (3) a tradeoff experiment that
-        pushes the portfolios cleaner and reports the cost in tracking error, active share, and diversification relative to the benchmark.
+        This project analyzes 20 BlackRock ESG-labelled ETFs to examine how their holdings align with key ESG themes from 2017 to 2025. Using a unified 2025 ESG classification map that combines the Clean200 and five controversial screens covering fossil fuels, weapons, tobacco, prisons, and deforestation, each fund’s holdings were classified and compared over time. The dashboard presents three perspectives: a 2025 Overview of current exposures, Change since 2017 showing how those exposures evolved, and Tradeoff Scenarios that simulate cleaner portfolio versions to explore the balance between ESG alignment and performance.
       </div>
     </div>
     """,
@@ -299,7 +296,7 @@ divider()
 # BODY
 # =========================
 if mode == "Dashboard":
-    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Lab"])
+    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
     # ---------- 2025 OVERVIEW ----------
     with tab1:
