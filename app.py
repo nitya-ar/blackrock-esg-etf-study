@@ -30,9 +30,23 @@ COLORS = {
     "text": "#E7EBF0",
     "muted": "#97A2B0",
     "primary": "#00A3FF",
-    "clean": "#0E8F66",
-    "contro": "#C63C41",
-    "other": "#768397",
+    "clean": "#0E8F66",   # darker emerald
+    "contro": "#C63C41",  # darker red
+    "other": "#768397",   # blue-grey
+}
+
+# Helper: hex -> rgba string (for subtle shading)
+def hex_to_rgba(hex_color: str, alpha: float = 0.9) -> str:
+    hex_color = hex_color.lstrip("#")
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+RGBA = {
+    "clean": hex_to_rgba(COLORS["clean"], 0.88),
+    "contro": hex_to_rgba(COLORS["contro"], 0.88),
+    "other": hex_to_rgba(COLORS["other"], 0.88),
 }
 
 # =========================
@@ -50,9 +64,6 @@ st.markdown(
         --text: {COLORS['text']};
         --muted: {COLORS['muted']};
         --primary: {COLORS['primary']};
-        --clean: {COLORS['clean']};
-        --contro: {COLORS['contro']};
-        --other: {COLORS['other']};
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
@@ -62,12 +73,12 @@ st.markdown(
       }}
 
       h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
-      .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
-      .blx-muted {{ color: var(--muted); }}
+      .blx-divider {{ border-top: 1px solid {COLORS['border']}; margin: 10px 0 24px 0; }}
+      .blx-muted {{ color: {COLORS['muted']}; }}
 
       .blx-card {{
         background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
-        border: 1px solid var(--border);
+        border: 1px solid {COLORS['border']};
         border-radius: 14px;
         padding: 14px 16px;
       }}
@@ -75,15 +86,14 @@ st.markdown(
       /* KPI cards */
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
-        border: 1px solid var(--border);
+        border: 1px solid {COLORS['border']};
         border-radius: 16px;
         padding: 18px 20px;
         box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
       }}
-      .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
+      .kpi .label {{ font-size: 12px; color: {COLORS['muted']}; margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
-      /* KPI tone variants */
       .kpi.kpi-red {{
         background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0));
         border-color: rgba(198,60,65,0.45);
@@ -97,16 +107,15 @@ st.markdown(
         border-color: rgba(255,255,255,0.08);
       }}
 
-      /* Tabs underline */
       .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
-        border-color: var(--primary) !important;
+        border-color: {COLORS['primary']} !important;
       }}
 
-      /* Dataframe: header + rows */
+      /* Dataframe polish */
       div[data-testid="stDataframe"] thead tr th {{
         background: #0C0E13 !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
+        color: {COLORS['text']} !important;
+        border-bottom: 1px solid {COLORS['border']} !important;
       }}
       div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
       div[data-testid="stDataframe"] * {{
@@ -114,31 +123,26 @@ st.markdown(
         font-size: 13px !important;
       }}
 
-      /* Chart titles row + tooltip badge */
+      /* Chart titles + tooltip badge */
       .chart-head {{
         display:flex; align-items:center; justify-content:space-between;
         margin: 4px 2px 8px 2px;
       }}
-      .chart-title {{
-        font-weight: 600; color: var(--text); letter-spacing:.1px;
-      }}
+      .chart-title {{ font-weight: 600; color: {COLORS['text']}; letter-spacing:.1px; }}
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         height: 24px; min-width: 24px; border-radius: 14px;
-        border: 1px solid #2A2F36; color: #B6C0CC; font-weight: 700;
-        font-size: 12px; user-select:none; cursor: default;
-        background: #0B0D12; padding: 0 8px;
+        border: 1px solid #2A2F36; color: #B6C0CC; font-weight: 700; font-size: 12px;
+        user-select:none; cursor: default; background: #0B0D12; padding: 0 8px;
       }}
       .has-tip {{ position: relative; }}
       .has-tip::after {{
         content: attr(data-tip);
         position: absolute; right: 0; top: calc(100% + 8px);
-        background: #0B0D12; color: var(--text);
-        border: 1px solid var(--border);
-        padding: 6px 10px; border-radius: 8px;
-        white-space: nowrap; opacity: 0; transform: translateY(6px);
-        pointer-events: none; transition: opacity .15s ease, transform .15s ease;
-        box-shadow: 0 10px 24px rgba(0,0,0,.45); z-index: 9999;
+        background: #0B0D12; color: {COLORS['text']};
+        border: 1px solid {COLORS['border']};
+        padding: 6px 10px; border-radius: 8px; white-space: nowrap; opacity: 0; transform: translateY(6px);
+        pointer-events: none; transition: opacity .15s ease, transform .15s ease; box-shadow: 0 10px 24px rgba(0,0,0,.45); z-index: 9999;
       }}
       .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
 
@@ -238,25 +242,65 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# Logos map
+# Logos map: robust column picker
 @st.cache_data(show_spinner=False)
 def load_logos_map():
-    """Expect 'logos.csv' with columns: ticker,logo_url. Append ?size=26 for neat thumbnails."""
+    """
+    Expect 'logos.csv' with columns like:
+    - ticker, logo_url  (preferred)
+    - or: ticker, logo / url / image_url / image / Logo URL (case-insensitive)
+    """
     try:
-        df = load_csv(1, "logos.csv").dropna(subset=["ticker", "logo_url"]).copy()
-        df["ticker"] = df["ticker"].astype(str).str.upper().str.strip()
+        df = load_csv(1, "logos.csv").copy()
+        # Find ticker column (case-insensitive exact match preferred)
+        cols = {c.lower().strip(): c for c in df.columns}
+        ticker_col = cols.get("ticker")
+        if not ticker_col:
+            # try a couple variants
+            for k in ["symbol", "tkr"]:
+                if k in cols: ticker_col = cols[k]; break
+        if not ticker_col:
+            return {}
 
+        # Find a URL column
+        url_candidates = ["logo_url", "logo", "url", "image_url", "image", "logourl", "logo url"]
+        url_col = None
+        for key in url_candidates:
+            if key in cols:
+                url_col = cols[key]
+                break
+        if not url_col:
+            # Try to guess any column that looks like URL
+            for c in df.columns:
+                sample = str(df[c].dropna().astype(str).head(1).tolist()[0] if df[c].notna().any() else "").lower()
+                if sample.startswith("http"):
+                    url_col = c
+                    break
+        if not url_col:
+            return {}
+
+        df = df[[ticker_col, url_col]].dropna()
+        df[ticker_col] = df[ticker_col].astype(str).str.upper().str.strip()
+        df[url_col] = df[url_col].astype(str).str.strip()
+
+        # Normalize thumbnail size if none specified
         def with_size(u):
-            u = str(u).strip()
-            return u if "?" in u else f"{u}?size=26"
+            if "?" in u or "&" in u:
+                return u
+            return f"{u}?size=26"
+        df[url_col] = df[url_col].apply(with_size)
 
-        df["logo_url"] = df["logo_url"].apply(with_size)
+        # Specific nits / overrides
+        # Berkshire: keep compact favicon-sized
+        mask_brk = df[ticker_col].isin(["BRKB", "BRK.B"])
+        if mask_brk.any():
+            df.loc[mask_brk, url_col] = "https://logo.clearbit.com/berkshirehathaway.com?size=26"
+        # Alphabet: use google favicon
+        mask_goog = df[ticker_col].isin(["GOOG", "GOOGL"])
+        if mask_goog.any():
+            df.loc[mask_goog, url_col] = "https://logo.clearbit.com/google.com?size=26"
 
-        # Specific nits
-        df.loc[df["ticker"].isin(["BRKB","BRK.B"]), "logo_url"] = "https://logo.clearbit.com/berkshirehathaway.com?size=26"
-        df.loc[df["ticker"].isin(["GOOG","GOOGL"]), "logo_url"] = "https://logo.clearbit.com/google.com?size=26"
-
-        return dict(zip(df["ticker"], df["logo_url"]))
+        return dict(zip(df[ticker_col], df[url_col]))
     except Exception:
         return {}
 
@@ -350,7 +394,7 @@ if mode == "Dashboard":
         # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition
+        # 1) Composition — subtle shading + soft stroke
         with c1:
             st.markdown(
                 """<div class="chart-head">
@@ -371,10 +415,10 @@ if mode == "Dashboard":
 
                 color_scale = alt.Scale(
                     domain=["Clean","Controversial","Other"],
-                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+                    range=[RGBA["clean"], RGBA["contro"], RGBA["other"]]
                 )
 
-                chart = alt.Chart(comp).mark_bar().encode(
+                chart = alt.Chart(comp).mark_bar(stroke="#0A0B0D", strokeWidth=1).encode(
                     x=alt.X("sum(share):Q", stack="normalize",
                             axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
                     y=alt.Y("o:O", title=None, axis=None),
@@ -388,7 +432,7 @@ if mode == "Dashboard":
             else:
                 st.warning("composition columns missing in context_summary_2025.csv")
 
-        # 2) By-screen bars
+        # 2) By-screen bars — subtle shading + soft stroke
         with c2:
             st.markdown(
                 """<div class="chart-head">
@@ -418,15 +462,15 @@ if mode == "Dashboard":
             scr_all = pd.concat(parts, ignore_index=True)
             scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
             scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
-            scr_all["color"] = scr_all["screen_category"].apply(
-                lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
+            scr_all["rgba"] = scr_all["screen_category"].apply(
+                lambda x: RGBA["clean"] if str(x).strip().lower()=="clean200" else RGBA["contro"]
             )
 
-            chart2 = alt.Chart(scr_all).mark_bar().encode(
+            chart2 = alt.Chart(scr_all).mark_bar(stroke="#0A0B0D", strokeWidth=0.8).encode(
                 x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)",
                         axis=alt.Axis(format=".1f")),
                 y=alt.Y("screen_category:N", sort="-x", title=None),
-                color=alt.Color("color:N", legend=None, scale=None),
+                color=alt.Color("rgba:N", legend=None, scale=None),
                 tooltip=[alt.Tooltip("screen_category:N", title="Category"),
                          alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
             ).properties(height=240)
@@ -605,7 +649,7 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 # =========================
 # FOOTER
 # =========================
-gap(28)
+gap(28)   # push footer down a bit
 divider()
 st.markdown(
     """
