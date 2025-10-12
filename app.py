@@ -586,7 +586,7 @@ st.markdown(
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
       }
       .footer-links a {
-        color: var(--border) !important;        /* no blue */
+        color: var(--primary) !important;        /* no blue */
         text-decoration: none;
         font-size: 15px;                      /* slightly larger */
         font-weight: 500;                     /* not bold by default */
