@@ -588,7 +588,7 @@ st.markdown(
       .footer-links a {
         color: var(--text) !important;        /* no blue */
         text-decoration: none;
-        font-size: 16px;                      /* slightly larger */
+        font-size: 14px;                      /* slightly larger */
         font-weight: 500;                     /* not bold by default */
         opacity: .9;
       }
