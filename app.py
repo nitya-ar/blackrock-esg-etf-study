@@ -1,15 +1,20 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-# Layout locked as agreed. Fixes FileNotFound by loading CSVs from GitHub raw URLs.
+# Layout locked. Loads CSVs from local path → public GitHub raw → private GitHub API (with token).
+# No emojis. Title + description full-width. Dashboard/Report switch below description.
 
 import os
 import re
 import urllib.parse
+from io import StringIO
+
+import requests
 import pandas as pd
 import streamlit as st
 
-# --------------------------------
+
+# =========================
 # CONFIG
-# --------------------------------
+# =========================
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
     page_icon=None,
@@ -17,18 +22,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# GitHub repo config (change if your branch/repo/path changes)
-GITHUB_USER_REPO = os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study")
-GITHUB_BRANCH    = os.getenv("ESG_BRANCH", "main")
-DASH_BASE_PATH   = os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard")  # shared base
-ANALYSIS_DIRS = {
-    1: "Analysis 1",
-    2: "Analysis 2",
-    3: "Analysis 3",
-}
+# Repo / path settings (override via Streamlit Secrets or environment if needed)
+GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
+GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
+DASH_BASE_PATH   = st.secrets.get("ESG_DASH_PATH", os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard"))
+LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", ""))  # e.g., "/Users/you/.../Data/Data for Dashboard"
+GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))      # optional for private repos
 
-# Optional local base (leave empty on Streamlit Cloud)
-LOCAL_BASE = os.getenv("ESG_LOCAL_BASE", "")  # e.g., "/Users/you/…/Data/Data for Dashboard"
+ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
 COLORS = {
     "bg": "#0A0B0D",
@@ -43,9 +44,10 @@ COLORS = {
     "focus": "#1F6FEB",
 }
 
-# --------------------------------
+
+# =========================
 # STYLES
-# --------------------------------
+# =========================
 st.markdown(
     f"""
     <style>
@@ -80,43 +82,127 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-# --------------------------------
-# DATA LOADER (local -> GitHub fallback)
-# --------------------------------
+
+# =========================
+# DATA LOADER
+# =========================
 def _url_join(*parts: str) -> str:
-    # join path parts and url-encode spaces etc.
+    """Join path parts and URL-encode safely (keeps slashes)."""
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
 
-def github_raw_url(analysis:int, filename:str) -> str:
+def github_raw_url(analysis: int, filename: str) -> str:
     rel = _url_join(DASH_BASE_PATH, ANALYSIS_DIRS[analysis], filename)
     return f"https://raw.githubusercontent.com/{GITHUB_USER_REPO}/{GITHUB_BRANCH}/{rel}"
 
-def local_path(analysis:int, filename:str) -> str:
+def github_api_url(analysis: int, filename: str) -> str:
+    # GitHub Contents API (works for private repos with token)
+    rel = _url_join(DASH_BASE_PATH, ANALYSIS_DIRS[analysis], filename)
+    return f"https://api.github.com/repos/{GITHUB_USER_REPO}/contents/{rel}?ref={GITHUB_BRANCH}"
+
+def local_path(analysis: int, filename: str) -> str:
     if not LOCAL_BASE:
         return ""
     return os.path.join(LOCAL_BASE, ANALYSIS_DIRS[analysis], filename)
 
 @st.cache_data(show_spinner=False)
-def load_csv(analysis:int, filename:str) -> pd.DataFrame:
+def load_csv(analysis: int, filename: str) -> pd.DataFrame:
     """
-    Attempts:
-    1) LOCAL_BASE/Data/Data for Dashboard/Analysis X/filename (if LOCAL_BASE set)
-    2) GitHub raw URL for repo/branch/path
+    Load CSV with 3-step fallback:
+    1) Local path (if LOCAL_BASE set)
+    2) Public GitHub raw URL
+    3) Private GitHub Contents API (needs token)
     """
+    # 1) Local
     lp = local_path(analysis, filename)
     if lp and os.path.exists(lp):
         return pd.read_csv(lp)
 
-    url = github_raw_url(analysis, filename)
-    return pd.read_csv(url)
+    # 2) Public raw
+    raw_url = github_raw_url(analysis, filename)
+    try:
+        return pd.read_csv(raw_url)
+    except Exception as e_raw:
+        # 3) Private Contents API
+        api_url = github_api_url(analysis, filename)
+        headers = {"Accept": "application/vnd.github.v3.raw"}
+        if GITHUB_TOKEN:
+            headers["Authorization"] = f"token {GITHUB_TOKEN}"
+        try:
+            r = requests.get(api_url, headers=headers, timeout=25)
+            r.raise_for_status()
+            return pd.read_csv(StringIO(r.text))
+        except Exception as e_api:
+            raise FileNotFoundError(
+                f"Failed to load {filename}. Tried:\n"
+                f"- Local: {lp or '(not set)'}\n"
+                f"- Public: {raw_url}\n"
+                f"- Private API: {api_url}\n"
+                f"Last errors: raw={e_raw}; api={e_api}"
+            )
 
-# --------------------------------
-# HEADER (full width; no "As of")
-# --------------------------------
+
+# Convenience wrappers for Analysis 1 (2025 Overview)
+@st.cache_data(show_spinner=False)
+def load_context_summary():
+    return load_csv(1, "context_summary_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_by_screen():
+    return load_csv(1, "context_breakdown_by_screen.csv")
+
+@st.cache_data(show_spinner=False)
+def load_spotlight():
+    return load_csv(1, "top_holdings_spotlight.csv")
+
+@st.cache_data(show_spinner=False)
+def load_explorer():
+    df = load_csv(1, "holdings_explorer_2025.csv")
+    # Normalize fields
+    for col in ["classification", "sector", "region", "screen_categories"]:
+        if col in df.columns:
+            df[col] = df[col].fillna("")
+    # Build screen tags
+    tags = set()
+    if "screen_categories" in df.columns:
+        df["screen_categories_norm"] = (
+            df["screen_categories"]
+            .astype(str)
+            .str.split(r"\s*\|\s*")
+            .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
+        )
+        for xs in df["screen_categories_norm"]:
+            tags.update(xs)
+    else:
+        df["screen_categories_norm"] = [[] for _ in range(len(df))]
+    tag_list = sorted([t for t in tags if t])
+
+    # Rename for display
+    rename_map = {
+        "etf_ticker": "ETF",
+        "etf_name": "ETF Name",
+        "ticker": "Ticker",
+        "holding_name": "Holding",
+        "sector": "Sector",
+        "region": "Region",
+        "classification": "Class",
+        "screen_categories": "Screens",
+        "weight_pct_in_etf": "Weight % in ETF",
+        "aum_usd": "ETF AUM (USD)",
+        "weight_usd_in_agg": "$ Contribution (Agg)",
+        "as_of_date": "As-of",
+    }
+    df_disp = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+    return df, df_disp, tag_list
+
+
+# =========================
+# HEADER (full-width)
+# =========================
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -136,9 +222,9 @@ st.markdown(
 
 divider()
 
-# --------------------------------
-# VIEW SWITCH (below description, before tabs)
-# --------------------------------
+# =========================
+# VIEW SWITCH (below description)
+# =========================
 mode = st.segmented_control(
     "View",
     options=["Dashboard", "Report"],
@@ -149,64 +235,10 @@ mode = st.segmented_control(
 
 divider()
 
-# --------------------------------
-# 2025 OVERVIEW — CHART/TABLE HELPERS
-# --------------------------------
-@st.cache_data(show_spinner=False)
-def load_context_summary():
-    # Analysis 1 files
-    return load_csv(1, "context_summary_2025.csv")
 
-@st.cache_data(show_spinner=False)
-def load_by_screen():
-    return load_csv(1, "context_breakdown_by_screen.csv")
-
-@st.cache_data(show_spinner=False)
-def load_spotlight():
-    return load_csv(1, "top_holdings_spotlight.csv")
-
-@st.cache_data(show_spinner=False)
-def load_explorer():
-    df = load_csv(1, "holdings_explorer_2025.csv")
-    # normalize helpful fields
-    for col in ["classification","sector","region","screen_categories"]:
-        if col in df.columns:
-            df[col] = df[col].fillna("")
-    # build normalized tag list
-    tags = set()
-    if "screen_categories" in df.columns:
-        df["screen_categories_norm"] = (
-            df["screen_categories"]
-            .astype(str)
-            .str.split(r"\s*\|\s*")
-            .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
-        )
-        for xs in df["screen_categories_norm"]:
-            tags.update(xs)
-    else:
-        df["screen_categories_norm"] = [[] for _ in range(len(df))]
-    tag_list = sorted([t for t in tags if t])
-
-    rename_map = {
-        "etf_ticker":"ETF",
-        "etf_name":"ETF Name",
-        "ticker":"Ticker",
-        "holding_name":"Holding",
-        "sector":"Sector",
-        "region":"Region",
-        "classification":"Class",
-        "screen_categories":"Screens",
-        "weight_pct_in_etf":"Weight % in ETF",
-        "aum_usd":"ETF AUM (USD)",
-        "weight_usd_in_agg":"$ Contribution (Agg)",
-        "as_of_date":"As-of",
-    }
-    df_disp = df.rename(columns={k:v for k,v in rename_map.items() if k in df.columns})
-    return df, df_disp, tag_list
-
-# --------------------------------
+# =========================
 # BODY
-# --------------------------------
+# =========================
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Lab"])
 
@@ -215,36 +247,37 @@ if mode == "Dashboard":
         st.subheader("2025 Overview")
         st.caption("Today’s composition and the names/screens that drive it.")
 
-        # 1) Composition (placeholder card; wire Plotly/Altair later)
         c1, c2 = st.columns([0.5, 0.5])
+
+        # 1) Composition
         with c1:
             try:
                 ctx = load_context_summary()
-                st.markdown('<div class="blx-card">100% stacked bar — 2025 composition (from context_summary_2025.csv)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="blx-card">100% stacked bar — 2025 composition (context_summary_2025.csv)</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Could not load context_summary_2025.csv: {e}")
+
             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
 
             # 2) By-screen bars
             try:
                 scr = load_by_screen()
-                st.markdown('<div class="blx-card">By-screen bars — Fossil, Weapons, Tobacco, Prisons, Deforestation (from context_breakdown_by_screen.csv)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="blx-card">By-screen bars — Fossil, Weapons, Tobacco, Prisons, Deforestation (context_breakdown_by_screen.csv)</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Could not load context_breakdown_by_screen.csv: {e}")
 
+        # 3–4) Spotlights
         with c2:
-            # 3) Spotlight — Controversial
             try:
                 spot = load_spotlight()
-                st.markdown('<div class="blx-card">Spotlight — Top 10 Controversial (from top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="blx-card">Spotlight — Top 10 Controversial (top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"Could not load top_holdings_spotlight.csv: {e}")
+
             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
+            st.markdown('<div class="blx-card">Spotlight — Top 10 Clean (top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
 
-            # 4) Spotlight — Clean
-            st.markdown('<div class="blx-card">Spotlight — Top 10 Clean (from top_holdings_spotlight.csv)</div>', unsafe_allow_html=True)
-
-        # 5) Holdings Explorer (real filterable table)
+        # 5) Holdings Explorer — filters + table
         st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
         st.markdown('<div class="blx-card">Holdings Explorer — filterable ETF × holding table</div>', unsafe_allow_html=True)
 
@@ -258,7 +291,7 @@ if mode == "Dashboard":
                 sel_etfs = st.multiselect("ETF", etfs, placeholder="All")
 
             with fc2:
-                classes = ["Clean","Controversial","Other"]
+                classes = ["Clean", "Controversial", "Other"]
                 sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
 
             with fc3:
@@ -298,24 +331,19 @@ if mode == "Dashboard":
                     mask &= qmask
 
             df_f = df_disp.loc[mask].copy()
-            sort_cols = [c for c in ["$ Contribution (Agg)", "Weight % in ETF", "Class","ETF","Sector","Region","Ticker"] if c in df_f.columns]
-            default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
+            default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else (
+                "Weight % in ETF" if "Weight % in ETF" in df_f.columns else None
+            )
             if default_sort:
                 df_f = df_f.sort_values(by=default_sort, ascending=False)
 
             show_all = st.toggle("Show all rows", value=False, help="Turn off to preview the first 500 rows for speed.")
             df_view = df_f if show_all else df_f.head(500)
 
-            # number formatting
-            fmt = {
-                "Weight % in ETF": "{:.2f}",
-                "ETF AUM (USD)": "{:,.0f}",
-                "$ Contribution (Agg)": "{:,.0f}",
-            }
-            for c,f in fmt.items():
+            # Formatting
+            for c in ("Weight % in ETF", "ETF AUM (USD)", "$ Contribution (Agg)"):
                 if c in df_view.columns:
-                    try: df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-                    except: pass
+                    df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
 
             st.dataframe(df_view, use_container_width=True, hide_index=True)
 
@@ -333,7 +361,6 @@ if mode == "Dashboard":
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures moved over time, by fund and in aggregate.")
-        # placeholders (you said keep layout; we’ll wire charts next)
         c1, c2 = st.columns([0.5, 0.5])
         with c1:
             st.markdown('<div class="blx-card">Trend — % Clean over time (EW/AUM)</div>', unsafe_allow_html=True)
@@ -376,9 +403,10 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
         """
     )
 
-# --------------------------------
+
+# =========================
 # FOOTER
-# --------------------------------
+# =========================
 divider()
 f1, f2, f3, f4 = st.columns([0.5, 0.16, 0.16, 0.18])
 with f1:
