@@ -88,6 +88,7 @@ st.markdown(
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
+      /* KPI tone variants (subtle tinted gradients) */
       .kpi.kpi-red {{
         background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0));
         border-color: rgba(198,60,65,0.45);
@@ -101,10 +102,12 @@ st.markdown(
         border-color: rgba(255,255,255,0.08);
       }}
 
+      /* Tabs underline */
       .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
         border-color: var(--primary) !important;
       }}
 
+      /* Dataframe: denser rows, darker header */
       div[data-testid="stDataframe"] thead tr th {{
         background: #0C0E13 !important;
         color: var(--text) !important;
@@ -116,8 +119,14 @@ st.markdown(
         font-size: 13px !important;
       }}
 
-      .chart-head {{ display:flex; align-items:center; justify-content:space-between; margin: 4px 2px 8px 2px; }}
-      .chart-title {{ font-weight: 600; color: var(--text); letter-spacing:.1px; }}
+      /* Chart titles row + tooltip badge */
+      .chart-head {{
+        display:flex; align-items:center; justify-content:space-between;
+        margin: 4px 2px 8px 2px;
+      }}
+      .chart-title {{
+        font-weight: 600; color: var(--text); letter-spacing:.1px;
+      }}
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         height: 24px; min-width: 24px; border-radius: 14px;
@@ -125,6 +134,7 @@ st.markdown(
         font-size: 12px; user-select:none; cursor: default;
         background: #0B0D12; padding: 0 8px;
       }}
+      /* pure CSS tooltip */
       .has-tip {{ position: relative; }}
       .has-tip::after {{
         content: attr(data-tip);
@@ -138,10 +148,18 @@ st.markdown(
       }}
       .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
 
-      .footer-wrap {{ display:flex; align-items:center; justify-content:space-between; width:100%; }}
+      /* Footer: right-aligned blue bold links */
+      .footer-wrap {{
+        display:flex; align-items:center; justify-content:space-between; width:100%;
+      }}
       .footer-left {{ color: var(--muted); font-size: 13px; }}
       .footer-links {{ display:flex; gap:24px; align-items:center; justify-content:flex-end; width:100%; }}
-      .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
+      .footer-links a {{
+        color: #4DA3FF !important;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 700;
+      }}
       .footer-links a:hover {{ text-decoration: underline; }}
     </style>
     """,
@@ -233,19 +251,19 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# Analysis 2 loaders
+# -------- Analysis 2 loaders (NEW, minimal) --------
 @st.cache_data(show_spinner=False)
-def load_exposures_by_fund_year():      return load_csv(2, "exposures_by_fund_year.csv")
+def load_exposures_by_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
 @st.cache_data(show_spinner=False)
-def load_agg_trends():                   return load_csv(2, "aggregate_exposure_trends.csv")
+def load_aggregate_trends():         return load_csv(2, "aggregate_exposure_trends.csv")
 @st.cache_data(show_spinner=False)
-def load_dispersion():                   return load_csv(2, "exposure_dispersion_stats.csv")
+def load_dispersion_stats():         return load_csv(2, "exposure_dispersion_stats.csv")
 @st.cache_data(show_spinner=False)
-def load_year_compare():                 return load_csv(2, "year_compare_summary.csv")
+def load_screen_trends():            return load_csv(2, "aggregate_screen_trends.csv")
 @st.cache_data(show_spinner=False)
-def load_movers():                       return load_csv(2, "movers_by_yearpair.csv")
+def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
 @st.cache_data(show_spinner=False)
-def load_screen_trends():                return load_csv(2, "aggregate_screen_trends.csv")
+def load_movers_by_yearpair():       return load_csv(2, "movers_by_yearpair.csv")
 
 # =========================
 # HEADER
@@ -451,6 +469,7 @@ if mode == "Dashboard":
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
+        # --- Holdings Explorer (always show all rows) ---
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
 
@@ -509,297 +528,373 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-    # ---------- CHANGE SINCE 2017 (REBUILT, ONE SCREEN) ----------
+    # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
-        st.caption("How today’s classification views past portfolios: who got cleaner, who didn’t, and why. (MV = total market value; not official AUM)")
+        st.caption("How exposures moved over time, by fund and in aggregate. Note: some ETFs launched after 2017; early years may be blank.")
 
+        # ---------- Load data
         exp_fy  = load_exposures_by_fund_year()
-        movers  = load_movers()
+        agg_tr  = load_aggregate_trends()
+        disp    = load_dispersion_stats()
         scr_tr  = load_screen_trends()
+        yearcmp = load_year_compare()
+        _mby    = load_movers_by_yearpair()
 
-        # ---- robust column resolver ----
-        def pick(df: pd.DataFrame, *cands):
-            cols = list(df.columns)
-            lower = {c.lower(): c for c in cols}
-            for cand in cands:
-                if cand in cols: return cand
-                if cand.lower() in lower: return lower[cand.lower()]
-            def norm(s): return "".join(ch for ch in s.lower() if ch.isalnum())
-            norm_map = {norm(c): c for c in cols}
-            for cand in cands:
-                n = norm(cand)
-                if n in norm_map: return norm_map[n]
-            for cand in cands:
-                key = cand.lower()
-                for c in cols:
-                    if key in c.lower(): return c
+        # ---------- Column detection helpers (robust to naming)
+        def col_like(df, *keys):
+            keys = [k.lower() for k in keys]
+            for c in df.columns:
+                cl = c.lower()
+                if any(k in cl for k in keys):
+                    return c
             return None
 
-        # Canonical columns
-        c_etf  = pick(exp_fy, "ETF_Ticker","ETF","Fund","etf","fund_ticker")
-        c_year = pick(exp_fy, "Year","year","report_year")
-        c_pc   = pick(exp_fy, "pct_clean","clean_pct","pct_clean_pct","clean")
-        c_pv   = pick(exp_fy, "pct_controversial","contro_pct","pct_contro","controversial")
-        c_mv   = pick(exp_fy, "market_total_value_usd","total_market_value_usd","aum_proxy_usd","total_mv_usd")
+        col_year = col_like(exp_fy, "year")
+        col_view = col_like(exp_fy, "view")
+        col_etf  = col_like(exp_fy, "etf_ticker","etf","fund")
+        col_name = col_like(exp_fy, "etf_name","name")
 
-        need = [("ETF",c_etf),("Year",c_year),("%Clean",c_pc),("%Contro",c_pv)]
-        missing = [k for k,v in need if v is None]
-        if missing:
-            st.error(f"Missing expected columns in exposures_by_fund_year.csv: {', '.join(missing)}")
-            st.stop()
+        # metric columns
+        m_clean  = col_like(exp_fy, "clean")
+        m_contro = col_like(exp_fy, "contro")
+        m_other  = col_like(exp_fy, "other")
 
-        # ---- presets for "Fund set" ----
-        all_etfs = sorted(exp_fy[c_etf].dropna().unique().tolist())
-        presets = {
-            "All funds": all_etfs,
-            "Broad ESG (ESGU/ESGD/SUSA)": [t for t in ["ESGU","ESGD","SUSA"] if t in all_etfs],
-            "Climate/Clean (ICLN/CRBN/SDG)": [t for t in ["ICLN","CRBN","SDG"] if t in all_etfs],
-            "Ex-US (DMXF/USXF)": [t for t in ["DMXF","USXF"] if t in all_etfs],
-            "Small/Mid (ESML)": [t for t in ["ESML"] if t in all_etfs],
-            "Custom…": all_etfs,  # default list; UI below will refine
-        }
+        # normalize
+        exp_fy = exp_fy.rename(columns={
+            col_year:"year", col_view:"view", col_etf:"etf_ticker", col_name:"etf_name",
+            m_clean:"pct_clean", m_contro:"pct_controversial", m_other:"pct_other"
+        })
+        for c in ["pct_clean","pct_controversial","pct_other"]:
+            if c in exp_fy.columns:
+                exp_fy[c] = pd.to_numeric(exp_fy[c], errors="coerce")
 
-        # ---- Top control bar (compact) ----
-        cA, cB, cC, cD = st.columns([0.36, 0.16, 0.24, 0.24])
-        with cA:
-            preset = st.selectbox("Fund set", list(presets.keys()), index=0)
-        with cB:
-            weighting = st.segmented_control("Weighting", ["EW","MV"], default="EW",
-                                             help="EW: equal-weight funds; MV: weight by each fund’s total market value")
-        years = sorted(exp_fy[c_year].dropna().unique().tolist())
-        y_min, y_max = (min(years), max(years)) if years else (2017, 2025)
-        with cC:
-            year_a = st.selectbox("Year A", years, index=years.index(y_min) if years else 0)
-        with cD:
-            year_b = st.selectbox("Year B", years, index=years.index(y_max) if years else 0)
+        # years range respecting launches
+        year_min = int(pd.to_numeric(exp_fy["year"], errors="coerce").min())
+        year_max = int(pd.to_numeric(exp_fy["year"], errors="coerce").max())
 
-        # Custom picker only if needed
-        sel_etf = presets[preset]
-        if preset == "Custom…":
-            sel_etf = st.multiselect("Choose ETFs (custom)", all_etfs, default=all_etfs)
+        # ---------- Controls row
+        cc1, cc2, cc3, cc4, cc5 = st.columns([0.28, 0.16, 0.2, 0.24, 0.12])
+        with cc1:
+            all_etfs = exp_fy[["etf_ticker","etf_name"]].drop_duplicates().sort_values("etf_ticker")
+            sel_etfs = st.multiselect(
+                "ETF(s)",
+                options=all_etfs["etf_ticker"].tolist(),
+                default=[],
+                help="Leave empty for All funds"
+            )
+        with cc2:
+            sel_view = st.selectbox("View", options=["AUM-weighted","Equal-weighted"], index=0)
+        with cc3:
+            metric_opts = {"% Controversial":"pct_controversial", "% Clean":"pct_clean", "% Other":"pct_other"}
+            sel_metric_label = st.selectbox("Metric", options=list(metric_opts.keys()), index=0)
+            sel_metric = metric_opts[sel_metric_label]
+        with cc4:
+            sel_years = st.slider("Years", min_value=year_min, max_value=year_max, value=(year_min, year_max))
+        with cc5:
+            show_disp = st.checkbox("Show dispersion", value=True, help="P10–P90 band (All funds only)")
 
-        # Filter
-        exp_sel = exp_fy[exp_fy[c_etf].isin(sel_etf)].copy()
+        # filter by view/years/etfs
+        view_key = "AUM" if "AUM" in sel_view else "EW"
+        dfv = exp_fy[exp_fy["view"].str.upper().str.contains(view_key)].copy()
+        dfv = dfv[(dfv["year"]>=sel_years[0]) & (dfv["year"]<=sel_years[1])]
 
-        # ---- helpers
-        def agg_series(df, col_pct):
-            if df.empty: 
-                return pd.DataFrame({c_year:[], "value":[]})
-            if weighting == "EW" or c_mv is None or c_mv not in df.columns:
-                s = df.groupby(c_year, as_index=False)[col_pct].mean()
-                s.rename(columns={col_pct:"value"}, inplace=True)
-            else:
-                w = df[[c_year, col_pct, c_mv]].dropna()
-                if w.empty:
-                    s = df.groupby(c_year, as_index=False)[col_pct].mean()
-                    s.rename(columns={col_pct:"value"}, inplace=True)
-                else:
-                    w["value"] = w[col_pct] * w[c_mv]
-                    s = w.groupby(c_year, as_index=False).agg(value=("value","sum"), mv=(c_mv,"sum"))
-                    s["value"] = s["value"]/s["mv"]
-            return s[[c_year,"value"]]
+        # helpers
+        def aggregate_series(df, col):
+            # If no ETF filter (All funds), prefer aggregate file
+            if not sel_etfs:
+                base = agg_tr.copy()
+                c_year = col_like(base, "year"); c_view = col_like(base, "view")
+                base = base.rename(columns={c_year:"year", c_view:"view"})
+                m = col_like(base, col.replace("pct_",""))
+                if m: base = base.rename(columns={m:col})
+                base = base[base["view"].str.upper().str.contains(view_key)]
+                return base[["year", col]].dropna()
+            # With ETF filter, average across selected ETFs (equal weight across ETFs)
+            d = df[(df["etf_ticker"].isin(sel_etfs))][["year", col]].groupby("year", as_index=False).mean()
+            return d
 
-        s_clean = agg_series(exp_sel, c_pc).rename(columns={"value":"clean"})
-        s_contr = agg_series(exp_sel, c_pv).rename(columns={"value":"contro"})
-        agg_now = s_clean.merge(s_contr, on=c_year, how="outer").fillna(0)
+        def kpi_vals(col):
+            s = aggregate_series(dfv, col)
+            if s.empty: return None, None, None
+            y0 = int(s["year"].min())
+            y1 = int(s["year"].max())
+            v0 = float(s.loc[s["year"]==y0, col].iloc[0])
+            v1 = float(s.loc[s["year"]==y1, col].iloc[0])
+            return v0, v1, v1 - v0
 
-        def val_at(df, y, col):
-            row = df.loc[df[c_year]==y]
-            return float(row[col].values[0]) if not row.empty else None
-
-        cA_val, cB_val = val_at(agg_now, year_a, "clean"), val_at(agg_now, year_b, "clean")
-        vA_val, vB_val = val_at(agg_now, year_a, "contro"), val_at(agg_now, year_b, "contro")
-
-        # Total MV change (only when MV)
-        mv_delta_text = "-"
-        if weighting == "MV" and c_mv in exp_sel.columns:
-            mv_by_year = exp_sel.groupby(c_year, as_index=False)[c_mv].sum()
-            mvA = float(mv_by_year.loc[mv_by_year[c_year]==year_a, c_mv].sum()) if not mv_by_year.empty else None
-            mvB = float(mv_by_year.loc[mv_by_year[c_year]==year_b, c_mv].sum()) if not mv_by_year.empty else None
-            if mvA is not None and mvB is not None:
-                mv_delta_text = usd_fmt(mvB - mvA)
-
-        # ---- Row 1: Headline + Trend (ribbon)
-        k1,k2,k3,k4 = st.columns([0.17,0.17,0.17,0.49])
-        with k1:
-            delta_clean = None if (cA_val is None or cB_val is None) else (cB_val - cA_val)
-            tone = "green" if (delta_clean or 0) >= 0 else "red"
-            kpi_card("Δ % Clean", pct_fmt(delta_clean) if delta_clean is not None else "-", tone=tone)
-        with k2:
-            delta_contro = None if (vA_val is None or vB_val is None) else (vB_val - vA_val)
-            tone = "red" if (delta_contro or 0) > 0 else "green"
-            kpi_card("Δ % Controversial", pct_fmt(delta_contro) if delta_contro is not None else "-", tone=tone)
-        with k3:
-            net_shift = None if (delta_clean is None or delta_contro is None) else (delta_clean - delta_contro)
-            tone = "green" if (net_shift or 0) >= 0 else "red"
-            kpi_card("Net shift (Clean−Contro)", pct_fmt(net_shift) if net_shift is not None else "-", tone=tone)
+        # ---------- KPI row
+        k1, k2, k3, k4 = st.columns(4)
+        v0, v1, dv = kpi_vals(sel_metric)
+        tone_delta = ("green" if (sel_metric=="pct_clean" and dv>0) or (sel_metric=="pct_controversial" and dv<0) else
+                      "red" if (sel_metric=="pct_clean" and dv<0) or (sel_metric=="pct_controversial" and dv>0) else "neutral")
+        with k1: kpi_card("Δ since first available", pct_fmt(dv) if dv is not None else "-", tone=tone_delta)
+        with k2: kpi_card("Level — first available", pct_fmt(v0) if v0 is not None else "-", tone="neutral")
+        with k3: kpi_card("Level — last year", pct_fmt(v1) if v1 is not None else "-", tone="neutral")
         with k4:
-            kpi_card("Δ Total MV" if weighting=="MV" else "Δ Total MV (n/a in EW)", mv_delta_text, tone="neutral")
+            # how many ETFs have data in first year vs last (respect launches)
+            starts = dfv.groupby("etf_ticker")["year"].min().reset_index(name="first_year")
+            ends   = dfv.groupby("etf_ticker")["year"].max().reset_index(name="last_year")
+            joined = starts.merge(ends, on="etf_ticker", how="inner")
+            txt = f"{(joined['first_year']<=sel_years[0]).sum()} had data in {sel_years[0]}"
+            kpi_card("Coverage", txt, tone="neutral")
 
-        # small badge if immaterial
-        if net_shift is not None and abs(net_shift) < 0.3:
-            st.markdown('<div class="blx-muted" style="margin:-6px 0 8px 4px;">≈ no material change (&lt; 0.3pp)</div>', unsafe_allow_html=True)
+        gap(6)
 
-        r1a, r1b = st.columns([0.58, 0.42])
-        with r1a:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">2017–2025 — % Clean vs % Controversial</div>', unsafe_allow_html=True)
+        # ---------- Charts row
+        lc, rc = st.columns([0.58, 0.42])
 
-            # dispersion ribbon for Clean (p10–p90 across funds)
-            disp_in = exp_sel[[c_year, c_etf, c_pc]].dropna()
-            ribbon = None
-            if not disp_in.empty:
-                dm = disp_in.groupby(c_year).agg(
-                    p10=(c_pc, lambda x: pd.Series(x).quantile(0.10)),
-                    med=(c_pc, "median"),
-                    p90=(c_pc, lambda x: pd.Series(x).quantile(0.90)),
-                ).reset_index()
-                ribbon = alt.Chart(dm).mark_area(opacity=0.15, stroke=None).encode(
-                    x=alt.X(f"{c_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                    y=alt.Y("p10:Q"),
-                    y2="p90:Q",
-                    color=alt.value(COLORS["clean"])
+        # 1) Trend with optional dispersion
+        with lc:
+            st.markdown(
+                f"""<div class="chart-head">
+                        <div class="chart-title">Trend — {sel_metric_label} over time ({'AUM' if view_key=='AUM' else 'EW'})</div>
+                        <div class="info-badge has-tip" data-tip="We apply 2025 classifications to all past years. Some ETFs start after 2017.">i</div>
+                    </div>""",
+                unsafe_allow_html=True
+            )
+
+            if not sel_etfs:
+                trend_df = aggregate_series(dfv, sel_metric)
+                base = alt.Chart(trend_df).mark_line().encode(
+                    x=alt.X("year:O", title=None),
+                    y=alt.Y(f"{sel_metric}:Q", title=sel_metric_label, axis=alt.Axis(format=".1f")),
+                    tooltip=[alt.Tooltip("year:O", title="Year"),
+                             alt.Tooltip(f"{sel_metric}:Q", title=sel_metric_label, format=".1f")]
+                )
+                chart = base
+                if show_disp and not disp.empty:
+                    d = disp.copy()
+                    cy = col_like(d, "year"); cv = col_like(d, "view")
+                    lo = col_like(d, "p10"); hi = col_like(d, "p90"); md = col_like(d, "median")
+                    met = col_like(d, sel_metric.replace("pct_",""))
+                    # Bring requested metric names to generic
+                    if met and md:
+                        d = d.rename(columns={cy:"year", cv:"view", md:"median", lo:"p10", hi:"p90", met:met})
+                    d = d[d["view"].str.upper().str.contains(view_key)].copy()
+                    d["metric"] = sel_metric  # placeholder for compatibility
+                    band = alt.Chart(d).mark_area(opacity=0.2).encode(
+                        x=alt.X("year:O", title=None),
+                        y=alt.Y("p10:Q", title=None),
+                        y2="p90:Q"
+                    )
+                    med = alt.Chart(d).mark_line(opacity=0.6).encode(
+                        x="year:O", y="median:Q"
+                    )
+                    chart = band + chart + med
+                st.altair_chart(chart.properties(height=260), use_container_width=True)
+            else:
+                # Multiple ETFs selected: show up to 6 lines + an optional aggregate overlay
+                sel_df = dfv[dfv["etf_ticker"].isin(sel_etfs)].copy()
+                # Limit for readability
+                to_show = sel_df["etf_ticker"].drop_duplicates().tolist()[:6]
+                sel_df = sel_df[sel_df["etf_ticker"].isin(to_show)]
+                chart = alt.Chart(sel_df).mark_line().encode(
+                    x=alt.X("year:O", title=None),
+                    y=alt.Y(f"{sel_metric}:Q", title=sel_metric_label, axis=alt.Axis(format=".1f")),
+                    color=alt.Color("etf_ticker:N", legend=alt.Legend(title="ETF")),
+                    tooltip=[alt.Tooltip("etf_ticker:N", title="ETF"),
+                             alt.Tooltip("year:O", title="Year"),
+                             alt.Tooltip(f"{sel_metric}:Q", title=sel_metric_label, format=".1f")]
+                ).properties(height=260)
+                st.altair_chart(chart, use_container_width=True)
+
+        # 2) 2017 vs 2025 composition + slope (right)
+        with rc:
+            st.markdown(
+                f"""<div class="chart-head">
+                        <div class="chart-title">2017 vs 2025 — Composition (Clean/Controversial/Other)</div>
+                        <div class="info-badge has-tip" data-tip="If an ETF launched after 2017, we use its first available year.">i</div>
+                    </div>""",
+                unsafe_allow_html=True
+            )
+            # choose single ETF or Aggregate
+            opts = ["Aggregate"] + (sel_etfs if sel_etfs else exp_fy["etf_ticker"].unique().tolist())
+            chosen = st.selectbox("Compare for", options=opts, index=0)
+
+            def comp_row(etf=None):
+                base = dfv.copy()
+                if etf and etf != "Aggregate":
+                    base = base[base["etf_ticker"]==etf]
+                series_years = base["year"]
+                if series_years.empty: return None, None, None
+                y0 = int(series_years.min())
+                y1 = int(series_years.max())
+                r0 = base[base["year"]==y0].iloc[0]
+                r1 = base[base["year"]==y1].iloc[0]
+                return (
+                    pd.DataFrame({
+                        "year":[str(y0), str(y1)],
+                        "Clean":[r0.get("pct_clean"), r1.get("pct_clean")],
+                        "Controversial":[r0.get("pct_controversial"), r1.get("pct_controversial")],
+                        "Other":[r0.get("pct_other"), r1.get("pct_other")]
+                    }),
+                    y0, y1
                 )
 
-            base = alt.Chart(agg_now).transform_fold(
-                ["clean","contro"], as_=["series","value"]
-            ).mark_line().encode(
-                x=alt.X(f"{c_year}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                y=alt.Y("value:Q", title="%", scale=alt.Scale(domain=[0,100])),
-                color=alt.Color("series:N",
-                                scale=alt.Scale(domain=["clean","contro"], range=[COLORS["clean"], COLORS["contro"]]),
-                                legend=alt.Legend(title=None, orient="top", direction="horizontal")),
-                tooltip=[alt.Tooltip(f"{c_year}:O", title="Year"),
-                         alt.Tooltip("series:N", title="Metric"),
-                         alt.Tooltip("value:Q", title="%", format=".1f")]
-            ).properties(height=170)
+            comp, y0, y1 = comp_row(chosen)
+            if comp is not None:
+                comp_m = comp.melt(id_vars="year", var_name="class", value_name="pct")
+                color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
+                bars = alt.Chart(comp_m).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                    x=alt.X("pct:Q", stack="normalize", axis=alt.Axis(format='%', title=None, labels=False, ticks=False)),
+                    y=alt.Y("year:N", title=None),
+                    color=alt.Color("class:N", scale=color_scale, legend=alt.Legend(title=None, orient="top")),
+                    tooltip=[alt.Tooltip("year:N", title="Year"),
+                             alt.Tooltip("class:N", title="Class"),
+                             alt.Tooltip("pct:Q", title="%", format=".1f")]
+                ).properties(height=140)
 
-            chart = base if ribbon is None else (ribbon + base)
-            st.altair_chart(chart, use_container_width=True)
+                # slopegraph for chosen metric
+                slope_df = comp[["year", "Clean" if sel_metric=="pct_clean" else
+                                         "Controversial" if sel_metric=="pct_controversial" else "Other"]].copy()
+                slope_df = slope_df.rename(columns={slope_df.columns[1]:"value"})
+                slope = alt.Chart(slope_df).mark_line(point=True).encode(
+                    x=alt.X("year:N", title=None),
+                    y=alt.Y("value:Q", title=sel_metric_label, axis=alt.Axis(format=".1f")),
+                    tooltip=[alt.Tooltip("year:N"), alt.Tooltip("value:Q", title=sel_metric_label, format=".1f")]
+                ).properties(height=120)
 
-        with r1b:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Fund movers — Δ (B−A)</div>', unsafe_allow_html=True)
-            metric_choice = st.segmented_control("Metric", ["% Controversial","% Clean"], default="% Controversial", label_visibility="collapsed")
-            metric_col = c_pv if metric_choice.startswith("% Con") else c_pc
+                st.altair_chart((bars & slope).resolve_scale(y="independent"), use_container_width=True)
+                st.caption(f"First available: {y0} → Last: {y1}" if y0!=2017 else "2017 → 2025")
 
-            # compute per-ETF delta
-            fy = exp_sel[[c_etf, c_year, metric_col]].dropna()
-            a_vals = fy[fy[c_year]==year_a][[c_etf, metric_col]].rename(columns={metric_col:"A"})
-            b_vals = fy[fy[c_year]==year_b][[c_etf, metric_col]].rename(columns={metric_col:"B"})
-            d = a_vals.merge(b_vals, on=c_etf, how="inner")
-            if d.empty:
-                st.caption("No overlapping Year A/B data for selected funds.")
+        gap(8)
+
+        # ---------- Heatmap + Movers + Screen trends
+        hcol, rcol = st.columns([0.58, 0.42])
+
+        with hcol:
+            st.markdown(
+                f"""<div class="chart-head">
+                        <div class="chart-title">Heatmap — {sel_metric_label} by Fund × Year</div>
+                        <div class="info-badge has-tip" data-tip="Blank cells indicate years before ETF launch or missing filings.">i</div>
+                    </div>""",
+                unsafe_allow_html=True
+            )
+            heat_df = dfv.copy()
+            if sel_etfs:
+                heat_df = heat_df[heat_df["etf_ticker"].isin(sel_etfs)]
+            # ensure full grid for selected years so missing shows as gaps
+            grid = pd.MultiIndex.from_product(
+                [sorted(heat_df["etf_ticker"].unique()), list(range(sel_years[0], sel_years[1]+1))],
+                names=["etf_ticker","year"]
+            ).to_frame(index=False)
+            heat_df = grid.merge(heat_df[["etf_ticker","year",sel_metric]], on=["etf_ticker","year"], how="left")
+            # Map ticker->name if available
+            names = exp_fy[["etf_ticker","etf_name"]].drop_duplicates()
+            heat_df = heat_df.merge(names, on="etf_ticker", how="left")
+            heat_df["etf_label"] = heat_df["etf_name"].fillna(heat_df["etf_ticker"])
+
+            hm = alt.Chart(heat_df).mark_rect(stroke=COLORS["bg"], strokeWidth=0.3).encode(
+                x=alt.X("year:O", title=None),
+                y=alt.Y("etf_label:N", title=None, sort="-x"),
+                color=alt.Color(f"{sel_metric}:Q",
+                                scale=alt.Scale(scheme="blues") if sel_metric!="pct_controversial"
+                                      else alt.Scale(range=["#1A2027","#2A3A46","#3F5667","#5E7E95","#8BB1C8"]),
+                                legend=alt.Legend(title=sel_metric_label)),
+                tooltip=[alt.Tooltip("etf_label:N", title="ETF"),
+                         alt.Tooltip("year:O", title="Year"),
+                         alt.Tooltip(f"{sel_metric}:Q", title=sel_metric_label, format=".1f")]
+            ).properties(height=max(220, 18*len(heat_df["etf_label"].unique())))
+
+            st.altair_chart(hm, use_container_width=True)
+
+        with rcol:
+            st.markdown(
+                f"""<div class="chart-head">
+                        <div class="chart-title">Top Movers — {sel_metric_label} (first → last)</div>
+                        <div></div>
+                    </div>""",
+                unsafe_allow_html=True
+            )
+            # Use pre-computed when unfiltered; else compute on the fly
+            if not sel_etfs:
+                dfm = yearcmp.copy()
+                c_etf = col_like(dfm, "etf")
+                c_view = col_like(dfm, "view")
+                c_m17 = col_like(dfm, "2017")
+                c_m25 = col_like(dfm, "2025")
+                c_dlt = col_like(dfm, "delta","Δ","ppt")
+                c_metric = col_like(dfm, sel_metric.replace("pct_",""))
+                # bring to standard
+                rename_map = {c_etf:"ETF", c_view:"view", c_m17:"y0", c_m25:"y1", c_dlt:"delta", c_metric:c_metric}
+                dfm = dfm.rename(columns={k:v for k,v in rename_map.items() if k})
+                dfm = dfm[(dfm["view"].str.upper().str.contains(view_key))]
+                if c_metric: dfm = dfm[dfm[c_metric].notna()]
+                show = dfm[["ETF","y0","y1","delta"]].sort_values("delta", ascending=(sel_metric!="pct_clean")).head(10)
             else:
-                d["delta"] = d["B"] - d["A"]
-                d = d.sort_values("delta", key=lambda s: s.abs(), ascending=False).head(8)
-                color_scale = alt.Scale(domain=["pos","neg"], range=[COLORS["green"] if "green" in COLORS else "#0E8F66", COLORS["contro"]])
+                base = dfv[dfv["etf_ticker"].isin(sel_etfs)].copy()
+                g = base.groupby("etf_ticker")
+                rows = []
+                for k, d in g:
+                    y0 = d["year"].min(); y1 = d["year"].max()
+                    v0 = d.loc[d["year"]==y0, sel_metric].iloc[0]
+                    v1 = d.loc[d["year"]==y1, sel_metric].iloc[0]
+                    rows.append({"ETF":k, "y0":v0, "y1":v1, "delta":v1-v0})
+                show = pd.DataFrame(rows).sort_values("delta", ascending=(sel_metric!="pct_clean")).head(10)
 
-                d["dir"] = d["delta"].apply(lambda x: "pos" if x>=0 else "neg")
-                bars = alt.Chart(d).mark_bar().encode(
-                    x=alt.X("delta:Q", title="Δ (pp)"),
-                    y=alt.Y(f"{c_etf}:N", sort="-x", title=None),
-                    color=alt.Color("dir:N", legend=None, scale=color_scale),
-                    tooltip=[alt.Tooltip(f"{c_etf}:N", title="ETF"),
-                             alt.Tooltip("A:Q", title=f"{metric_choice} (A)", format=".1f"),
-                             alt.Tooltip("B:Q", title=f"{metric_choice} (B)", format=".1f"),
-                             alt.Tooltip("delta:Q", title="Δ", format=".1f")]
-                ).properties(height=220)
-                st.altair_chart(bars, use_container_width=True)
+            show = show.rename(columns={"y0":"First %", "y1":"Last %", "delta":"Δ (ppt)"})
+            for c in ["First %","Last %","Δ (ppt)"]:
+                show[c] = pd.to_numeric(show[c], errors="coerce").map(lambda x: f"{x:.1f}" if pd.notna(x) else "-")
+            st.dataframe(show, use_container_width=True, hide_index=True, height=290)
 
-        # ---- Row 2: Drivers (names) + Screen mini-sparks
-        st.markdown('<div class="chart-title" style="margin:6px 0;">Drivers — names & screens</div>', unsafe_allow_html=True)
-        d1, d2 = st.columns([0.55, 0.45])
+        gap(8)
 
-        with d1:
-            # Movers list (top + and - by delta contribution)
-            mv = movers.copy()
-            # Optional ETF filter if movers has ETF column
-            mv_etf = pick(mv, "etf_ticker","ETF")
-            if mv_etf and sel_etf:
-                mv = mv[mv[mv_etf].isin(sel_etf)]
-            h_name = pick(mv, "holding_name","company_name","name")
-            h_tic  = pick(mv, "ticker","symbol")
-            h_dc   = pick(mv, "delta_contribution_pct","delta_pct","delta")
-            h_scr  = pick(mv, "screen_categories","screens")
-
-            if h_dc and h_name:
-                mv[h_dc] = pd.to_numeric(mv[h_dc], errors="coerce")
-                pos = mv.sort_values(h_dc, ascending=False).head(5)
-                neg = mv.sort_values(h_dc, ascending=True).head(5)
-
-                def rowize(df, arrow):
-                    rows = []
-                    for _, r in df.iterrows():
-                        nm = str(r.get(h_name,"")).upper()
-                        tk = str(r.get(h_tic,"")).upper() if h_tic in r else ""
-                        dt = r.get(h_dc, None)
-                        sc = r.get(h_scr, "")
-                        rows.append(f"<div style='display:flex;justify-content:space-between;'><span>{arrow} <strong>{nm}</strong> <span style='opacity:.75;'>({tk})</span></span><span>{dt:.3f} pp</span></div><div class='blx-muted' style='font-size:12px;margin:-2px 0 6px 18px;'>{sc}</div>")
-                    return "\n".join(rows)
-
-                left = rowize(pos, "▲")
-                right= rowize(neg, "▼")
-                st.markdown(
-                    f"""
-                    <div class="blx-card" style="padding:12px 14px;">
-                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-                        <div>
-                          <div class="blx-muted" style="margin-bottom:6px;">Top + contributors</div>
-                          {left if left else '<div class="blx-muted">None</div>'}
-                        </div>
-                        <div>
-                          <div class="blx-muted" style="margin-bottom:6px;">Top − contributors</div>
-                          {right if right else '<div class="blx-muted">None</div>'}
-                        </div>
-                      </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            else:
-                st.caption("Movers dataset missing expected columns; skipping names view.")
-
-        with d2:
-            # Screen mini sparks
-            if scr_tr is None or scr_tr.empty:
-                st.caption("No screen trend data available.")
-            else:
-                sc_cat  = pick(scr_tr, "screen_category","category","screen")
-                sc_year = pick(scr_tr, "year","report_year")
-                sc_val  = pick(scr_tr, "share_of_total_mv_pct","share_of_total_aum_pct","value_pct","pct")
-                if sc_cat and sc_year and sc_val:
-                    keep = scr_tr[[sc_cat, sc_year, sc_val]].dropna()
-                    def normcat(x: str) -> str:
-                        t = str(x).strip().lower().replace(" ", "").replace("-", "").replace("_", "")
-                        mapping = {
-                            "fossil":"FossilFuel","fossilfuel":"FossilFuel","fossilfuels":"FossilFuel",
-                            "weapons":"Weapons","weapon":"Weapons",
-                            "tobacco":"Tobacco",
-                            "prisons":"Prisons","prison":"Prisons",
-                            "deforestation":"Deforestation"
-                        }
-                        return mapping.get(t, str(x))
-                    keep[sc_cat] = keep[sc_cat].map(normcat)
-                    cats = ["FossilFuel","Weapons","Tobacco","Prisons","Deforestation"]
-                    keep = keep[keep[sc_cat].isin(cats)]
-                    if not keep.empty:
-                        spark = alt.Chart(keep).mark_line().encode(
-                            x=alt.X(f"{sc_year}:O", title=None, axis=alt.Axis(labels=False, ticks=False)),
-                            y=alt.Y(f"{sc_val}:Q", title="%", axis=alt.Axis(values=[0,5,10])),
-                            facet=alt.Facet(f"{sc_cat}:N", columns=5, title=None, sort=cats),
-                            tooltip=[alt.Tooltip(f"{sc_year}:O", title="Year"),
-                                     alt.Tooltip(f"{sc_val}:Q", title="%", format=".1f")]
-                        ).properties(height=90)
-                        st.altair_chart(spark, use_container_width=True)
-                    else:
-                        st.caption("Screen categories not found.")
-                else:
-                    st.caption("Screen trend dataset missing expected columns.")
-
+        # ---------- Small-multiples: Screen trends (aggregate)
         st.markdown(
-            '<div class="blx-muted" style="margin-top:6px;">2025 classifications applied retroactively. MV = sum of holdings market values; screen categories overlap and do not sum to total controversial.</div>',
+            f"""<div class="chart-head">
+                    <div class="chart-title">Screen Trends — Aggregate over time (overlapping categories)</div>
+                    <div class="info-badge has-tip" data-tip="Categories overlap; not meant to sum to 'Controversial'.">i</div>
+                </div>""",
             unsafe_allow_html=True
         )
+        if not scr_tr.empty:
+            sc = scr_tr.copy()
+            cy = col_like(sc, "year"); cv = col_like(sc, "view")
+            cc = col_like(sc, "screen","category"); cm = col_like(sc, "clean","fossil","tobacco","weapons","prisons","deforest","pct")
+            # Bring to standard
+            sc = sc.rename(columns={cy:"year", cv:"view", cc:"screen", cm:"pct"})
+            sc = sc[sc["view"].str.upper().str.contains(view_key)]
+            screens_order = ["Fossil Fuels","Tobacco","Weapons","Prisons","Deforestation","Clean200"]
+            sc["screen"] = sc["screen"].astype(str)
+            sc["screen"] = sc["screen"].replace({
+                "fossil":"Fossil Fuels","fossil fuels":"Fossil Fuels","clean200":"Clean200",
+                "weapons":"Weapons","tobacco":"Tobacco","prisons":"Prisons","deforestation":"Deforestation"
+            }).apply(lambda s: s.title() if s.lower()!="clean200" else "Clean200")
+            sc["screen"] = pd.Categorical(sc["screen"], categories=screens_order, ordered=True)
+
+            small = alt.Chart(sc).mark_line().encode(
+                x=alt.X("year:O", title=None),
+                y=alt.Y("pct:Q", title="%", axis=alt.Axis(format=".1f")),
+                facet=alt.Facet("screen:N", columns=6, header=alt.Header(labelColor=COLORS["text"])),
+                tooltip=[alt.Tooltip("year:O", title="Year"), alt.Tooltip("pct:Q", title="%", format=".1f")]
+            ).properties(height=130)
+            st.altair_chart(small, use_container_width=True)
+
+        # ---------- Downloads
+        dl1, dl2, dl3 = st.columns([0.34, 0.33, 0.33])
+        with dl1:
+            st.download_button(
+                "Download current trend series (CSV)",
+                data=aggregate_series(dfv, sel_metric).to_csv(index=False).encode("utf-8"),
+                file_name="trend_series.csv",
+                mime="text/csv"
+            )
+        with dl2:
+            st.download_button(
+                "Download heatmap data (CSV)",
+                data=heat_df.to_csv(index=False).encode("utf-8"),
+                file_name="heatmap_dataset.csv",
+                mime="text/csv"
+            )
+        with dl3:
+            st.download_button(
+                "Download movers table (CSV)",
+                data=show.to_csv(index=False).encode("utf-8"),
+                file_name="top_movers.csv",
+                mime="text/csv"
+            )
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
@@ -843,25 +938,25 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 gap(28)
 divider()
 st.markdown(
-    f"""
+    """
     <style>
-      .footer-wrap {{
+      .footer-wrap {
         display:flex; align-items:center; justify-content:space-between; width:100%;
-      }}
-      .footer-left {{
+      }
+      .footer-left {
         color: var(--muted); font-size: 14px; white-space: nowrap;
-      }}
-      .footer-links {{
+      }
+      .footer-links {
         display:flex; gap:28px; align-items:center; justify-content:flex-end;
-      }}
-      .footer-links a {{
-        color: {COLORS["text"]} !important;
+      }
+      .footer-links a {
+        color: var(--text) !important;        /* no blue */
         text-decoration: none;
-        font-size: 15.5px;
-        font-weight: 500;
+        font-size: 15.5px;                      /* slightly larger */
+        font-weight: 500;                     /* not bold by default */
         opacity: .9;
-      }}
-      .footer-links a:hover {{ opacity: 1; text-decoration: underline; }}
+      }
+      .footer-links a:hover { opacity: 1; text-decoration: underline; }
     </style>
 
     <div class="footer-wrap">
