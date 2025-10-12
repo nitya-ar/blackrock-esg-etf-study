@@ -1,11 +1,11 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
 # Layout locked. Inter font + refined dark palette.
 # 2025 Overview:
-# - KPI cards (restyled)
-# - Composition chart with title and Clean200 pill (value from breakdown file)
-# - By-screen chart incl. Clean200 + dark "?" help badge with overlap note
-# - Spotlight Top 10 tables (denser, darker headers)
-# - Filter-first Explorer (helper column hidden)
+# - KPI cards
+# - Composition chart (title added, Clean200 pill removed)
+# - By-screen chart incl. Clean200 + dark "i" info badge (overlap note)
+# - Top 10 tables (retitled)
+# - Filter-first Explorer
 # Loader: local -> GitHub raw -> GitHub API (token)
 
 import os
@@ -35,7 +35,7 @@ LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", 
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))      # optional for private repos
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-# Palette (slightly darker, still readable)
+# Palette (dark + slightly fluorescent vibe)
 COLORS = {
     "bg": "#0A0B0D",
     "card": "#0F1116",
@@ -43,9 +43,9 @@ COLORS = {
     "text": "#E7EBF0",
     "muted": "#97A2B0",
     "primary": "#00A3FF",
-    "clean": "#16A370",      # darker clean
-    "contro": "#E0474D",     # darker contro
-    "other": "#7E8A99",      # darker blue-grey
+    "clean": "#12B886",   # dark emerald with brightness
+    "contro": "#E24A4A",  # dark bright red
+    "other": "#7E8A99",
 }
 
 # =========================
@@ -85,7 +85,7 @@ st.markdown(
         padding: 14px 16px;
       }}
 
-      /* KPI cards (more premium) */
+      /* KPI cards */
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
         border: 1px solid var(--border);
@@ -107,9 +107,7 @@ st.markdown(
         color: var(--text) !important;
         border-bottom: 1px solid var(--border) !important;
       }}
-      div[data-testid="stDataframe"] tbody tr {{
-        background: #0E1015 !important;
-      }}
+      div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
       div[data-testid="stDataframe"] * {{
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
         font-size: 13px !important;
@@ -123,22 +121,26 @@ st.markdown(
       .chart-title {{
         font-weight: 600; color: var(--text); letter-spacing:.1px;
       }}
-      .help-badge {{
+      .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
-        width: 22px; height: 22px; border-radius: 999px;
-        border: 1px solid #2A2F36; color: #9AA4B2; font-weight: 700;
+        height: 24px; border-radius: 14px;
+        border: 1px solid #2A2F36; color: #B6C0CC; font-weight: 600;
         font-size: 12px; user-select:none; cursor: default;
-        background: #0B0D12;
+        background: #0B0D12; padding: 0 10px;
       }}
-      .pill {{
-        display:inline-flex; align-items:center; gap:8px;
-        padding: 4px 10px; border-radius: 999px;
-        border: 1px solid var(--border); color: var(--text);
-        background: #0B0D12; font-size: 12px;
+
+      /* Footer */
+      .blx-footer {{
+        display:flex; align-items:center; justify-content:flex-end;
+        gap: 24px; width: 100%;
       }}
-      .pill .swatch {{
-        width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px;
+      .blx-footer a {{
+        color: var(--text) !important;
+        text-decoration: none;
+        font-size: 15px;
+        opacity: 0.9;
       }}
+      .blx-footer a:hover {{ opacity: 1; text-decoration: underline; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -345,29 +347,12 @@ if mode == "Dashboard":
         # Chart row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition — add title and Clean200 pill (value from breakdown)
+        # 1) Composition — title only (Clean200 pill removed)
         with c1:
-            # Clean200 from breakdown file (authoritative)
-            clean200_from_breakdown = None
-            if {"screen_category","share_of_total_aum_pct"}.issubset(scr.columns):
-                _row = scr.loc[scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
-                               "share_of_total_aum_pct"]
-                if len(_row):
-                    clean200_from_breakdown = float(_row.sum())
-
-            pill_html = ""
-            if clean200_from_breakdown is not None:
-                pill_html = f"""
-                <span class="pill" title="From context_breakdown_by_screen.csv">
-                  <span class="swatch" style="background: var(--clean);"></span>
-                  Clean200: {clean200_from_breakdown:.1f}%
-                </span>
-                """
-
             st.markdown(
                 f"""<div class="chart-head">
                       <div class="chart-title">2025 Composition — Clean vs Controversial vs Other</div>
-                      <div>{pill_html}</div>
+                      <div></div>
                     </div>""",
                 unsafe_allow_html=True,
             )
@@ -400,37 +385,34 @@ if mode == "Dashboard":
             else:
                 st.warning("composition columns missing in context_summary_2025.csv")
 
-        # 2) By-screen bars — include Clean200 + dark help badge right of title
+        # 2) By-screen bars — include Clean200 + info icon with text tooltip
         with c2:
             st.markdown(
                 """<div class="chart-head">
                       <div class="chart-title">By-screen exposures — share of total AUM</div>
-                      <div class="help-badge" title="Categories can overlap; not intended to sum to overall controversial exposure.">?</div>
+                      <div class="info-badge" title="Categories can overlap; not intended to sum to overall controversial exposure.">i</div>
                    </div>""",
                 unsafe_allow_html=True,
             )
 
             show_parts = []
+            clean200 = 0.0
             if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
                 s2 = scr.copy()
                 s2["classification"] = s2["classification"].str.title()
-                s2 = s2[s2["classification"]=="Controversial"]
-                s2 = s2.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
-                show_parts.append(s2)
+                # get controversial categories for bars
+                s_con = s2[s2["classification"]=="Controversial"].groupby(
+                    "screen_category", as_index=False
+                )["share_of_total_aum_pct"].sum()
+                show_parts.append(s_con)
+                # authoritative Clean200 from the same file (regardless of classification)
+                c2_row = scr.loc[
+                    scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                    "share_of_total_aum_pct"
+                ].sum()
+                clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
 
-                # Clean200 authoritative from the same file
-                clean200 = s2.loc[s2["screen_category"].astype(str).str.strip().str.lower()=="clean200",
-                                  "share_of_total_aum_pct"].sum()
-                if clean200 == 0:
-                    # If it was filtered out, look in raw 'scr'
-                    c2_row = scr.loc[scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
-                                     "share_of_total_aum_pct"].sum()
-                    clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
-            else:
-                s2 = pd.DataFrame(columns=["screen_category","share_of_total_aum_pct"])
-                clean200 = 0.0
-
-            # Add/ensure Clean200 row
+            # Ensure Clean200 row
             show_parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
 
             scr_all = pd.concat(show_parts, ignore_index=True)
@@ -451,11 +433,11 @@ if mode == "Dashboard":
 
             st.altair_chart(chart2, use_container_width=True)
 
-        # Spotlights
+        # Top 10 tables (retitled)
         s1, s2 = st.columns([0.5, 0.5])
 
         with s1:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Spotlight — Top 10 Controversial</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
                 cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
                 if "rank_within_cohort" in cont.columns:
@@ -477,7 +459,7 @@ if mode == "Dashboard":
                 st.warning("Missing 'cohort' in top_holdings_spotlight.csv")
 
         with s2:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Spotlight — Top 10 Clean</div>', unsafe_allow_html=True)
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
                 clean = spot[spot["cohort"].str.lower()=="clean"].copy()
                 if "rank_within_cohort" in clean.columns:
@@ -614,13 +596,16 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
 # =========================
 # FOOTER
 # =========================
+gap(28)  # push footer down a bit
 divider()
-f1, f2, f3, f4 = st.columns([0.5, 0.16, 0.16, 0.18])
-with f1:
-    st.caption("Built by **Nitya Arya**")
-with f2:
-    st.markdown('<div class="blx-footer"><a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a></div>', unsafe_allow_html=True)
-with f3:
-    st.markdown('<div class="blx-footer"><a href="https://github.com/nitya-ar" target="_blank">GitHub</a></div>', unsafe_allow_html=True)
-with f4:
-    st.markdown('<div class="blx-footer"><a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a></div>', unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <div class="blx-footer">
+      <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
+      <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
+      <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
