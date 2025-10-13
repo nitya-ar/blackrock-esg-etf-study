@@ -509,7 +509,7 @@ if mode == "Dashboard":
             return None
 
         def numify(x): return pd.to_numeric(x, errors="coerce")
-        def pct_fmt(v): 
+        def pct_fmt(v):
             try: return f"{float(v):.1f}%"
             except: return "-"
 
@@ -588,39 +588,44 @@ if mode == "Dashboard":
         net_Z   = float(series.loc[series["year"]==end_year,"net_align"].mean()) if not series.empty else None
         d_net   = (net_Z - net_A) if (net_A is not None and net_Z is not None) else None
 
-        # ---------- KPI Row (slopegraphs; toned as requested) ----------
+        # ---------- KPI Row (taller slopegraphs w/ axes) ----------
         k1,k2,k3,k4 = st.columns(4)
 
-        def slope(df, col):
+        def slope(df, col, color_hex):
             if df.empty or col not in df.columns: return None
             s = df[df["year"].isin([yearA, end_year])][["year", col]].dropna().sort_values("year")
             if s.empty: return None
-            return alt.Chart(s).mark_line(point=True).encode(
+            area = alt.Chart(s).mark_area(opacity=0.10).encode(
+                x=alt.X("year:O", title=None),
+                y=alt.Y(f"{col}:Q", title=None, scale=alt.Scale(domain=[0, 100])),
+            )
+            line = alt.Chart(s).mark_line(point=True, strokeWidth=2.2, color=color_hex).encode(
                 x=alt.X("year:O", title=None),
                 y=alt.Y(f"{col}:Q", title=None, scale=alt.Scale(domain=[0, 100])),
                 tooltip=[alt.Tooltip("year:O"), alt.Tooltip(f"{col}:Q", format=".1f")]
-            ).properties(height=54)
+            )
+            return (area + line).properties(height=110)
 
         # Δ Net alignment (neutral/grey)
         with k1:
             kpi_card("Δ Net alignment (Clean − Contro)", pct_fmt(d_net), tone="neutral")
-            sp = slope(series, "net_align")
+            sp = slope(series, "net_align", COLORS["other"])
             if sp: st.altair_chart(sp, use_container_width=True)
 
-        # % Clean (tone green on improvement)
+        # % Clean (green)
         with k2:
             kpi_card(f"% Clean — {yearA} → {end_year}",
                      f"{pct_fmt(clean_A)} → {pct_fmt(clean_Z)}",
                      tone=("green" if (d_clean or 0) > 0 else "red"))
-            sp = slope(series, "pct_clean")
+            sp = slope(series, "pct_clean", COLORS["clean"])
             if sp: st.altair_chart(sp, use_container_width=True)
 
-        # % Controversial (force red shading)
+        # % Controversial (red)
         with k3:
             kpi_card(f"% Controversial — {yearA} → {end_year}",
                      f"{pct_fmt(cont_A)} → {pct_fmt(cont_Z)}",
                      tone="red")
-            sp = slope(series, "pct_controversial")
+            sp = slope(series, "pct_controversial", COLORS["contro"])
             if sp: st.altair_chart(sp, use_container_width=True)
 
         with k4:
@@ -643,33 +648,34 @@ if mode == "Dashboard":
             color_scale = alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])
             lines = alt.Chart(cm).mark_line().encode(
                 x=alt.X("year:O", title=None),
-                y=alt.Y("pct:Q", title="% of AUM", scale=alt.Scale(domain=[0,100]),
-                        axis=alt.Axis(format=".1f")),
+                y=alt.Y("pct:Q", title="% of AUM", scale=alt.Scale(domain=[0,100]), axis=alt.Axis(format=".1f")),
                 color=alt.Color("class:N", scale=color_scale, title=None),
                 tooltip=[alt.Tooltip("year:O"), alt.Tooltip("class:N"), alt.Tooltip("pct:Q", format=".1f")]
-            ).properties(height=300)
+            ).properties(height=320)
             st.altair_chart(lines, use_container_width=True)
         else:
             st.info("No data for combined trend.")
 
-        gap(8)
+        gap(10)
 
         # ---------- Graphs B & C BELOW, SIDE-BY-SIDE ----------
-        colB, colC = st.columns([0.5, 0.5])
+        colB, colC = st.columns([0.52, 0.48])
 
-        # B) Screen trends — multiline with all required screens
+        # B) Screen trends — multiline: Clean200, Deforestation, Fossil Fuels, Prisons, Weapons
         with colB:
             st.markdown(
                 """<div class="chart-head">
                        <div class="chart-title">Screen trends — aggregate shift (Year A → 2025)</div>
-                       <div class="info-badge has-tip" data-tip="Fossil Fuels, Weapons, Tobacco, Prisons, Deforestation, Clean200.">i</div>
+                       <div class="info-badge has-tip" data-tip="Clean200, Deforestation, Fossil Fuels, Prisons, Weapons.">i</div>
                    </div>""",
                 unsafe_allow_html=True,
             )
             if scr_tr is not None and not scr_tr.empty:
                 sc = scr_tr.copy()
-                cy = colpick(sc,"year","yr"); cv = colpick(sc,"view","weighting")
-                cat = colpick(sc,"screen","category"); met = colpick(sc,"pct","value","share")
+                cy  = colpick(sc,"year","yr")
+                cv  = colpick(sc,"view","weighting")
+                cat = colpick(sc,"screen","category","screen_category")
+                met = colpick(sc,"pct","value","share","share_of_aum_pct")
                 if cy: sc = sc.rename(columns={cy:"year"})
                 if cv: sc = sc.rename(columns={cv:"view"})
                 if cat: sc = sc.rename(columns={cat:"screen"})
@@ -677,29 +683,33 @@ if mode == "Dashboard":
                 if "view" in sc.columns: sc = sc[sc["view"].astype(str).str.upper().str.contains("AUM")]
                 sc = sc[(sc["year"]>=yearA) & (sc["year"]<=end_year)]
                 sc["screen"] = sc.get("screen", pd.Series(dtype=str)).astype(str).str.strip().str.title()
-                mapfix = {"Fossil":"Fossil Fuels","Fossil Fuels":"Fossil Fuels",
-                          "Weapons":"Weapons","Tobacco":"Tobacco","Prisons":"Prisons",
-                          "Deforestation":"Deforestation","Clean200":"Clean200"}
+                # normalize spelling & choose the 5 lines we want
+                mapfix = {
+                    "Clean200":"Clean200", "Clean 200":"Clean200",
+                    "Deforestation":"Deforestation",
+                    "Fossil":"Fossil Fuels", "Fossil Fuel":"Fossil Fuels", "Fossil Fuels":"Fossil Fuels",
+                    "Prison":"Prisons", "Prisons":"Prisons",
+                    "Weapons":"Weapons",
+                }
                 sc["screen"] = sc["screen"].map(lambda x: mapfix.get(x, x))
-                keep = ["Fossil Fuels","Weapons","Tobacco","Prisons","Deforestation","Clean200"]
+                keep = ["Clean200","Deforestation","Fossil Fuels","Prisons","Weapons"]
                 sc = sc[sc["screen"].isin(keep)]
-                # enforce ordering for legend readability
                 sc["screen"] = pd.Categorical(sc["screen"], categories=keep, ordered=True)
 
                 if {"year","pct","screen"}.issubset(sc.columns) and not sc.empty:
                     lines = alt.Chart(sc).mark_line().encode(
                         x=alt.X("year:O", title=None),
-                        y=alt.Y("pct:Q", title="%", scale=alt.Scale(domain=[0,100]), axis=alt.Axis(format=".1f")),
+                        y=alt.Y("pct:Q", title="% of AUM", scale=alt.Scale(domain=[0,100]), axis=alt.Axis(format=".1f")),
                         color=alt.Color("screen:N", title=None),
                         tooltip=[alt.Tooltip("screen:N"), alt.Tooltip("year:O"), alt.Tooltip("pct:Q", format=".1f")]
-                    ).properties(height=280)
+                    ).properties(height=300)
                     st.altair_chart(lines, use_container_width=True)
                 else:
-                    st.info("No screen metrics available.")
+                    st.info("No screen metrics available for the selected span.")
             else:
                 st.info("aggregate_screen_trends.csv missing/empty.")
 
-        # C) Year A vs 2025 composition — vertical 100%
+        # C) Year A vs 2025 composition — vertical 100% (proper percent axis)
         with colC:
             st.markdown(
                 f"""<div class="chart-head">
@@ -714,20 +724,19 @@ if mode == "Dashboard":
             compZ = baseC[baseC["year"]==end_year][["pct_clean","pct_controversial","pct_other"]].mean(numeric_only=True)
             comp = pd.DataFrame({
                 "year":[str(yearA), str(end_year)],
-                "Clean":[compA.get("pct_clean",0.0), compZ.get("pct_clean",0.0)],
-                "Controversial":[compA.get("pct_controversial",0.0), compZ.get("pct_controversial",0.0)],
-                "Other":[compA.get("pct_other",0.0), compZ.get("pct_other",0.0)],
+                "Clean":[compA.get("pct_clean",0.0)/100.0, compZ.get("pct_clean",0.0)/100.0],
+                "Controversial":[compA.get("pct_controversial",0.0)/100.0, compZ.get("pct_controversial",0.0)/100.0],
+                "Other":[compA.get("pct_other",0.0)/100.0, compZ.get("pct_other",0.0)/100.0],
             })
-            comp_m = comp.melt(id_vars="year", var_name="class", value_name="pct")
+            comp_m = comp.melt(id_vars="year", var_name="class", value_name="share")
             color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
                                     range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
             bars_v = alt.Chart(comp_m).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
                 x=alt.X("year:N", title=None),
-                y=alt.Y("pct:Q", stack="normalize", scale=alt.Scale(domain=[0,100]),
-                        axis=alt.Axis(format='%', title=None)),
+                y=alt.Y("share:Q", stack="normalize", axis=alt.Axis(format='%', title=None)),
                 color=alt.Color("class:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
-                tooltip=[alt.Tooltip("year:N"), alt.Tooltip("class:N"), alt.Tooltip("pct:Q", format=".1f")]
-            ).properties(height=280)
+                tooltip=[alt.Tooltip("year:N"), alt.Tooltip("class:N"), alt.Tooltip("share:Q", format=".1%")]
+            ).properties(height=300)
             st.altair_chart(bars_v, use_container_width=True)
 
 
