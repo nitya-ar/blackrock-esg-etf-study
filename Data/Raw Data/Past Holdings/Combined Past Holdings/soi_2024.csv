@@ -1155,6 +1155,15 @@ CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,United States — 62.0%,Zi
 CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,United States — 62.0%,Zoetis Inc.,"5,900","11,08,079",,
 CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,United States — 62.0%,"Zoom Video Communications Inc., Class A","2,392","1,54,547",,
 CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,United States — 62.0%,Zscaler Inc.,176,"41,478","53,63,99,250",860893857
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,BRAZIL — 0.1%,"Banco Bradesco SA, Preference Shares, NVS","1,13,347","3,51,178",,
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,BRAZIL — 0.1%,"Itau Unibanco Holding SA, Preference Shares, NVS","59,052","3,90,708","7,41,886",
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,COLOMBIA — 0.0%,"Bancolombia SA, Preference Shares, NVS","26,918","2,12,082","2,12,082",
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,GERMANY — 0.1%,"Dr Ing h C F Porsche AG, Preference Shares, NVS(b)","5,848","4,96,507",,
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,GERMANY — 0.1%,"Sartorius AG, Preference Shares, NVS",116,"42,317","5,38,824","14,92,792"
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,BRAZIL — 0.0% (Rights),"Localiza Rent a Car SA, (Expires 02/19/24, Strike Price BRL 45.35)(a)",35,64,64,64
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,CANADA — 0.0% (Warrants),"Constellation Software Inc., (Issued 08/28/23, 1 Share for 1 Warrant, Expires 03/31/40, Strike Price CAD 11.50)(a)",555,0,0,
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,MONEY MARKET FUNDS — 1.3%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.51%(f)(g)(h)","1,03,58,627","1,03,64,842",,
+CRBN,iShares MSCI ACWI Low Carbon Target ETF,31/01/24,MONEY MARKET FUNDS — 1.3%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.32%(f)(h)","11,50,000","11,50,000","1,15,14,842","1,15,14,842"
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,Australia — 4.9%,ASX Ltd.,"14,536","6,22,822",,
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,Australia — 4.9%,Aurizon Holdings Ltd.,"1,13,533","2,81,383",,
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,Australia — 4.9%,BlueScope Steel Ltd.,"32,266","4,79,811",,
@@ -1668,6 +1677,10 @@ DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,United Kingdom — 7.0%,Taylor 
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,United Kingdom — 7.0%,Whitbread PLC,"12,788","5,34,155",,
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,United Kingdom — 7.0%,"Wise PLC, Class A","40,940","4,75,612",,
 DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,United Kingdom — 7.0%,WPP PLC,"74,785","6,69,064","4,30,83,761",607290287
+DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,GERMANY — 0.3%,"Bayerische Motoren Werke AG, Preference Shares, NVS","4,232","4,63,970",,
+DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,GERMANY — 0.3%,"Henkel AG & Co. KGaA, Preference Shares, NVS","11,776","8,85,953",,
+DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,GERMANY — 0.3%,"Sartorius AG, Preference Shares, NVS","1,824","6,90,803","20,40,726","20,40,726"
+DMXF,iShares ESG Advanced MSCI EAFE ETF,29/02/24,MONEY MARKET FUNDS — 0.1%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(e)(f)","7,56,047","7,56,425","7,56,425","7,56,425"
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Air Freight & Logistics — 0.6%,"CH Robinson Worldwide, Inc.","20,671","14,67,641",,
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Air Freight & Logistics — 0.6%,"Expeditors International Washington, Inc.","26,498","29,49,492",,
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Air Freight & Logistics — 0.6%,"United Parcel Service, Inc., Class","1,30,193","1,92,00,864","2,36,17,997",
@@ -2069,6 +2082,8 @@ DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Trading Companies & Distributors �
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Trading Companies & Distributors — 0.8%,"WW Grainger, Inc.","8,081","74,45,429","3,24,85,757",
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Water Utilities — 0.1%,"American Water Works Co., Inc.","35,056","42,88,050",,
 DSI,iShares MSCI KLD 400 Social ETF,30/04/24,Water Utilities — 0.1%,"Essential Utilities, Inc.","46,737","17,09,639","59,97,689","4,23,25,56,551"
+DSI,iShares MSCI KLD 400 Social ETF,30/04/24,MONEY MARKET FUNDS — 0.5%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.49%(c)(d)(e)","1,04,38,511","1,04,41,642",,
+DSI,iShares MSCI KLD 400 Social ETF,30/04/24,MONEY MARKET FUNDS — 0.5%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.28%(c)(d)","1,12,94,314","1,12,94,314","2,17,35,956","2,17,35,956"
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,Brazil — 3.0%,Atacadao SA,"13,251","32,227",,
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,Brazil — 3.0%,B3 SA - Brasil Bolsa Balcao,"1,23,711","3,19,288",,
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,Brazil — 3.0%,Banco Bradesco SA,"33,503","82,896",,
@@ -2570,6 +2585,14 @@ EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,United Arab Emirate
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,United Arab Emirates — 1.9%,Emirates NBD Bank PJSC,"41,874","2,08,632",,
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,United Arab Emirates — 1.9%,Emirates Telecommunications Group Co. PJSC,"75,075","3,69,963",,
 EMXF,iShares ESG Advanced MSCI Emerging Markets ETF,29/02/24,United Arab Emirates — 1.9%,First Abu Dhabi Bank PJSC,"96,033","3,56,760","14,25,367",72047983
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,BRAZIL — 1.9%,"Banco Bradesco SA, Preference Shares, NVS","1,16,172","3,21,330",,
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,BRAZIL — 1.9%,"Gerdau SA, Preference Shares, NVS","24,486","1,05,902",,
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,BRAZIL — 1.9%,"Itau Unibanco Holding SA, Preference Shares, NVS","1,04,643","7,14,446",,
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,BRAZIL — 1.9%,"Itausa SA, Preference Shares, NVS","1,17,270","2,42,981","13,84,659",
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,CHILE — 0.2%,"Sociedad Química y Minera de Chile SA, Class B, Preference Shares","3,108","1,54,134","1,54,134",
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,COLOMBIA — 0.1%,"Bancolombia SA, Preference Shares, NVS","10,164","83,073","83,073","16,21,866"
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,SOUTH KOREA — 0.0% (Rights),"LG Display Co. Ltd., (Expires 03/14/24, Strike Price KRW 10070)(a)(b)","1,443","1,419","1,419","1,419"
+EMXF,iShares ESG Advanced MSCI EM ETF,29/02/24,MONEY MARKET FUNDS — 0.9%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(a)(b)(h)","6,75,126","6,75,464","6,75,464","6,75,464"
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,Australia — 7.2%,ANZ Group Holdings Ltd.,"10,07,937","1,86,82,773",,
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,Australia — 7.2%,APA Group,"18,47,228","94,30,595",,
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,Australia — 7.2%,Aristocrat Leisure Ltd.,"3,46,138","1,05,16,855",,
@@ -2946,6 +2969,10 @@ ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,United Kingdom — 13.7%,United Ki
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,United Kingdom — 13.7%,Tesco PLC,"35,13,630","1,23,92,688",,
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,United Kingdom — 13.7%,Unilever PLC,"13,17,713","6,43,49,513",,
 ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,United Kingdom — 13.7%,WPP PLC,"8,05,750","72,08,646","1,07,92,79,766",7800349259
+ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,GERMANY — 0.2%,"Henkel AG & Co. KGaA, Preference Shares, NVS","1,15,288","86,73,553",,
+ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,GERMANY — 0.2%,"Sartorius AG, Preference Shares, NVS","22,810","86,38,827","1,73,12,380","1,73,12,380"
+ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,MONEY MARKET FUNDS — 0.2%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(d)(e)(f)","1,58,41,678","1,58,49,599",,
+ESGD,iShares ESG Aware MSCI EAFE ETF,29/02/24,MONEY MARKET FUNDS — 0.2%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(d)(e)","4,20,000","4,20,000","1,62,69,599","1,62,69,599"
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,Brazil — 3.8%,Atacadao SA,"18,40,256","44,75,608",,
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,Brazil — 3.8%,B3 SA - Brasil Bolsa Balcao,"44,42,710","1,14,66,269",,
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,Brazil — 3.8%,Banco do Brasil SA,"4,68,924","54,57,935",,
@@ -3247,6 +3274,15 @@ ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,United Arab Emirates — 1.3%,Abu Dh
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,United Arab Emirates — 1.3%,Aldar Properties PJSC,"29,08,205","43,78,598",,
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,United Arab Emirates — 1.3%,Emirates Telecommunications Group Co. PJSC,"28,02,026","1,38,08,157",,
 ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,United Arab Emirates — 1.3%,First Abu Dhabi Bank PJSC,"38,07,798","1,41,45,852","5,26,20,699",3965007859
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,BRAZIL — 1.2%,"Banco Bradesco SA, Preference Shares, NVS","20,51,198","56,73,588",,
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,BRAZIL — 1.2%,"Cia. Energetica de Minas Gerais, Preference Shares, NVS","17,87,659","43,04,536",,
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,BRAZIL — 1.2%,"Gerdau SA, Preference Shares, NVS","12,77,194","55,23,862",,
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,BRAZIL — 1.2%,"Itau Unibanco Holding SA, Preference Shares, NVS","6,04,183","41,25,037",,
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,BRAZIL — 1.2%,"Petroleo Brasileiro SA, Preference Shares, NVS","35,11,253","2,83,52,215","4,79,79,238",
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,COLOMBIA — 0.2%,"Bancolombia SA, Preference Shares, NVS","8,74,406","71,46,737","71,46,737",
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,SOUTH KOREA — 0.5%,"Samsung Electronics Co. Ltd., Preference Shares, NVS","4,31,789","2,06,76,931","2,06,76,931","7,58,02,906"
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,SOUTH KOREA — 0.0% (Rights),"LG Display Co. Ltd. (Expires 03/14/24, Strike Price KRW 10070)(b)","1,34,439","1,32,258","1,32,258","1,32,258"
+ESGE,iShares ESG Aware MSCI EM ETF,29/02/24,MONEY MARKET FUNDS — 0.3%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(g)(h)","1,27,25,181","1,27,31,543","1,27,31,543","1,27,31,543"
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Aerospace & Defense — 0.9%,"Axon Enterprise, Inc.","78,613","2,41,63,278",,
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Aerospace & Defense — 0.9%,"Huntington Ingalls Industries, Inc.","1,35,551","3,95,29,382",,
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Aerospace & Defense — 0.9%,RTX Corp.,"6,74,040","6,04,41,167","12,41,33,827",
@@ -3532,6 +3568,8 @@ ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Trading Companies & Distributors �
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Trading Companies & Distributors — 0.7%,"WW Grainger, Inc.","30,510","2,97,00,265","9,54,09,851",
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Water Utilities — 0.2%,"American Water Works Co., Inc.","1,16,336","1,37,90,469",,
 ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,Water Utilities — 0.2%,"Essential Utilities, Inc.","4,05,441","1,41,01,238","2,78,91,707","13,43,52,53,279"
+ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.7%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","5,38,03,814","5,38,30,717",,
+ESGU,iShares ESG Aware MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.7%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(c)(d)","4,01,91,142","4,01,91,142","9,40,21,859","9,40,21,859"
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Aerospace & Defense — 1.7%,"AeroVironment, Inc.","9,789","12,41,147",,
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Aerospace & Defense — 1.7%,"BWX Technologies, Inc.","46,108","46,49,070",,
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Aerospace & Defense — 1.7%,Curtiss-Wright Corp.,"12,496","29,52,430",,
@@ -4452,6 +4490,9 @@ ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Water Utilities — 0.2%,
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Wireless Telecommunication Services — 0.1%,"Gogo, Inc.","81,080","6,61,613",,
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Wireless Telecommunication Services — 0.1%,"Telephone and Data Systems, Inc.","55,588","8,50,496",,
 ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,Wireless Telecommunication Services — 0.1%,United States Cellular Corp.,"22,547","7,86,665","22,98,774",1573188115
+ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,BIOTECHNOLOGY — 0.0% (Rights),"Chinook Therapeutics, Inc., CVR (Expires 01/01/26)(c)","30,052","13,223","13,223","13,223"
+ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,MONEY MARKET FUNDS — 6.7%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(d)(f)","10,04,80,571","10,05,30,811",,
+ESML,iShares ESG Aware MSCI USA Small-Cap ETF,29/02/24,MONEY MARKET FUNDS — 6.7%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(d)(e)","43,75,857","43,75,857","10,49,06,668","10,49,06,668"
 ICLN,iShares Global Clean Energy ETF,30/04/24,Austria — 1.3%,Verbund AG,"3,71,775","2,84,00,322","2,84,00,322",
 ICLN,iShares Global Clean Energy ETF,30/04/24,Brazil — 2.4%,AES Brasil Energia SA,"26,21,228","47,80,462",,
 ICLN,iShares Global Clean Energy ETF,30/04/24,Brazil — 2.4%,Auren Energia SA,"33,77,656","75,39,004",,
@@ -4550,6 +4591,10 @@ ICLN,iShares Global Clean Energy ETF,30/04/24,United States — 34.0%,SolarEdge 
 ICLN,iShares Global Clean Energy ETF,30/04/24,United States — 34.0%,Sunnova Energy International Inc. (a)(b),"11,88,630","50,04,132",,
 ICLN,iShares Global Clean Energy ETF,30/04/24,United States — 34.0%,SunPower Corp. (a)(b),"9,79,972","20,18,742",,
 ICLN,iShares Global Clean Energy ETF,30/04/24,United States — 34.0%,Sunrun Inc. (a)(b),"18,44,857","1,89,83,579","73,65,80,441","2,10,06,74,718"
+ICLN,iShares Global Clean Energy ETF,30/04/24,BRAZIL — 2.4%,"Cia. Energetica de Minas Gerais, Preference Shares, ADR, NVS","1,61,41,777","3,03,71,136",,
+ICLN,iShares Global Clean Energy ETF,30/04/24,BRAZIL — 2.4%,"Companhia Paranaense de Energia, Preference Shares, NVS","1,17,96,728","2,06,50,976","5,10,22,112","5,10,22,112"
+ICLN,iShares Global Clean Energy ETF,30/04/24,Money Market Funds — 7.8%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.49%(e)(f)(g)","16,31,82,154","16,32,31,108",,
+ICLN,iShares Global Clean Energy ETF,30/04/24,Money Market Funds — 7.8%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.28%(e)(f)","65,00,000","65,00,000","16,97,31,108","16,97,31,108"
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,Australia — 6.9%,ANZ Group Holdings Ltd.,"16,696","2,94,591",,
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,Australia — 6.9%,Aristocrat Leisure Ltd.,"56,714","16,35,099",,
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,Australia — 6.9%,BlueScope Steel Ltd.,"16,151","2,46,598",,
@@ -4895,6 +4940,12 @@ LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,United Kin
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,United Kingdom — 12.4%,Standard Chartered PLC,"79,119","5,97,945",,
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,United Kingdom — 12.4%,Tesco PLC,"2,49,476","9,04,006",,
 LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,United Kingdom — 12.4%,Unilever PLC,"27,819","13,53,678","4,27,36,937",338908809
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,GERMANY — 0.6%,"Bayerische Motoren Werke AG, Preference Shares, NVS","7,323","7,15,534",,
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,GERMANY — 0.6%,"Henkel AG & Co. KGaA, Preference Shares, NVS","4,289","3,28,788",,
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,GERMANY — 0.6%,"Sartorius AG, Preference Shares, NVS",183,"66,759",,
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,GERMANY — 0.6%,"Volkswagen AG, Preference Shares, NVS","7,674","9,86,992","20,98,073","20,98,073"
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,MONEY MARKET FUNDS — 1.3%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.51%(d)(e)(f)","18,38,214","18,39,317",,
+LCTD,BlackRock World ex U.S. Carbon Transition Readiness ETF,31/01/24,MONEY MARKET FUNDS — 1.3%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.32%(d)(e)","25,90,000","25,90,000","44,29,317","44,29,317"
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,Aerospace & Defense — 0.5%,Howmet Aerospace Inc.,"84,607","47,59,990",,
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,Aerospace & Defense — 0.5%,RTX Corp.,"22,379","20,39,174","67,99,164",
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,Air Freight & Logistics — 0.5%,Expeditors International of Washington Inc.,"29,991","37,88,763",,
@@ -5259,6 +5310,8 @@ LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,"Textiles, Apparel 
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,"Textiles, Apparel & Luxury Goods — 0.7%",VF Corp.,"22,854","3,76,177","90,18,725",
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,Trading Companies & Distributors — 0.1%,"MSC Industrial Direct Co. Inc., Class A","10,153","10,01,898","10,01,898",
 LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,Water Utilities — 0.1%,Essential Utilities Inc.,"23,920","8,57,771","8,57,771","1,34,09,40,439"
+LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,MONEY MARKET FUNDS — 1.4%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.51%(c)(d)(e)","54,12,000","54,15,247",,
+LCTU,BlackRock U.S. Carbon Transition Readiness ETF,31/01/24,MONEY MARKET FUNDS — 1.4%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.32%(c)(d)","1,41,70,000","1,41,70,000","1,95,85,247","1,95,85,247"
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,Australia — 6.2%,ANZ Group Holdings Ltd.,"1,368","25,357",,
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,Australia — 6.2%,Aristocrat Leisure Ltd.,196,"5,955",,
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,Australia — 6.2%,ASX Ltd.,96,"4,113",,
@@ -5695,6 +5748,9 @@ PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,Unit
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,United Kingdom — 10.0%,Taylor Wimpey PLC,"5,216","9,090",,
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,United Kingdom — 10.0%,"Wise PLC, Class A",88,"1,022",,
 PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,United Kingdom — 10.0%,WPP PLC,320,"2,863","6,20,337",6118940
+PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,GERMANY — 0.3%,"Dr Ing hc F Porsche AG, Preference Shares, NVS",44,"4,114",,
+PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,GERMANY — 0.3%,"Henkel AG & Co. KGaA, Preference Shares, NVS",112,"8,426",,
+PABD,iShares Paris-Aligned Climate Optimized MSCI World ex USA ETF,29/02/24,GERMANY — 0.3%,"Sartorius AG, Preference Shares, NVS",16,"6,060","18,600","18,600"
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,Aerospace & Defense — 0.4%,"Axon Enterprise, Inc.","16,555","50,88,510",,
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,Aerospace & Defense — 0.4%,"L3Harris Technologies, Inc.","10,393","21,99,783","72,88,293",
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,Automobiles — 2.1%,"Rivian Automotive, Inc., Class","2,91,683","33,01,851",,
@@ -5954,6 +6010,8 @@ PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,"Textiles, Ap
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,"Textiles, Apparel & Luxury Goods — 0.3%","Nike, Inc., Class","19,361","20,12,189","63,01,010",
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,Trading Companies & Distributors — 0.3%,Fastenal Co.,"62,362","45,53,050","45,53,050",
 PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,Water Utilities — 0.5%,"American Water Works Co., Inc.","72,773","86,26,511","86,26,511","1,77,29,64,466"
+PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.6%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","83,89,081","83,93,275",,
+PABU,iShares Paris-Aligned Climate Optimized MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.6%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(c)(d)(e)","21,53,142","21,53,142","1,05,46,417","1,05,46,417"
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,Australia — 1.4%,CSL Ltd.,"18,585","34,59,862",,
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,Australia — 1.4%,IDP Education Ltd.,"23,807","2,95,723",,
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,Australia — 1.4%,Vicinity Ltd.,"4,12,335","5,20,710","42,76,295",
@@ -6105,6 +6163,8 @@ SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,United States
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,United States — 23.3%,Vertex Pharmaceuticals Inc. (a)(c),"9,113","38,34,204",,
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,United States — 23.3%,Weyerhaeuser Co.,"1,89,443","65,13,050",,
 SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,United States — 23.3%,Xylem Inc./NY,"26,085","33,14,099","7,02,69,227","30,04,62,949"
+SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,MONEY MARKET FUNDS — 1.9%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(e)(f)(h)","58,51,515","58,54,441",,
+SDG,iShares MSCI Global Sustainable Development Goals ETF,29/02/24,MONEY MARKET FUNDS — 1.9%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(e)(f)","20,000","20,000","58,74,441","58,74,441"
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,Aerospace & Defense — 0.3%,"Axon Enterprise, Inc.","30,554","95,83,568","95,83,568",
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,Air Freight & Logistics — 1.5%,"CH Robinson Worldwide, Inc.","2,61,002","1,85,31,142",,
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,Air Freight & Logistics — 1.5%,"Expeditors International Washington, Inc.","2,80,219","3,11,91,177","4,97,22,319",
@@ -6282,6 +6342,8 @@ SUSA,iShares MSCI USA ESG Select ETF,30/04/24,"Textiles, Apparel & Luxury Goods 
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,"Textiles, Apparel & Luxury Goods — 0.6%","Lululemon Athletica, Inc.","8,968","32,33,861","2,09,56,192",
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,Trading Companies & Distributors — 1.8%,Ferguson PLC,"1,68,025","3,52,68,447",,
 SUSA,iShares MSCI USA ESG Select ETF,30/04/24,Trading Companies & Distributors — 1.8%,"WW Grainger, Inc.","27,076","2,49,46,473","6,02,14,920","3,32,51,98,697"
+SUSA,iShares MSCI USA ESG Select ETF,30/04/24,MONEY MARKET FUNDS — 0.7%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.49%(c)(e)(f)","1,82,65,674","1,82,71,154",,
+SUSA,iShares MSCI USA ESG Select ETF,30/04/24,MONEY MARKET FUNDS — 0.7%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.28%(c)(e)","51,26,467","51,26,467","2,33,97,621","2,33,97,621"
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,Aerospace & Defense — 0.1%,"Axon Enterprise, Inc.","3,484","10,70,877","10,70,877",
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,Air Freight & Logistics — 0.6%,"CH Robinson Worldwide, Inc.","5,730","4,24,478",,
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,Air Freight & Logistics — 0.6%,"Expeditors International Washington, Inc.","7,175","8,58,130",,
@@ -6564,6 +6626,8 @@ SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,a Trading Companies & Distributor
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,a Trading Companies & Distributors — 0.8%,"WW Grainger, Inc.","2,177","21,19,222","85,47,227",
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,a Water Utilities — 0.1%,"American Water Works Co., Inc.","9,451","11,20,321",,
 SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,a Water Utilities — 0.1%,"Essential Utilities, Inc.","12,652","4,40,037","15,60,358","1,12,00,42,654"
+SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,MONEY MARKET FUNDS — 0.6%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","54,69,948","54,72,683",,
+SUSL,iShares MSCI USA ESG Leaders ETF,29/02/24,MONEY MARKET FUNDS — 0.6%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(c)(d)","16,83,126","16,83,126","71,55,809","71,55,809"
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,Air Freight & Logistics — 0.6%,"Expeditors International Washington, Inc.","8,861","10,59,775",,
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,Air Freight & Logistics — 0.6%,FedEx Corp.,"14,439","35,94,878",,
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,Air Freight & Logistics — 0.6%,"United Parcel Service, Inc., Class","43,814","64,95,864","1,11,50,517",
@@ -6870,6 +6934,8 @@ USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,"a Textiles, A
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,a Water Utilities — 0.1%,"American Water Works Co., Inc.","11,759","13,93,912",,
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,a Water Utilities — 0.1%,"Essential Utilities, Inc.","15,730","5,47,089","19,41,001",
 USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,a Wireless Telecommunication Services — 0.3%,"T-Mobile U.S., Inc.","31,531","51,49,012","51,49,012","1,94,48,37,701"
+USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.3%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","4,08,413","4,08,617",,
+USCL,iShares Climate Conscious & Transition MSCI USA ETF,29/02/24,MONEY MARKET FUNDS — 0.3%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(c)(d)","51,98,241","51,98,241","56,06,858","56,06,858"
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Aerospace & Defense — 0.4%,"Axon Enterprise, Inc.","3,710","11,40,343",,
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Aerospace & Defense — 0.4%,HEICO Corp.,"2,280","4,40,952",,
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Aerospace & Defense — 0.4%,"HEICO Corp., Class","3,917","6,09,446",,
@@ -7233,11 +7299,13 @@ USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,"Technology Hardware, Storage & 
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,"Textiles, Apparel & Luxury Goods — 0.4%",Deckers Outdoor Corp.,"1,344","12,03,673",,
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,"Textiles, Apparel & Luxury Goods — 0.4%","Lululemon Athletica, Inc.","5,993","27,99,270","40,02,943",
 USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Trading Companies & Distributors — 1.0%,Fastenal Co.,"29,772","21,73,654",,
-USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Trading Companies & Distributors — 1.0%,Ferguson PLC,"10,603","22,42,004",,
-USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Trading Companies & Distributors — 1.0%,"United Rentals, Inc.","3,531","24,47,936",,
-USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Trading Companies & Distributors — 1.0%,"Watsco, Inc.","1,764","6,95,228",,
-USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Trading Companies & Distributors — 1.0%,"WW Grainger, Inc.","2,327","22,65,241","98,24,063",
-USXF,iShares ESG Advanced MSCI USA ETF,29/02/24,Water Utilities — 0.1%,"American Water Works Co., Inc.","10,146","12,02,707","12,02,707","93,29,27,778"
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/25,Trading Companies & Distributors — 1.0%,Ferguson PLC,"10,603","22,42,004",,
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/26,Trading Companies & Distributors — 1.0%,"United Rentals, Inc.","3,531","24,47,936",,
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/27,Trading Companies & Distributors — 1.0%,"Watsco, Inc.","1,764","6,95,228",,
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/28,Trading Companies & Distributors — 1.0%,"WW Grainger, Inc.","2,327","22,65,241","98,24,063",
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/29,Water Utilities — 0.1%,"American Water Works Co., Inc.","10,146","12,02,707","12,02,707","93,29,27,778"
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/30,MONEY MARKET FUNDS — 1.1%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","79,19,176","79,23,136",,
+USXF,iShares ESG Advanced MSCI USA ETF,29/02/31,MONEY MARKET FUNDS — 1.1%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.30%(c)(d)","21,78,434","21,78,434","1,01,01,570","1,01,01,570"
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Aerospace Defense — 1.0%,Curtiss-Wright Corp.,"2,789","7,13,817",,
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Aerospace Defense — 1.0%,Hexcel Corp.,"6,229","4,53,783",,
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Aerospace Defense — 1.0%,"Woodward, Inc.","4,504","6,94,156","18,61,756",
@@ -7598,6 +7666,8 @@ XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Trading Companies Distr
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Trading Companies Distributors — 1.7%,"Watsco, Inc.","2,372","10,24,633",,
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Trading Companies Distributors — 1.7%,"WESCO International, Inc.","3,367","5,76,700","30,37,335",
 XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,Water Utilities — 0.4%,"Essential Utilities, Inc.","19,055","7,05,988","7,05,988","18,21,13,953"
+XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,MONEY MARKET FUNDS — 4.8%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","84,70,512","84,74,748",,
+XJH,iShares ESG Select Screened S&P Mid-Cap ETF,31/03/24,MONEY MARKET FUNDS — 4.8%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.29%(c)(d)","2,58,761","2,58,761","87,33,509","87,33,509"
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Aerospace & Defense — 0.8%,"Axon Enterprise, Inc.",452,"1,41,422",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Aerospace & Defense — 0.8%,General Electric Co.,"6,830","11,98,870",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Aerospace & Defense — 0.8%,"Howmet Aerospace, Inc.","2,437","1,66,764",,
@@ -7729,7 +7799,7 @@ XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electric Utilities — 0.8%,Everso
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electric Utilities — 0.8%,Exelon Corp.,"6,256","2,35,038",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electric Utilities — 0.8%,"NextEra Energy, Inc.","12,880","8,23,161",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electric Utilities — 0.8%,"NRG Energy, Inc.","1,411","95,511","19,66,712",
-XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electrical Equipment — 0.7% ,"AMETEK, Inc.","1,458","2,66,668",,
+XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electrical Equipment — 0.7%,"AMETEK, Inc.","1,458","2,66,668",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electrical Equipment — 0.7%,Eaton Corp. PLC,"2,509","7,84,514",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electrical Equipment — 0.7%,Emerson Electric Co.,"3,575","4,05,477",,
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Electrical Equipment — 0.7%,"Generac Holdings, Inc.",392,"49,447",,
@@ -8048,3 +8118,5 @@ XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Trading Companies & Distributors �
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Trading Companies & Distributors — 0.2%,"United Rentals, Inc.",416,"2,99,982","5,75,989",
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Water Utilities — 0.1%,"American Water Works Co., Inc.","1,232","1,50,563","1,50,563",
 XVV,iShares ESG Screened S&P 500 ETF,31/03/24,Wireless Telecommunication Services — 0.2%,"T-Mobile U.S., Inc.","3,285","5,36,178","5,36,178","25,31,38,751"
+XVV,iShares ESG Screened S&P 500 ETF,31/03/24,MONEY MARKET FUNDS — 0.2%,"BlackRock Cash Funds: Institutional, SL Agency Shares, 5.50%(c)(d)(e)","96,728","96,777",,
+XVV,iShares ESG Screened S&P 500 ETF,31/03/24,MONEY MARKET FUNDS — 0.2%,"BlackRock Cash Funds: Treasury, SL Agency Shares, 5.29%(c)(d)","3,06,229","3,06,229","4,03,006","4,03,006"
