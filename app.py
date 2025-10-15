@@ -35,9 +35,9 @@ COLORS = {
     "text": "#E7EBF0",
     "muted": "#97A2B0",
     "primary": "#00A3FF",
-    "clean": "#0E8F66",   # emerald
-    "contro": "#C63C41",  # red
-    "other": "#768397",   # blue-grey
+    "clean": "#0E8F66",
+    "contro": "#C63C41",
+    "other": "#768397",
 }
 
 # =========================
@@ -77,7 +77,6 @@ st.markdown(
         padding: 14px 16px;
       }}
 
-      /* KPI cards */
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
         border: 1px solid var(--border);
@@ -88,45 +87,18 @@ st.markdown(
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
-      /* KPI tone variants (subtle tinted gradients) */
-      .kpi.kpi-red {{
-        background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0));
-        border-color: rgba(198,60,65,0.45);
-      }}
-      .kpi.kpi-green {{
-        background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0));
-        border-color: rgba(14,143,102,0.45);
-      }}
-      .kpi.kpi-neutral {{
-        background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
-        border-color: rgba(255,255,255,0.08);
-      }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
 
-      /* Tabs underline */
-      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
-        border-color: var(--primary) !important;
-      }}
+      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{ border-color: var(--primary) !important; }}
 
-      /* Dataframe: denser rows, darker header */
-      div[data-testid="stDataframe"] thead tr th {{
-        background: #0C0E13 !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
-      }}
+      div[data-testid="stDataframe"] thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
       div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
-      div[data-testid="stDataframe"] * {{
-        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-        font-size: 13px !important;
-      }}
+      div[data-testid="stDataframe"] * {{ font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important; font-size: 13px !important; }}
 
-      /* Chart titles row + tooltip badge */
-      .chart-head {{
-        display:flex; align-items:center; justify-content:space-between;
-        margin: 4px 2px 8px 2px;
-      }}
-      .chart-title {{
-        font-weight: 600; color: var(--text); letter-spacing:.1px;
-      }}
+      .chart-head {{ display:flex; align-items:center; justify-content:space-between; margin: 4px 2px 8px 2px; }}
+      .chart-title {{ font-weight: 600; color: var(--text); letter-spacing:.1px; }}
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         height: 24px; min-width: 24px; border-radius: 14px;
@@ -134,7 +106,6 @@ st.markdown(
         font-size: 12px; user-select:none; cursor: default;
         background: #0B0D12; padding: 0 8px;
       }}
-      /* pure CSS tooltip */
       .has-tip {{ position: relative; }}
       .has-tip::after {{
         content: attr(data-tip);
@@ -148,18 +119,10 @@ st.markdown(
       }}
       .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
 
-      /* Footer: right-aligned blue bold links */
-      .footer-wrap {{
-        display:flex; align-items:center; justify-content:space-between; width:100%;
-      }}
+      .footer-wrap {{ display:flex; align-items:center; justify-content:space-between; width:100%; }}
       .footer-left {{ color: var(--muted); font-size: 13px; }}
       .footer-links {{ display:flex; gap:24px; align-items:center; justify-content:flex-end; width:100%; }}
-      .footer-links a {{
-        color: #4DA3FF !important;
-        text-decoration: none;
-        font-size: 15px;
-        font-weight: 700;
-      }}
+      .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
       .footer-links a:hover {{ text-decoration: underline; }}
     </style>
     """,
@@ -251,19 +214,19 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# --------- Analysis 2 loaders ----------
+# Analysis 2 loaders (for Change since 2017)
 @st.cache_data(show_spinner=False)
-def load_trends():                return load_csv(2, "aggregate_exposure_trends.csv")
+def load_exposures_by_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
 @st.cache_data(show_spinner=False)
-def load_dispersion():            return load_csv(2, "exposure_dispersion_stats.csv")
+def load_aggregate_trends():         return load_csv(2, "aggregate_exposure_trends.csv")
 @st.cache_data(show_spinner=False)
-def load_exposures_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
+def load_dispersion_stats():         return load_csv(2, "exposure_dispersion_stats.csv")
 @st.cache_data(show_spinner=False)
-def load_year_compare():          return load_csv(2, "year_compare_summary.csv")
+def load_screen_trends():            return load_csv(2, "aggregate_screen_trends.csv")
 @st.cache_data(show_spinner=False)
-def load_movers():                return load_csv(2, "movers_by_yearpair.csv")
+def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
 @st.cache_data(show_spinner=False)
-def load_screen_trends():         return load_csv(2, "aggregate_screen_trends.csv")
+def load_movers_by_yearpair():       return load_csv(2, "movers_by_yearpair.csv")
 
 # =========================
 # HEADER
@@ -282,7 +245,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# KPI helper (tinted variants)
+# KPI helpers
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
@@ -303,32 +266,6 @@ def usd_fmt(x):
         if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
     except: return "-"
-
-# ---- NEW small helpers for robust column matching ----
-def find_col(df: pd.DataFrame, candidates=None, contains=None):
-    """
-    Return the first matching column name in df.
-    - candidates: explicit list of possible exact names (case-insensitive).
-    - contains: list of substrings that must all appear (case-insensitive).
-    """
-    cols = list(df.columns)
-    lower = {c.lower(): c for c in cols}
-    if candidates:
-        for c in candidates:
-            if c.lower() in lower:
-                return lower[c.lower()]
-    if contains:
-        for c in cols:
-            name = c.lower()
-            if all(s in name for s in contains):
-                return c
-    return None
-
-def to_percent_series(s):
-    try:
-        return pd.to_numeric(s, errors="coerce")
-    except Exception:
-        return pd.to_numeric(pd.Series([None]*len(s)), errors="coerce")
 
 divider()
 
@@ -381,7 +318,6 @@ if mode == "Dashboard":
         # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
-        # 1) Composition — shaded bars (opacity + stroke)
         with c1:
             st.markdown(
                 """<div class="chart-head">
@@ -414,12 +350,10 @@ if mode == "Dashboard":
                     tooltip=[alt.Tooltip("classification:N"),
                              alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
                 ).properties(height=120)
-
                 st.altair_chart(chart, use_container_width=True)
             else:
                 st.warning("composition columns missing in context_summary_2025.csv")
 
-        # 2) By-screen bars — shaded
         with c2:
             st.markdown(
                 """<div class="chart-head">
@@ -454,19 +388,15 @@ if mode == "Dashboard":
             )
 
             chart2 = alt.Chart(scr_all).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
-                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)",
-                        axis=alt.Axis(format=".1f")),
+                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
                 y=alt.Y("screen_category:N", sort="-x", title=None),
                 color=alt.Color("color:N", legend=None, scale=None),
                 tooltip=[alt.Tooltip("screen_category:N", title="Category"),
                          alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
             ).properties(height=240)
-
             st.altair_chart(chart2, use_container_width=True)
 
-        # Top 10 tables (no logos)
         s1, s2 = st.columns([0.5, 0.5])
-
         with s1:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
@@ -480,7 +410,6 @@ if mode == "Dashboard":
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 st.dataframe(cont_disp, use_container_width=True, hide_index=True)
-
         with s2:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
             if "cohort" in spot.columns:
@@ -495,16 +424,14 @@ if mode == "Dashboard":
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
                 st.dataframe(clean_disp, use_container_width=True, hide_index=True)
 
-        # --- Holdings Explorer (always show all rows) ---
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
 
         df_raw, df_disp, all_tags = load_explorer()
-
         fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
         with fc1:
             etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
-            sel_etfs = st.multiselect("ETF", etfs, placeholder="All")
+            sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
         with fc2:
             classes = ["Clean","Controversial","Other"]
             sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
@@ -520,7 +447,7 @@ if mode == "Dashboard":
         q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
 
         mask = pd.Series(True, index=df_raw.index)
-        if sel_etfs:   mask &= df_disp["ETF"].isin(sel_etfs)
+        if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
         if sel_class:  mask &= df_disp["Class"].isin(sel_class)
         if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
         if sel_region: mask &= df_disp["Region"].isin(sel_region)
@@ -539,11 +466,9 @@ if mode == "Dashboard":
             df_f = df_f.sort_values(by=default_sort, ascending=False)
 
         df_view = df_f
-
         for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
             if c in df_view.columns:
                 df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-
         st.dataframe(df_view, use_container_width=True, hide_index=True)
 
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
@@ -554,248 +479,390 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-    # ---------- CHANGE SINCE 2017 (robust implementation) ----------
+      # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
-        st.caption("How exposures moved over time, by fund and in aggregate.")
+        st.caption("Market value–weighted. Year A compares to 2025 (or last available).")
 
-        # --- Controls (local to tab) ---
-        colx, coly, colz = st.columns([0.28, 0.36, 0.36])
-        with colx:
-            weighting = st.radio("Weighting", ["AUM-weighted", "Equal-weighted"], index=0, horizontal=True)
-        with coly:
-            metric_for_heatmap = st.radio("Heatmap metric", ["% Controversial", "% Clean"], index=0, horizontal=True)
-        with colz:
-            topN = st.slider("Top movers to show", 5, 30, 10, step=5)
+        # ---------- Load data (Analysis 2) ----------
+        def _safe_read(fname):
+            try:
+                return load_csv(2, fname)
+            except Exception:
+                return pd.DataFrame()
 
-        # --- Load data ---
-        trends = load_trends()
-        disp   = load_dispersion()
-        fundyr = load_exposures_fund_year()
-        ycomp  = load_year_compare()
-        movers = load_movers()
-        scr_tr = load_screen_trends()
+        exp_fy = _safe_read("exposures_by_fund_year.csv")
+        scr_tr = _safe_read("aggregate_screen_trends.csv")
+        movers = _safe_read("movers_by_yearpair.csv")
+        # optional / used for badges if present
+        disp_stats = _safe_read("exposure_dispersion_stats.csv")
+        yc_sum = _safe_read("year_compare_summary.csv")
 
-        # --- Resolve columns dynamically ---
-        year_col = find_col(trends, candidates=["year"])
-        wcol = "aum" if "AUM" in weighting else "ew"
-        clean_col = find_col(trends, candidates=[f"pct_clean_{wcol}", "pct_clean", "clean_pct", "pct_clean_aum", "pct_clean_ew"]) \
-                    or find_col(trends, contains=["clean","pct"])
-        contro_col = find_col(trends, candidates=[f"pct_contro_{wcol}", "pct_controversial", "controversial_pct", "pct_contro_aum", "pct_contro_ew"]) \
-                     or find_col(trends, contains=["contro","pct"])
-        total_aum_col = find_col(trends, candidates=["total_aum_usd", "aum_total_usd", "market_total_value_usd"])
+        # ---------- Utils ----------
+        def _nk(s: str) -> str:
+            return str(s).strip().lower().replace("%","").replace("_","").replace(" ","")
 
-        # --- KPI deltas ---
-        k1, k2, k3, k4 = st.columns(4)
-        try:
-            t2017 = trends.loc[trends[year_col]==2017].iloc[0]
-            t2025 = trends.loc[trends[year_col]==2025].iloc[0]
-            d_clean  = float(t2025[clean_col])  - float(t2017[clean_col])
-            d_contro = float(t2025[contro_col]) - float(t2017[contro_col])
-            d_aum    = (float(t2025[total_aum_col]) - float(t2017[total_aum_col])) if total_aum_col else None
-        except Exception:
-            d_clean = d_contro = d_aum = None
+        def pick(df, *names):
+            if df is None or df.empty: return None
+            m = {_nk(c): c for c in df.columns}
+            for n in names:
+                k = _nk(n)
+                if k in m: return m[k]
+                # loose contains
+                for nk, orig in m.items():
+                    if k in nk: return orig
+            return None
 
-        with k1: kpi_card("Δ % Clean (pp)", f"{d_clean:+.1f} pp" if d_clean is not None else "—",
-                          tone="green" if (d_clean or 0)>0 else "neutral")
-        with k2: kpi_card("Δ % Controversial (pp)", f"{d_contro:+.1f} pp" if d_contro is not None else "—",
-                          tone="red" if (d_contro or 0)<0 else "neutral")
-        with k3: kpi_card("Δ Total AUM", usd_fmt(d_aum) if d_aum is not None else "—", tone="neutral")
+        def to_num(s): return pd.to_numeric(s, errors="coerce")
+
+        def pct_fmt(x):
+            try: return f"{float(x):.1f}%"
+            except: return "-"
+
+        # ---------- Normalize exposures_by_fund_year (MV only) ----------
+        if exp_fy.empty:
+            st.error("exposures_by_fund_year.csv missing or empty.")
+            st.stop()
+
+        ef = exp_fy.copy()
+        c_year = pick(ef,"year","yr")
+        c_etf  = pick(ef,"etf_ticker","etf","ticker","fund")
+        c_name = pick(ef,"etf_name","name")
+        c_view = pick(ef,"view","weighting","method")
+
+        c_clean = pick(ef,"pct_clean","clean_pct","clean")
+        c_cont  = pick(ef,"pct_controversial","controversial_pct","controversial","contro")
+        c_other = pick(ef,"pct_other","other_pct","other")
+
+        ef = ef.rename(columns={c_year:"year", c_etf:"etf_ticker"})
+        if c_name: ef["etf_name"] = ef[c_name]
+        else:      ef["etf_name"] = ef["etf_ticker"]
+
+        # view -> MV only
+        if c_view:
+            ef["_view"] = ef[c_view].astype(str).str.upper()
+            ef = ef[ef["_view"].str.contains("AUM|MARKET|MKT|MV|VALUE", regex=True)]
+        ef["year"] = to_num(ef["year"])
+
+        if c_clean: ef = ef.rename(columns={c_clean:"pct_clean"})
+        if c_cont:  ef = ef.rename(columns={c_cont :"pct_controversial"})
+        if c_other: ef = ef.rename(columns={c_other:"pct_other"})
+
+        for c in ["pct_clean","pct_controversial","pct_other"]:
+            if c in ef.columns: ef[c] = to_num(ef[c])
+        if "pct_other" not in ef.columns and {"pct_clean","pct_controversial"}.issubset(ef.columns):
+            ef["pct_other"] = 100 - ef["pct_clean"].fillna(0) - ef["pct_controversial"].fillna(0)
+
+        # years
+        if ef["year"].dropna().empty:
+            st.error("No year values found in exposures_by_fund_year.csv"); st.stop()
+        y_min = int(ef["year"].min())
+        y_last = 2025 if (ef["year"]==2025).any() else int(ef["year"].max())
+
+        # ---------- Controls ----------
+        cc1, cc2, cc3 = st.columns([0.46, 0.24, 0.30])
+        with cc1:
+            all_etfs = sorted(ef["etf_ticker"].dropna().unique().tolist())
+            sel_etfs = st.multiselect("ETF(s)", options=all_etfs, placeholder="All ETFs")
+        with cc2:
+            coh_only = st.toggle("Consistent cohort (in both Year A & 2025)", value=True, help="Limits to ETFs with data in both endpoints.")
+        with cc3:
+            yearA = st.slider("Year A (compares to 2025)", min_value=y_min, max_value=max(y_min, y_last-1),
+                              value=max(2017, y_min))
+        view_change = st.toggle("Show change vs Year A (pp)", value=True)
+
+        # filter by ETFs & cohort
+        dfv = ef.copy()
+        if sel_etfs:
+            dfv = dfv[dfv["etf_ticker"].isin(sel_etfs)]
+
+        if coh_only:
+            have_A = set(dfv.loc[dfv["year"]==yearA, "etf_ticker"])
+            have_Z = set(dfv.loc[dfv["year"]==y_last, "etf_ticker"])
+            keep = list(have_A & have_Z)
+            dfv = dfv[dfv["etf_ticker"].isin(keep)]
+
+        # final year window
+        dfv = dfv[(dfv["year"]>=yearA) & (dfv["year"]<=y_last)].copy()
+
+        # coverage
+        covA = dfv.loc[dfv["year"]==yearA, "etf_ticker"].nunique()
+        covZ = dfv.loc[dfv["year"]==y_last, "etf_ticker"].nunique()
+
+        # aggregated series (avg across selected ETFs)
+        series = (dfv.groupby("year", as_index=False)[["pct_clean","pct_controversial","pct_other"]]
+                    .mean(numeric_only=True).sort_values("year"))
+        series["net_align"] = series["pct_clean"].fillna(0)-series["pct_controversial"].fillna(0)
+
+        # helpers for Year A vs Last
+        def _v(df, y, col):
+            try: return float(df.loc[df["year"]==y, col].mean())
+            except: return None
+
+        clean_A, clean_Z = _v(series, yearA,"pct_clean"), _v(series, y_last,"pct_clean")
+        cont_A,  cont_Z  = _v(series, yearA,"pct_controversial"), _v(series, y_last,"pct_controversial")
+        net_A,   net_Z   = _v(series, yearA,"net_align"), _v(series, y_last,"net_align")
+        d_clean = (clean_Z - clean_A) if clean_A is not None and clean_Z is not None else None
+        d_cont  = (cont_Z  - cont_A)  if cont_A  is not None and cont_Z  is not None  else None
+        d_net   = (net_Z   - net_A)   if net_A   is not None and net_Z   is not None   else None
+
+        # change view dataframe
+        def to_change(df, base_year):
+            out = df.copy()
+            for c in ["pct_clean","pct_controversial","pct_other","net_align"]:
+                if c in out.columns:
+                    base = _v(out, base_year, c)
+                    if base is None: base = 0.0
+                    out[c+"_pp"] = out[c] - base
+            return out
+
+        ser_chg = to_change(series, yearA)
+
+        # ---------- KPI row with tall slope charts ----------
+        k1,k2,k3,k4 = st.columns(4)
+
+        def slope(df, col, color_hex):
+            if df.empty or col not in df.columns: return None
+            s = df[df["year"].isin([yearA, y_last])][["year", col]].dropna().sort_values("year")
+            if s.empty: return None
+            ax_title = "pp" if col.endswith("_pp") else "%"
+            y_scale = alt.Scale(domain=(-5,5)) if col.endswith("_pp") else alt.Scale(domain=[0,100])
+            area = alt.Chart(s).mark_area(opacity=0.12).encode(
+                x=alt.X("year:O", title=None),
+                y=alt.Y(f"{col}:Q", title=None, scale=y_scale)
+            )
+            line = alt.Chart(s).mark_line(point=True, strokeWidth=2.2, color=color_hex).encode(
+                x=alt.X("year:O", title=None),
+                y=alt.Y(f"{col}:Q", title=None, scale=y_scale),
+                tooltip=[alt.Tooltip("year:O"), alt.Tooltip(f"{col}:Q", format=".1f")]
+            )
+            yaxis = alt.Chart(pd.DataFrame({"y":[0]})).mark_rule(color="#2A2F36") \
+                .encode(y=alt.Y("y:Q", scale=y_scale)) if col.endswith("_pp") else None
+            chart = (area + line) if yaxis is None else (area + line + yaxis)
+            return chart.properties(height=120)
+
+        # choose columns for slope based on view
+        net_col   = "net_align_pp" if view_change else "net_align"
+        clean_col = "pct_clean_pp" if view_change else "pct_clean"
+        cont_col  = "pct_controversial_pp" if view_change else "pct_controversial"
+
+        with k1:
+            kpi_card("Δ Net alignment (Clean − Contro)", pct_fmt(d_net), tone="neutral")
+            sp = slope(ser_chg if view_change else series, net_col, COLORS["other"])
+            if sp: st.altair_chart(sp, use_container_width=True)
+
+        with k2:
+            kpi_card(f"% Clean — {yearA} → {y_last}",
+                     f"{pct_fmt(clean_A)} → {pct_fmt(clean_Z)}",
+                     tone=("green" if (d_clean or 0) > 0 else "red"))
+            sp = slope(ser_chg if view_change else series, clean_col, COLORS["clean"])
+            if sp: st.altair_chart(sp, use_container_width=True)
+
+        with k3:
+            kpi_card(f"% Controversial — {yearA} → {y_last}",
+                     f"{pct_fmt(cont_A)} → {pct_fmt(cont_Z)}",
+                     tone="red")
+            sp = slope(ser_chg if view_change else series, cont_col, COLORS["contro"])
+            if sp: st.altair_chart(sp, use_container_width=True)
+
         with k4:
-            etf_col_guess = find_col(fundyr, candidates=["etf_ticker","etf","fund","fund_ticker","ticker"])
-            n_etfs = fundyr[etf_col_guess].nunique() if etf_col_guess else None
-            kpi_card("ETFs in scope", f"{n_etfs:,}" if n_etfs else "—", tone="neutral")
+            kpi_card("Coverage", f"{covA} funds in {yearA} • {covZ} in {y_last}", tone="neutral")
 
         gap(6)
 
-        # --- Trends (Clean & Controversial) ---
-        t1, t2 = st.columns([0.5, 0.5])
+        # ---------- Graph A (full width): Combined trend or change ----------
+        st.markdown(
+            """<div class="chart-head">
+                   <div class="chart-title">Combined trend — % Clean / % Controversial (Year A → 2025)</div>
+                   <div class="info-badge has-tip" data-tip="Toggle 'Show change' to view percentage-point deltas vs Year A.">i</div>
+               </div>""",
+            unsafe_allow_html=True,
+        )
+        plot_df = ser_chg if view_change else series
+        value_col = "pct" if not view_change else "pp"
+        # melt
+        cm = plot_df.melt(id_vars="year",
+                          value_vars=[clean_col, cont_col] if view_change else ["pct_clean","pct_controversial"],
+                          var_name="class", value_name="val")
+        cm["class"] = cm["class"].replace({
+            "pct_clean":"Clean","pct_controversial":"Controversial",
+            "pct_clean_pp":"Clean (pp)","pct_controversial_pp":"Controversial (pp)"
+        })
+        y_scale = alt.Scale(domain=(-5,5)) if view_change else alt.Scale(domain=[0,100])
+        y_title = "Δ vs Year A (pp)" if view_change else "% of AUM"
+        color_scale = alt.Scale(domain=[c for c in cm["class"].unique()],
+                                range=[COLORS["clean"], COLORS["contro"]])
+        lines = alt.Chart(cm).mark_line().encode(
+            x=alt.X("year:O", title=None),
+            y=alt.Y("val:Q", title=y_title, scale=y_scale, axis=alt.Axis(format=".1f")),
+            color=alt.Color("class:N", scale=color_scale, title=None),
+            tooltip=[alt.Tooltip("year:O"), alt.Tooltip("class:N"), alt.Tooltip("val:Q", format=".1f")]
+        ).properties(height=320)
+        if view_change:
+            zero = alt.Chart(pd.DataFrame({"y":[0]})).mark_rule(color="#2A2F36").encode(y="y:Q")
+            lines = zero + lines
+        st.altair_chart(lines, use_container_width=True)
 
-        with t1:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">% Clean over time</div>', unsafe_allow_html=True)
-            if all([year_col, clean_col]):
-                base = alt.Chart(trends).encode(x=alt.X(f"{year_col}:O", title="Year"))
-                clean_line = base.mark_line(point=False, strokeWidth=2, color=COLORS["clean"]).encode(
-                    y=alt.Y(f"{clean_col}:Q", title="% Clean")
-                )
-                chart = clean_line
+        gap(10)
 
-                if not disp.empty and find_col(disp, candidates=["metric"]) and \
-                   find_col(disp, candidates=["p10"]) and find_col(disp, candidates=["p90"]) and \
-                   find_col(disp, candidates=["year"]):
-                    mcol = find_col(disp, candidates=["metric"])
-                    ycol = find_col(disp, candidates=["year"])
-                    band = disp[disp[mcol].str.lower().str.contains("clean")].copy()
-                    rib = alt.Chart(band).mark_area(opacity=0.18, color=COLORS["clean"]).encode(
-                        x=alt.X(f"{ycol}:O"),
-                        y=alt.Y(find_col(band, candidates=["p10"]), title=""),
-                        y2=find_col(band, candidates=["p90"])
-                    )
-                    chart = rib + clean_line
+        # ---------- Graphs B & C: screens + composition ----------
+        colB, colC = st.columns([0.52, 0.48])
 
-                st.altair_chart(chart.properties(height=260), use_container_width=True)
-            else:
-                st.warning("Trend columns for % Clean not found.")
-
-        with t2:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">% Controversial over time</div>', unsafe_allow_html=True)
-            if all([year_col, contro_col]):
-                base = alt.Chart(trends).encode(x=alt.X(f"{year_col}:O", title="Year"))
-                c_line = base.mark_line(point=False, strokeWidth=2, color=COLORS["contro"]).encode(
-                    y=alt.Y(f"{contro_col}:Q", title="% Controversial")
-                )
-                chart = c_line
-
-                if not disp.empty and find_col(disp, candidates=["metric"]) and \
-                   find_col(disp, candidates=["p10"]) and find_col(disp, candidates=["p90"]) and \
-                   find_col(disp, candidates=["year"]):
-                    mcol = find_col(disp, candidates=["metric"])
-                    ycol = find_col(disp, candidates=["year"])
-                    band = disp[disp[mcol].str.lower().str.contains("contro")].copy()
-                    rib = alt.Chart(band).mark_area(opacity=0.18, color=COLORS["contro"]).encode(
-                        x=alt.X(f"{ycol}:O"),
-                        y=alt.Y(find_col(band, candidates=["p10"]), title=""),
-                        y2=find_col(band, candidates=["p90"])
-                    )
-                    chart = rib + c_line
-
-                st.altair_chart(chart.properties(height=260), use_container_width=True)
-            else:
-                st.warning("Trend columns for % Controversial not found.")
-
-        gap(6)
-
-        # --- Heatmap Fund × Year ---
-        st.markdown(f'<div class="chart-title" style="margin-bottom:6px;">Heatmap — Fund × Year by {metric_for_heatmap}</div>', unsafe_allow_html=True)
-
-        fy_year  = find_col(fundyr, candidates=["year","as_of_year"])
-        fy_etf   = find_col(fundyr, candidates=["etf_ticker","etf","fund","etf_name","fund_ticker","ticker"])
-        col_clean  = find_col(fundyr, candidates=["pct_clean","clean_pct"]) or find_col(fundyr, contains=["clean","pct"])
-        col_contro = find_col(fundyr, candidates=["pct_controversial","controversial_pct"]) or find_col(fundyr, contains=["contro","pct"])
-
-        if fy_year and fy_etf and (col_clean or col_contro):
-            if metric_for_heatmap.startswith("% Clean") and col_clean:
-                val_col = col_clean
-                cmap = alt.Scale(scheme="greens")
-            else:
-                val_col = col_contro
-                cmap = alt.Scale(scheme="oranges")
-
-            heat = alt.Chart(fundyr).mark_rect().encode(
-                x=alt.X(f"{fy_year}:O", title="Year"),
-                y=alt.Y(f"{fy_etf}:O", title="ETF"),
-                color=alt.Color(f"{val_col}:Q", title=metric_for_heatmap, scale=cmap),
-                tooltip=[fy_etf, fy_year, alt.Tooltip(f"{val_col}:Q", format=".1f")]
-            ).properties(height=420)
-            st.altair_chart(heat, use_container_width=True)
-        else:
-            st.warning("Heatmap columns not found in exposures_by_fund_year.csv")
-
-        gap(6)
-
-        # --- Year vs Year & Movers ---
-        yy_left, yy_right = st.columns([0.5, 0.5])
-
-        with yy_left:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">2017 vs 2025 — composition</div>', unsafe_allow_html=True)
-
-            if not ycomp.empty:
-                ycol = find_col(ycomp, candidates=["year"])
-                ccol = find_col(ycomp, candidates=["classification"])
-                vcol = find_col(ycomp, candidates=["share_pct","share_of_total_aum_pct","pct"])
-            else:
-                ycol = ccol = vcol = None
-
-            if ycol and ccol and vcol:
-                yy = ycomp.copy()
-                yy[ccol] = yy[ccol].astype(str).str.title()
-                yy = yy[yy[ccol].isin(["Clean","Controversial","Other"])]
-                yy = yy[yy[ycol].isin([2017, 2025])]
-            else:
-                # Build from trends (fallback)
-                yy = []
-                other_col = find_col(trends, candidates=[f"pct_other_{wcol}","pct_other","other_pct"]) or \
-                            find_col(trends, contains=["other","pct"])
-                for y in [2017, 2025]:
-                    row = trends.loc[trends[year_col]==y].head(1)
-                    if row.empty: continue
-                    row = row.iloc[0]
-                    vals = {
-                        "Clean": float(row[clean_col]) if clean_col in trends.columns else None,
-                        "Controversial": float(row[contro_col]) if contro_col in trends.columns else None,
-                        "Other": float(row[other_col]) if other_col else max(0.0, 100.0 - float(row.get(clean_col,0)) - float(row.get(contro_col,0)))
-                    }
-                    for k,v in vals.items():
-                        yy.append({"year": y, "classification": k, "share": v})
-                yy = pd.DataFrame(yy)
-                ycol, ccol, vcol = "year", "classification", "share"
-
-            if not yy.empty:
-                color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
-                                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
-                bars = alt.Chart(yy).mark_bar().encode(
-                    x=alt.X(f"{vcol}:Q", title="Share (%)", axis=alt.Axis(format=".1f"), stack="normalize"),
-                    y=alt.Y(f"{ycol}:O", title=None),
-                    color=alt.Color(f"{ccol}:N", scale=color_scale, legend=alt.Legend(title=None, orient="top")),
-                    tooltip=[ycol, ccol, alt.Tooltip(vcol, title="Share (%)", format=".1f")]
-                ).properties(height=180)
-                st.altair_chart(bars, use_container_width=True)
-            else:
-                st.info("Could not build 2017 vs 2025 comparison.")
-
-        with yy_right:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top movers (2017 → 2025)</div>', unsafe_allow_html=True)
-            if not movers.empty:
-                mv = movers.copy()
-                delta_col = find_col(mv, contains=["delta","contrib"]) or find_col(mv, contains=["delta","share"]) or find_col(mv, contains=["delta","pct"])
-                name_col  = find_col(mv, candidates=["holding_name","company_name","name"])
-                ticker_col = find_col(mv, candidates=["ticker","company_ticker"])
-                screens_col = find_col(mv, candidates=["screen_categories","screens"])
-
-                if delta_col and name_col:
-                    mv[delta_col] = pd.to_numeric(mv[delta_col], errors="coerce")
-                    mv = mv.sort_values(delta_col, ascending=False)
-                    top_up = mv.head(topN).copy()
-                    top_dn = mv.tail(topN).copy().iloc[::-1]
-                    top_up["Direction"] = "↑"
-                    top_dn["Direction"] = "↓"
-                    out = pd.concat([top_up, top_dn], ignore_index=True)
-
-                    out_df = pd.DataFrame({
-                        "Ticker": out[ticker_col] if ticker_col in out.columns else "",
-                        "Holding": out[name_col],
-                        "Screens": out[screens_col] if screens_col in out.columns else "",
-                        "Δ contribution (pp)": out[delta_col].map(lambda v: f"{v:.2f}" if pd.notna(v) else ""),
-                        "Dir": out["Direction"]
-                    })
-                    st.dataframe(out_df, use_container_width=True, hide_index=True)
-                else:
-                    st.info("Could not detect movers delta/name columns.")
-            else:
-                st.info("movers_by_yearpair.csv not found or empty.")
-
-        # --- Optional: Screen trends (small multiples) ---
-        with st.expander("Screen trends over time (AUM-weighted)"):
+        # B) Screen trends — Clean200, Deforestation, Fossil Fuels, Prisons, Weapons
+        with colB:
+            st.markdown(
+                """<div class="chart-head">
+                       <div class="chart-title">Screen trends — aggregate shift (Year A → 2025)</div>
+                       <div class="info-badge has-tip" data-tip="Clean200, Deforestation, Fossil Fuels, Prisons, Weapons.">i</div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
             if not scr_tr.empty:
-                sc_col = find_col(scr_tr, candidates=["screen_category","category"])
-                y_col  = find_col(scr_tr, candidates=["year"])
-                v_col  = find_col(scr_tr, candidates=["share_of_total_aum_pct","share_pct","pct","exposure_pct"])
-                if sc_col and y_col and v_col:
-                    base = alt.Chart(scr_tr).encode(
-                        x=alt.X(f"{y_col}:O", title="Year"),
-                        y=alt.Y(f"{v_col}:Q", title="Share (%)", axis=alt.Axis(format=".1f")),
-                        tooltip=[sc_col, y_col, alt.Tooltip(v_col, title="Share (%)", format=".1f")]
-                    )
-                    sm = base.mark_line().encode(
-                        color=alt.Color(f"{sc_col}:N", legend=None)
-                    ).properties(height=120).facet(
-                        row=alt.Row(f"{sc_col}:N", header=alt.Header(labelColor=COLORS["muted"]))
-                    )
-                    st.altair_chart(sm, use_container_width=True)
+                sc = scr_tr.copy()
+                cy  = pick(sc,"year","yr")
+                cv  = pick(sc,"view","weighting")
+                cat = pick(sc,"screen","category","screen_category")
+                met = pick(sc,"pct","value","share","share_of_aum_pct")
+                if cy: sc = sc.rename(columns={cy:"year"})
+                if cv: sc = sc.rename(columns={cv:"view"})
+                if cat: sc = sc.rename(columns={cat:"screen"})
+                if met: sc = sc.rename(columns={met:"pct"})
+                if "view" in sc.columns:
+                    sc = sc[sc["view"].astype(str).str.upper().str.contains("AUM|MARKET|MKT|MV|VALUE")]
+                sc = sc[(sc["year"]>=yearA) & (sc["year"]<=y_last)]
+                sc["screen"] = sc.get("screen", pd.Series(dtype=str)).astype(str).str.strip().str.title()
+                fix = {
+                    "Clean 200":"Clean200","Clean200":"Clean200",
+                    "Deforestation":"Deforestation",
+                    "Fossil":"Fossil Fuels","Fossil Fuel":"Fossil Fuels","Fossil Fuels":"Fossil Fuels",
+                    "Prison":"Prisons","Prisons":"Prisons",
+                    "Weapons":"Weapons",
+                }
+                sc["screen"] = sc["screen"].map(lambda x: fix.get(x, x))
+                keep = ["Clean200","Deforestation","Fossil Fuels","Prisons","Weapons"]
+                sc = sc[sc["screen"].isin(keep)]
+                sc["screen"] = pd.Categorical(sc["screen"], categories=keep, ordered=True)
+                if view_change:
+                    # convert to change vs Year A per screen
+                    base = sc[sc["year"]==yearA].set_index("screen")["pct"].to_dict()
+                    sc["pct"] = sc.apply(lambda r: (r["pct"] - base.get(r["screen"], 0.0)), axis=1)
+                    ysc = alt.Scale(domain=(-5,5))
+                    ytitle = "Δ vs Year A (pp)"
+                    zero = alt.Chart(pd.DataFrame({"y":[0]})).mark_rule(color="#2A2F36").encode(y="y:Q")
                 else:
-                    st.info("aggregate_screen_trends.csv present but columns are named differently than expected.")
+                    ysc = alt.Scale(domain=[0,100])
+                    ytitle = "% of AUM"
+                    zero = None
+                lines_sc = alt.Chart(sc).mark_line().encode(
+                    x=alt.X("year:O", title=None),
+                    y=alt.Y("pct:Q", title=ytitle, scale=ysc, axis=alt.Axis(format=".1f")),
+                    color=alt.Color("screen:N", title=None),
+                    tooltip=[alt.Tooltip("screen:N"), alt.Tooltip("year:O"), alt.Tooltip("pct:Q", format=".1f")]
+                ).properties(height=300)
+                st.altair_chart(lines_sc if zero is None else (zero + lines_sc), use_container_width=True)
             else:
-                st.info("aggregate_screen_trends.csv not found.")
+                st.info("aggregate_screen_trends.csv missing/empty.")
+
+        # C) Year A vs 2025 composition — vertical 100%
+        with colC:
+            st.markdown(
+                f"""<div class="chart-head">
+                        <div class="chart-title">Year {yearA} vs {y_last} — composition</div>
+                        <div></div>
+                    </div>""",
+                unsafe_allow_html=True,
+            )
+            baseC = dfv.copy()
+            compA = baseC[baseC["year"]==yearA][["pct_clean","pct_controversial","pct_other"]].mean(numeric_only=True)
+            compZ = baseC[baseC["year"]==y_last][["pct_clean","pct_controversial","pct_other"]].mean(numeric_only=True)
+            comp = pd.DataFrame({
+                "year":[str(yearA), str(y_last)],
+                "Clean":[compA.get("pct_clean",0.0)/100.0, compZ.get("pct_clean",0.0)/100.0],
+                "Controversial":[compA.get("pct_controversial",0.0)/100.0, compZ.get("pct_controversial",0.0)/100.0],
+                "Other":[compA.get("pct_other",0.0)/100.0, compZ.get("pct_other",0.0)/100.0],
+            })
+            comp_m = comp.melt(id_vars="year", var_name="class", value_name="share")
+            color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
+            bars_v = alt.Chart(comp_m).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                x=alt.X("year:N", title=None),
+                y=alt.Y("share:Q", stack="normalize", axis=alt.Axis(format='%', title=None)),
+                color=alt.Color("class:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
+                tooltip=[alt.Tooltip("year:N"), alt.Tooltip("class:N"), alt.Tooltip("share:Q", format=".1%")]
+            ).properties(height=300)
+            st.altair_chart(bars_v, use_container_width=True)
+
+        gap(10)
+
+        # ---------- Movers + Distributions row ----------
+        m1, m2, m3 = st.columns([0.44, 0.28, 0.28])
+
+        # Movers scatter: ΔClean vs ΔControversial (Year A -> last)
+        with m1:
+            st.markdown('<div class="chart-title">Movers — ΔClean vs ΔControversial (pp)</div>', unsafe_allow_html=True)
+            mv = movers.copy()
+            y0 = pick(mv,"year_start","year_a","year0","yeara")
+            y1 = pick(mv,"year_end","year_b","year1","yearz")
+            et = pick(mv,"etf_ticker","etf","ticker")
+            dc = pick(mv,"d_clean_pp","delta_clean_pp","clean_pp")
+            dct= pick(mv,"d_contro_pp","d_controversial_pp","delta_contro_pp","contro_pp")
+            if all([col is not None for col in [y0,y1,et,dc,dct]]):
+                mv = mv.rename(columns={y0:"y0", y1:"y1", et:"ETF", dc:"d_clean_pp", dct:"d_contro_pp"})
+                mv = mv[(mv["y0"]==yearA) & (mv["y1"]==y_last)]
+                if sel_etfs: mv = mv[mv["ETF"].isin(sel_etfs)]
+                if coh_only and mv.shape[0]:
+                    mv = mv[mv["ETF"].isin(dfv["etf_ticker"].unique())]
+                if not mv.empty:
+                    zeroV = alt.Chart(pd.DataFrame({"x":[0],"y":[0]})).mark_rule(color="#2A2F36").encode(x="x:Q") + \
+                            alt.Chart(pd.DataFrame({"x":[0],"y":[0]})).mark_rule(color="#2A2F36").encode(y="y:Q")
+                    scat = alt.Chart(mv).mark_point(filled=True, size=85).encode(
+                        x=alt.X("d_contro_pp:Q", title="Δ Controversial (pp)"),
+                        y=alt.Y("d_clean_pp:Q", title="Δ Clean (pp)"),
+                        color=alt.value(COLORS["primary"]),
+                        tooltip=["ETF","d_clean_pp","d_contro_pp"]
+                    ).properties(height=280)
+                    st.altair_chart(zeroV + scat, use_container_width=True)
+                else:
+                    st.info("No movers available for the chosen Year A and selection.")
+            else:
+                st.info("movers_by_yearpair.csv missing expected columns — skipping scatter.")
+
+        # Histograms: ΔControversial and ΔClean
+        with m2:
+            st.markdown('<div class="chart-title">Distribution — ΔControversial (pp)</div>', unsafe_allow_html=True)
+            # derive quick deltas from dfv by ETF
+            baseA = dfv[dfv["year"]==yearA].set_index("etf_ticker")
+            baseZ = dfv[dfv["year"]==y_last].set_index("etf_ticker")
+            joined = baseA[["pct_controversial"]].join(baseZ[["pct_controversial"]], lsuffix="_A", rsuffix="_Z", how="inner")
+            joined["d_contro_pp"] = joined["pct_controversial_Z"] - joined["pct_controversial_A"]
+            if not joined.empty:
+                hist = alt.Chart(joined.reset_index()).mark_bar().encode(
+                    x=alt.X("d_contro_pp:Q", bin=alt.Bin(step=0.5), title="pp"),
+                    y=alt.Y("count()", title="ETFs")
+                ).properties(height=180)
+                st.altair_chart(hist, use_container_width=True)
+            else:
+                st.info("Not enough overlapping ETFs for histogram.")
+
+        with m3:
+            st.markdown('<div class="chart-title">Distribution — ΔClean (pp)</div>', unsafe_allow_html=True)
+            joined2 = baseA[["pct_clean"]].join(baseZ[["pct_clean"]], lsuffix="_A", rsuffix="_Z", how="inner")
+            joined2["d_clean_pp"] = joined2["pct_clean_Z"] - joined2["pct_clean_A"]
+            if not joined2.empty:
+                hist2 = alt.Chart(joined2.reset_index()).mark_bar().encode(
+                    x=alt.X("d_clean_pp:Q", bin=alt.Bin(step=0.5), title="pp"),
+                    y=alt.Y("count()", title="ETFs")
+                ).properties(height=180)
+                st.altair_chart(hist2, use_container_width=True)
+            else:
+                st.info("Not enough overlapping ETFs for histogram.")
+
+        gap(8)
+
+        # ---------- Screen attribution to change (Year A -> 2025) ----------
+        st.markdown('<div class="chart-title">Attribution — which screens drove Δ (pp) since Year A</div>', unsafe_allow_html=True)
+        if not scr_tr.empty:
+            sc2 = scr_tr
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
@@ -841,31 +908,15 @@ divider()
 st.markdown(
     """
     <style>
-      .footer-wrap {
-        display:flex; align-items:center; justify-content:space-between; width:100%;
-      }
-      .footer-left {
-        color: var(--muted); font-size: 14px; white-space: nowrap;
-      }
-      .footer-links {
-        display:flex; gap:28px; align-items:center; justify-content:flex-end;
-      }
-      .footer-links a {
-        color: var(--text) !important;        /* no blue */
-        text-decoration: none;
-        font-size: 15.5px;                      /* slightly larger */
-        font-weight: 500;                     /* not bold by default */
-        opacity: .9;
-      }
-      .footer-links a:hover { opacity: 1; text-decoration: underline; }
+      .footer-wrap { display:flex; align-items:center; justify-content:space-between; width:100%; }
+      .footer-left { color: var(--muted); font-size: 14px; white-space: nowrap; }
     </style>
-
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
-      <div class="footer-links">
-        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
-        <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
-        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
+      <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">LinkedIn</a>
+        <a href="https://github.com/nitya-ar" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">GitHub</a>
+        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500;"><strong>Send Feedback</strong></a>
       </div>
     </div>
     """,
