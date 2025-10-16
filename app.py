@@ -287,10 +287,17 @@ divider()
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
-    # ---------- 2025 OVERVIEW ----------
+        # ---------- 2025 OVERVIEW ----------
     with tab1:
         st.subheader("2025 Overview")
         st.caption("Today’s composition and the names/screens that drive it.")
+
+        # NEW: one-click hard refresh so updated CSVs are reloaded
+        btn_col, _sp = st.columns([0.18, 0.82])
+        with btn_col:
+            if st.button("Reload 2025 data", help="Clear cache and reload latest Analysis 1 CSVs"):
+                st.cache_data.clear()
+                st.rerun()
 
         ctx = load_context_summary()
         scr = load_by_screen()
