@@ -490,7 +490,7 @@ if mode == "Dashboard":
 
 
 
-    # ---------- CHANGE SINCE 2017 ----------
+# ---------- CHANGE SINCE 2017 ----------
 with tab2:
     st.subheader("Change since 2017")
     st.caption("End year fixed at 2025. Drag the start year. Using a unified 2025 classification applied to all years.")
@@ -502,7 +502,7 @@ with tab2:
             st.cache_data.clear()
             st.rerun()
 
-    # Load files
+    # Load data
     by_fund = load_exposures_by_fund_year()
     agg_tr  = load_aggregate_trends()
     scr_tr  = load_screen_trends()
@@ -665,7 +665,7 @@ with tab2:
 
     gap(8)
 
-    # ---------- Screen trends (Clean200, Prisons, Deforestation, Fossil Fuel, Weapons, Tobacco) ----------
+    # ---------- Screen trends ----------
     st.markdown('<div class="chart-title">Screen trends — Clean200 & controversial screens</div>', unsafe_allow_html=True)
     if not scr_tr.empty:
         d = scr_tr.copy()
@@ -762,34 +762,50 @@ with tab2:
 
     # ---------- Biggest movers list ----------
     st.markdown('<div class="chart-title">Biggest movers — holdings driving change (Start → 2025)</div>', unsafe_allow_html=True)
-    mv = movers.copy()
-    mvcols = {c.lower(): c for c in mv.columns}
-    sy   = mvcols.get("year_a") or mvcols.get("start_year") or mvcols.get("startyear")
-    ey   = mvcols.get("year_b") or mvcols.get("end_year")   or mvcols.get("endyear")
-    hcol = mvcols.get("holding_name") or mvcols.get("holding") or mvcols.get("name")
-    ecol = mvcols.get("etf_ticker") or etf_col
-    scrc = mvcols.get("screen") or mvcols.get("classification")
-    contrib = mvcols.get("delta_contrib_pct_agg") or mvcols.get("contribution_pp") or mvcols.get("delta_pp")
 
-    if sy and ey and hcol and contrib:
-        mvv = mv[(mv[sy]==start_year) & (mv[ey]==end_year)].copy()
-        if sel_etfs and ecol in mvv.columns:
-            mvv = mvv[mvv[ecol].astype(str).isin(sel_etfs)]
-        cols = []
-        if ecol in mvv.columns: cols.append(("ETF", ecol))
-        cols += [("Holding", hcol)]
-        if scrc in mvv.columns: cols.append(("Screen", scrc))
-        cols += [("Contribution (pp)", contrib)]
-        table = mvv[[c for _,c in cols]].rename(columns={c:l for l,c in cols}).copy()
-        table["Contribution (pp)"] = pd.to_numeric(table["Contribution (pp)"], errors="coerce")
-        table["_abs"] = table["Contribution (pp)"].abs()
-        table = table.sort_values("_abs", ascending=False).drop(columns=["_abs"]).head(50)
-        st.dataframe(table, use_container_width=True, hide_index=True)
-        st.download_button("Download movers (CSV)",
-            data=table.to_csv(index=False).encode("utf-8"),
-            file_name=f"movers_{start_year}_to_{end_year}.csv", mime="text/csv")
+    if movers is None or movers.empty:
+        st.info("Movers table unavailable (file missing or empty).")
     else:
-        st.info("Movers table unavailable (need year_a/year_b, holding_name, and contribution column).")
+        mv = movers.copy()
+        mvcols = {c.lower(): c for c in mv.columns}
+
+        sy      = mvcols.get("year_a") or mvcols.get("start_year") or mvcols.get("startyear")
+        ey      = mvcols.get("year_b") or mvcols.get("end_year")   or mvcols.get("endyear")
+        hcol    = mvcols.get("holding_name") or mvcols.get("holding") or mvcols.get("name")
+        ecol    = mvcols.get("etf_ticker") or etf_col
+        scrc    = mvcols.get("screen") or mvcols.get("classification")
+        contrib = mvcols.get("delta_contrib_pct_agg") or mvcols.get("contribution_pp") or mvcols.get("delta_pp")
+
+        if not all([sy, ey, hcol, contrib]):
+            st.info("Movers table unavailable (need year_a/year_b, holding_name, and contribution column).")
+        else:
+            mvv = mv[(mv[sy] == start_year) & (mv[ey] == end_year)].copy()
+            if sel_etfs and (ecol in mvv.columns):
+                mvv = mvv[mvv[ecol].astype(str).isin(sel_etfs)]
+
+            cols = []
+            if ecol in mvv.columns: cols.append(("ETF", ecol))
+            cols.append(("Holding", hcol))
+            if scrc in mvv.columns: cols.append(("Screen", scrc))
+            cols.append(("Contribution (pp)", contrib))
+
+            if cols:
+                table = mvv[[c for _, c in cols]].rename(columns={c: lbl for lbl, c in cols}).copy()
+                table["Contribution (pp)"] = pd.to_numeric(table["Contribution (pp)"], errors="coerce")
+                table["_abs"] = table["Contribution (pp)"].abs()
+                table = table.sort_values("_abs", ascending=False).drop(columns=["_abs"]).head(50)
+
+                st.dataframe(table, use_container_width=True, hide_index=True)
+                st.download_button(
+                    "Download movers (CSV)",
+                    data=table.to_csv(index=False).encode("utf-8"),
+                    file_name=f"movers_{start_year}_to_{end_year}.csv",
+                    mime="text/csv",
+                )
+            else:
+                st.info("Movers table unavailable (no displayable columns).")
+# (end of with tab2)
+
 
 
 
