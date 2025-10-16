@@ -481,8 +481,9 @@ if mode == "Dashboard":
             file_name="holdings_explorer_filtered.csv",
             mime="text/csv",
         )
-
-            # ---------- CHANGE SINCE 2017 ----------
+        
+        # ---------- CHANGE SINCE 2017 ----------
+        
         with tab2:
         st.subheader("Change since 2017")
         st.caption("Track how exposures evolved using today’s (2025) classification, applied to past portfolios.")
