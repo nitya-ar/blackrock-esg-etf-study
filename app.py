@@ -491,62 +491,56 @@ if mode == "Dashboard":
 
 
 
-        # ---------------- Change Since 2017 ----------------
+    # ---------------- Change Since 2017 ----------------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("All years are evaluated using the 2025 classification.")
 
         # ---- Load data
         try:
-            by_fund = load_exposures_by_fund_year()        # ETF-level %s + AUM proxy
-            scr_tr  = load_screen_trends()                 # may be empty
+            by_fund = load_exposures_by_fund_year()   # ETF-level exposures
+            scr_tr  = load_screen_trends()            # may be empty
         except Exception as e:
             st.error(f"Could not load Analysis 2 CSVs: {e}")
             st.stop()
 
         # ---- Helpers & canonical cols
         def _pick(df, *keys):
-            k = [x.lower() for x in keys]
+            keys = [k.lower() for k in keys]
             for c in df.columns:
-                if any(s in c.lower() for s in k):
+                cl = c.lower()
+                if any(k in cl for k in keys):
                     return c
             return None
 
-        etf_col   = _pick(by_fund, "ETF ticker", "etf_ticker", "etf")
         year_col  = "year"
+        etf_col   = _pick(by_fund, "ETF ticker", "etf_ticker", "etf")
         clean_col = _pick(by_fund, "pct_clean", "clean")
         ctr_col   = _pick(by_fund, "pct_controversial", "controversial", "contro")
         oth_col   = _pick(by_fund, "pct_other", "other")
         aum_col   = _pick(by_fund, "market_total_value_usd", "aum", "net_assets")
 
-        # standardize year dtype
         if year_col in by_fund.columns:
             by_fund[year_col] = pd.to_numeric(by_fund[year_col], errors="coerce").astype("Int64")
 
-        years = sorted([int(y) for y in by_fund[year_col].dropna().unique().tolist()]) if year_col in by_fund.columns else list(range(2017, 2026))
+        years    = sorted([int(y) for y in by_fund[year_col].dropna().unique().tolist()]) if year_col in by_fund.columns else list(range(2017, 2026))
         end_year = 2025 if 2025 in years else (max(years) if years else 2025)
         min_year = min(years) if years else 2017
 
-        # ---- First compute overlap cohort for the UI
         df_all = by_fund.copy()
-        yA_all = df_all[df_all[year_col]==min_year]
-        yZ_all = df_all[df_all[year_col]==end_year]
-        setA_all = set(yA_all.get(etf_col, pd.Series([], dtype=str)).astype(str)) if etf_col in yA_all.columns else set()
-        setZ_all = set(yZ_all.get(etf_col, pd.Series([], dtype=str)).astype(str)) if etf_col in yZ_all.columns else set()
 
-        # ---- Controls
+        # ---- UI: Start year slider first (drives overlap)
         topA, topB, topC = st.columns([0.44, 0.28, 0.28])
 
         with topB:
             start_year = st.slider("Start Year", min_value=min_year, max_value=max(end_year-1, min_year), value=min_year)
 
-        # overlap *for the chosen start year*
+        # ---- Overlap cohort for chosen start year and 2025
         setA = set(df_all.loc[df_all[year_col]==start_year, etf_col].astype(str)) if etf_col in df_all.columns else set()
         setZ = set(df_all.loc[df_all[year_col]==end_year,   etf_col].astype(str)) if etf_col in df_all.columns else set()
-        overlap = sorted((setA & setZ))
+        overlap = sorted(list(setA & setZ))
 
         with topA:
-            # ETF filter only offers ETFs present in BOTH start and end years
             sel_etfs = st.multiselect("ETF (present in both selected years)", overlap, default=[])
 
         with topC:
@@ -557,19 +551,15 @@ if mode == "Dashboard":
             )
             weighting = st.segmented_control("Weighting", ["AUM-weighted", "Equal-weighted"], default="AUM-weighted", label_visibility="collapsed")
 
-        # ---- Build the active cohort dataframe (only overlap ETFs, further filtered by user selection if any)
+        # ---- Build active cohort df (only overlap ETFs, then user subset if any)
         cohort = overlap if not sel_etfs else sel_etfs
         df = df_all[df_all[etf_col].astype(str).isin(cohort)].copy() if etf_col in df_all.columns else df_all.copy()
         df = df[(df[year_col]>=start_year) & (df[year_col]<=end_year)]
 
-        # ---- Coverage card (clear, unambiguous)
-        yA = df[df[year_col]==start_year]
-        yZ = df[df[year_col]==end_year]
-        covA = yA[etf_col].nunique() if etf_col in yA.columns else 0
-        covZ = yZ[etf_col].nunique() if etf_col in yZ.columns else 0
+        # ---- Coverage numbers (cohort = intersection; show only that)
         covI = len(cohort)
 
-        # ---- Weighted series from per-fund table (respects ETF selection)
+        # ---- Series from per-fund table (respects ETF selection)
         def _series_from_funds(col_name: str) -> pd.DataFrame:
             if not col_name or col_name not in df.columns or df.empty:
                 return pd.DataFrame(columns=[year_col,"value"])
@@ -597,23 +587,24 @@ if mode == "Dashboard":
         cA, cZ = _val(s_clean, start_year),  _val(s_clean, end_year)
         kA, kZ = _val(s_contro, start_year), _val(s_contro, end_year)
 
-        # ---- Proper slope charts (two points, labeled axes)
+        # ---- Proper slope charts (two points, same y-range 0..30)
         def slope_chart(s: pd.DataFrame, title: str, color: str):
-            if s is None or s.empty: 
+            if s is None or s.empty:
                 return None
             two = s[s[year_col].isin([start_year, end_year])].copy()
-            if two.empty: 
+            if two.empty:
                 return None
             two["Year"] = two[year_col].astype(str)
             base = alt.Chart(two).encode(
                 x=alt.X("Year:N", title="year", sort=[str(start_year), str(end_year)]),
-                y=alt.Y("value:Q", title="value", axis=alt.Axis(format=".1f"))
+                y=alt.Y("value:Q", title="value", axis=alt.Axis(format=".1f"),
+                        scale=alt.Scale(domain=[0, 30]))
             )
             line = base.mark_line(color=color, strokeWidth=3)
-            pts  = base.mark_point(color=color, size=90)
-            return (line + pts).properties(height=140)
+            pts  = base.mark_point(color=color, size=110)
+            return (line + pts).properties(height=160)
 
-        # ---- KPIs row
+        # ---- KPI cards + slopes
         k1, k2, k3 = st.columns([0.32, 0.32, 0.36])
         with k1:
             d_clean = (cZ - cA) if (pd.notna(cZ) and pd.notna(cA)) else None
@@ -621,23 +612,20 @@ if mode == "Dashboard":
                      tone="green" if (d_clean or 0) >= 0 else "red")
             ch = slope_chart(s_clean, "Clean", COLORS["clean"])
             if ch: st.altair_chart(ch, use_container_width=True)
+
         with k2:
             d_ctr = (kZ - kA) if (pd.notna(kZ) and pd.notna(kA)) else None
             kpi_card("Controversial — change since start", f"{d_ctr:.1f} pp" if d_ctr is not None else "–",
                      tone="red" if (d_ctr or 0) > 0 else "green")
             ch = slope_chart(s_contro, "Controversial", COLORS["contro"])
             if ch: st.altair_chart(ch, use_container_width=True)
+
         with k3:
-            # clearer phrasing
-            kpi_card(
-                "ETF coverage",
-                f"{covI} ETFs appear in both {start_year} and {end_year} (Start: {covA}, End: {covZ})",
-                tone="neutral"
-            )
+            kpi_card("ETF coverage", f"{covI} ETFs appear in both {start_year} and {end_year}", tone="neutral")
 
         gap(8)
 
-        # ---- Combined trend
+        # ---- Combined trend — headroom to 30
         st.markdown('<div class="chart-title">Combined trend — % Clean and % Controversial</div>', unsafe_allow_html=True)
         comb = pd.concat([
             s_clean.assign(category="Clean"),
@@ -647,40 +635,51 @@ if mode == "Dashboard":
             st.altair_chart(
                 alt.Chart(comb).mark_line(point=True).encode(
                     x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                    y=alt.Y("value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f")),
-                    color=alt.Color("category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])),
-                    tooltip=[alt.Tooltip("category:N"), alt.Tooltip(f"{year_col}:O"), alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
+                    y=alt.Y("value:Q", title="Exposure (%)",
+                            axis=alt.Axis(format=".1f"),
+                            scale=alt.Scale(domain=[0, 30])),
+                    color=alt.Color("category:N", title=None,
+                                    scale=alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])),
+                    tooltip=[alt.Tooltip("category:N", title="Category"),
+                             alt.Tooltip(f"{year_col}:O", title="Year"),
+                             alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
                 ).properties(height=300),
                 use_container_width=True
             )
 
         gap(8)
 
-        # ---- Screen trends and composition (side-by-side, composition taller)
+        # ---- Screen trends and composition — equal size side-by-side, tooltips, fixed ranges
         st.markdown('<div class="chart-title">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
-        left, right = st.columns([0.55, 0.45])
+        left, right = st.columns([0.5, 0.5])  # equal width
 
         with left:
             if scr_tr is not None and not scr_tr.empty:
-                # expected cols if populated: year, screen_category, exposure_pct, weighting_mode (optional)
                 d = scr_tr.copy()
                 if "weighting_mode" in d.columns:
-                    # we can't reflect ETF subset here (file is pre-aggregated), but at least respect mode name if present
                     mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
                     d = d[d["weighting_mode"].astype(str)==mode_name]
                 d = d.rename(columns={"exposure_pct":"value"})
                 if "screen_category" in d.columns and "value" in d.columns:
                     keep = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
-                    d["_screen"] = d["screen_category"].astype(str).str.strip().str.title().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
+                    d["_screen"] = d["screen_category"].astype(str).str.strip().str.title().replace(
+                        {"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"}
+                    )
                     d = d[d["_screen"].isin(keep)]
                     d = d[(d[year_col]>=start_year) & (d[year_col]<=end_year)]
                     if not d.empty:
                         st.altair_chart(
                             alt.Chart(d).mark_line(point=True).encode(
                                 x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                                y=alt.Y("value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f")),
+                                y=alt.Y("value:Q", title="Exposure (%)",
+                                        axis=alt.Axis(format=".1f"),
+                                        scale=alt.Scale(domain=[0, 20])),
                                 color=alt.Color("_screen:N", title=None),
-                                tooltip=[alt.Tooltip("_screen:N"), alt.Tooltip(f"{year_col}:O"), alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
+                                tooltip=[
+                                    alt.Tooltip("_screen:N", title="Screen"),
+                                    alt.Tooltip(f"{year_col}:O", title="Year"),
+                                    alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")
+                                ]
                             ).properties(height=300),
                             use_container_width=True
                         )
@@ -693,32 +692,41 @@ if mode == "Dashboard":
 
         with right:
             st.markdown('<div class="chart-title" style="margin-bottom:4px;">Composition — Year A vs 2025</div>', unsafe_allow_html=True)
-            # compute from selected overlap cohort (not global file)
-            def comp_val(col):
-                return _series_from_funds(col)[_series_from_funds(col)[year_col].isin([start_year, end_year])]
+
+            def _val_series(col):
+                s = _series_from_funds(col)
+                if s.empty: return None, None
+                return _val(s, start_year), _val(s, end_year)
 
             comp_rows = []
             for label, col in [("Clean", clean_col), ("Controversial", ctr_col), ("Other", oth_col)]:
-                s = _series_from_funds(col)
-                if not s.empty:
-                    vA = _val(s, start_year)
-                    vZ = _val(s, end_year)
-                    if pd.notna(vA): comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
-                    if pd.notna(vZ): comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
+                vA, vZ = _val_series(col)
+                if pd.notna(vA): comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
+                if pd.notna(vZ): comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
             comp_df = pd.DataFrame(comp_rows)
+
             if not comp_df.empty:
                 comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
                 st.altair_chart(
                     alt.Chart(comp_df).mark_bar(opacity=0.92, stroke="#0A0B0D", strokeWidth=0.6).encode(
                         x=alt.X("Year:N", title=None),
-                        y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True), title="Portfolio share"),
-                        color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                        tooltip=[alt.Tooltip("Year:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
+                        y=alt.Y("Value:Q", stack="normalize",
+                                axis=alt.Axis(format="%", grid=True),
+                                title="Portfolio share"),
+                        color=alt.Color("Category:N", title=None,
+                                        scale=alt.Scale(domain=["Clean","Controversial","Other"],
+                                                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
+                        tooltip=[
+                            alt.Tooltip("Year:N", title="Year"),
+                            alt.Tooltip("Category:N", title="Category"),
+                            alt.Tooltip("Value:Q", title="Share (%)", format=".1f")
+                        ]
                     ).properties(height=300),
                     use_container_width=True
                 )
             else:
                 st.info("Composition compare unavailable for the selected ETFs.")
+
 
 
 
