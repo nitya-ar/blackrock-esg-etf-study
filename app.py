@@ -483,7 +483,7 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-        # ---------- CHANGE SINCE 2017 ----------
+            # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures evolved from Year A to 2025. AUM/EW toggle and cohort control affect all visuals below.")
@@ -495,54 +495,58 @@ if mode == "Dashboard":
         ast = load_screen_trends()
         mv  = load_movers_by_yearpair()
 
+        # normalize column names and values
         if "ETF ticker" in eby.columns and "etf_ticker" not in eby.columns:
-            eby = eby.rename(columns={"ETF ticker":"etf_ticker"})
+            eby = eby.rename(columns={"ETF ticker": "etf_ticker"})
 
+        # coerce and renormalize ETF x year rows to avoid >100% totals
         if {"year","pct_clean","pct_controversial","pct_other"}.issubset(eby.columns):
             for c in ["pct_clean","pct_controversial","pct_other"]:
                 eby[c] = pd.to_numeric(eby[c], errors="coerce")
             sums = eby[["pct_clean","pct_controversial","pct_other"]].sum(axis=1)
-            valid = sums.mask(sums<=0, 1.0)  # avoid divide-by-zero
+            valid = sums.mask(~sums.gt(0), 1.0)
             eby["pct_clean"]         = (eby["pct_clean"] / valid).clip(0,1)*100
             eby["pct_controversial"] = (eby["pct_controversial"] / valid).clip(0,1)*100
             eby["pct_other"]         = (eby["pct_other"] / valid).clip(0,1)*100
 
         yrs_all = sorted(aet["year"].dropna().unique().tolist()) if "year" in aet.columns else sorted(eby["year"].dropna().unique().tolist())
-        yrs_a_choices = [y for y in yrs_all if y != 2025]
+        yrs_a_choices = [y for y in yrs_all if y != 2025] or [2017]
 
-        top_controls = st.columns([0.22, 0.22, 0.22, 0.34])
-        with top_controls[0]:
+        # --- controls
+        c_year, c_weight, c_cohort, c_metric = st.columns([0.22, 0.22, 0.22, 0.34])
+        with c_year:
             year_a = st.selectbox("Year A", yrs_a_choices, index=0)
-        with top_controls[1]:
+        with c_weight:
             weighting_choice = st.segmented_control(
                 "Weighting", options=["AUM-weighted","Equal-weighted"], default="AUM-weighted",
-                help="AUM uses ETF AUM; EW treats each ETF equally"
+                help="AUM uses ETF AUM; EW treats each ETF equally."
             )
-            wmap = {"AUM-weighted":"AUM","Equal-weighted":"EW"}
-            wmode = wmap[weighting_choice]
-        with top_controls[2]:
+            wmode = {"AUM-weighted":"AUM","Equal-weighted":"EW"}[weighting_choice]
+        with c_cohort:
             cohort_only = st.toggle("Only ETFs present in both years", value=True)
-        with top_controls[3]:
+        with c_metric:
             slope_metric = st.segmented_control("Slope metric", options=["% Clean","% Controversial"], default="% Clean")
 
+        # helpers
         def get_agg(year, cls):
-            if aet.empty:
-                return None
+            if aet.empty: return None
             df = aet[(aet["year"]==year) & (aet["weighting_mode"]==wmode)]
             if df.empty: return None
             key = {"Clean":"pct_clean","Controversial":"pct_controversial","Other":"pct_other"}[cls]
             val = pd.to_numeric(df[key], errors="coerce").dropna()
             return float(val.iloc[0]) if len(val) else None
 
+        # headline deltas (A -> 2025)
         clean_a, clean_b = get_agg(year_a, "Clean"), get_agg(2025, "Clean")
         contro_a, contro_b = get_agg(year_a, "Controversial"), get_agg(2025, "Controversial")
         other_a, other_b = get_agg(year_a, "Other"), get_agg(2025, "Other")
 
-        k1,k2,k3,k4 = st.columns(4)
-        d_clean = (clean_b or 0) - (clean_a or 0) if (clean_a is not None and clean_b is not None) else None
-        d_contro = (contro_b or 0) - (contro_a or 0) if (contro_a is not None and contro_b is not None) else None
+        k1, k2, k3, k4 = st.columns(4)
+        d_clean  = (clean_b or 0)  - (clean_a or 0)   if (clean_a is not None and clean_b is not None) else None
+        d_contro = (contro_b or 0) - (contro_a or 0)  if (contro_a is not None and contro_b is not None) else None
         with k1: kpi_card("Δ Clean (pp)", f"{d_clean:.1f}%" if d_clean is not None else "-", tone="green" if (d_clean or 0) >= 0 else "red")
         with k2: kpi_card("Δ Controversial (pp)", f"{d_contro:.1f}%" if d_contro is not None else "-", tone="red" if (d_contro or 0) > 0 else "green")
+
         if "aum_total_usd" in aet.columns:
             aum_2025 = aet[(aet["year"]==2025) & (aet["weighting_mode"]==wmode)]["aum_total_usd"]
             aum_disp = usd_fmt(aum_2025.dropna().iloc[0]) if len(aum_2025.dropna()) else "-"
@@ -550,11 +554,12 @@ if mode == "Dashboard":
             aum_disp = "-"
         with k3: kpi_card("Total AUM (2025)", aum_disp, tone="neutral")
 
+        # cohort filter for ETF-level artifacts and counts
         def cohort_mask(df):
             if not cohort_only or "etf_ticker" not in df.columns:
                 return pd.Series(True, index=df.index)
-            a = set(df.loc[df["year"]==year_a,"etf_ticker"].dropna().unique())
-            b = set(df.loc[df["year"]==2025,"etf_ticker"].dropna().unique())
+            a = set(df.loc[df["year"]==year_a, "etf_ticker"].dropna().unique())
+            b = set(df.loc[df["year"]==2025,   "etf_ticker"].dropna().unique())
             keep = a.intersection(b)
             return df["etf_ticker"].isin(list(keep))
 
@@ -566,14 +571,14 @@ if mode == "Dashboard":
             else:
                 num_cleaner = 0
         else:
-            eby_masked = eby
-            num_cleaner = 0
+            eby_masked, num_cleaner = eby, 0
+
         with k4: kpi_card("# ETFs cleaner", f"{num_cleaner}", tone="neutral")
 
         gap(6)
-        c1,c2 = st.columns([0.55, 0.45])
+        c1, c2 = st.columns([0.55, 0.45])
 
-        # --- Aggregate Trend (fix tooltips) ---
+        # --- Aggregate trend 2017–2025 (Clean / Contro / Other)
         with c1:
             st.markdown(
                 '<div class="chart-head"><div class="chart-title">Aggregate trend (2017–2025) — Clean vs Controversial vs Other</div><div></div></div>',
@@ -604,10 +609,10 @@ if mode == "Dashboard":
             else:
                 st.info("aggregate_exposure_trends.csv is empty")
 
-        # --- Dispersion Fan (fix tooltips implicit via fields) ---
+        # --- Dispersion fan (p10–p90 band + p50 line)
         with c2:
             st.markdown(
-                '<div class="chart-head"><div class="chart-title">Dispersion fan — p10–p90 with median</div><div class="info-badge has-tip" data-tip="Shows distribution of ETF exposures by year; wide band = dispersion across funds.">i</div></div>',
+                '<div class="chart-head"><div class="chart-title">Dispersion fan — p10–p90 with median</div><div class="info-badge has-tip" data-tip="Distribution of ETF exposures by year; wider band = greater dispersion across funds.">i</div></div>',
                 unsafe_allow_html=True
             )
             if not eds.empty:
@@ -626,9 +631,7 @@ if mode == "Dashboard":
                         alt.Tooltip("p90:Q",  title="p90", format=".1f"),
                     ],
                 )
-                med = alt.Chart(e).mark_line().encode(
-                    x="year:O", y="p50:Q"
-                )
+                med = alt.Chart(e).mark_line().encode(x="year:O", y="p50:Q")
                 st.altair_chart((band + med), use_container_width=True)
             else:
                 st.info("exposure_dispersion_stats.csv is empty")
@@ -639,28 +642,44 @@ if mode == "Dashboard":
             unsafe_allow_html=True
         )
 
-        # --- ETF Slopes (fix tooltips) ---
+        # --- ETF slopes (A -> 2025), facet-sorted by numeric delta (Altair v5-safe)
         if "etf_ticker" in eby_masked.columns:
             metric_col = "pct_clean" if slope_metric == "% Clean" else "pct_controversial"
-            ef = eby_masked[eby_masked["year"].isin([year_a,2025])][["etf_ticker","year",metric_col]].dropna()
+            ef = eby_masked[eby_masked["year"].isin([year_a, 2025])][["etf_ticker","year",metric_col]].dropna()
             if not ef.empty:
-                for c in [metric_col]:
-                    ef[c] = pd.to_numeric(ef[c], errors="coerce")
+                ef[metric_col] = pd.to_numeric(ef[metric_col], errors="coerce")
+                ef["year"] = ef["year"].astype(str)  # two-point slope
+
+                piv = (
+                    eby_masked.pivot_table(index="etf_ticker", columns="year", values=metric_col)
+                    .rename(columns={year_a: "A", 2025: "B"})
+                )
+                piv["delta"] = (piv["B"] - piv["A"])
+                delta_map = piv["delta"].to_dict()
+                ef["delta"] = ef["etf_ticker"].map(delta_map)
+
                 base = alt.Chart(ef).encode(
                     x=alt.X("year:O", title=None),
                     y=alt.Y(f"{metric_col}:Q", title="%", scale=alt.Scale(domain=[0,100])),
                     tooltip=[
-                        alt.Tooltip("etf_ticker:N", title="ETF"),
-                        alt.Tooltip("year:O",       title="Year"),
+                        alt.Tooltip("etf_ticker:N",   title="ETF"),
+                        alt.Tooltip("year:O",         title="Year"),
                         alt.Tooltip(f"{metric_col}:Q", title="%", format=".1f"),
+                        alt.Tooltip("delta:Q",        title="Δ (A→2025)", format=".1f"),
                     ],
                 )
                 lines = base.mark_line().encode(detail="etf_ticker:N")
-                pts = base.mark_point(filled=True, size=35)
-                piv = ef.pivot_table(index="etf_ticker", columns="year", values=metric_col).reset_index()
-                piv["delta"] = piv.get(2025) - piv.get(year_a)
-                sort_order = piv.sort_values("delta", ascending=False)["etf_ticker"].tolist()
-                chart = (lines + pts).facet(facet=alt.Facet("etf_ticker:N", sort=sort_order, title=None), columns=6).properties(height=120)
+                pts   = base.mark_point(filled=True, size=35)
+
+                chart = (lines + pts).facet(
+                    facet=alt.Facet(
+                        "etf_ticker:N",
+                        sort=alt.SortField(field="delta", order="descending"),
+                        title=None
+                    ),
+                    columns=6
+                ).properties(height=120)
+
                 st.altair_chart(chart, use_container_width=True)
             else:
                 st.info("No ETF slope data after filters.")
@@ -668,9 +687,9 @@ if mode == "Dashboard":
             st.info("exposures_by_fund_year is missing etf_ticker.")
 
         gap(6)
-        l1,r1 = st.columns([0.55, 0.45])
+        l1, r1 = st.columns([0.55, 0.45])
 
-        # --- Year A vs 2025 Bars (tooltips normalized) ---
+        # --- Year A vs 2025 composition bars (normalized)
         with l1:
             st.markdown('<div class="chart-head"><div class="chart-title">Year A vs 2025 — composition and deltas</div><div></div></div>', unsafe_allow_html=True)
             g = ycs.copy()
@@ -678,8 +697,8 @@ if mode == "Dashboard":
                 if "weighting_mode" in g.columns:
                     g = g[g["weighting_mode"]==wmode]
                 if "classification" in g.columns:
-                    g["classification"] = g["classification"].str.title()
-                g = g[g["year"].isin([year_a,2025])]
+                    g["classification"] = g["classification"].astype(str).str.title()
+                g = g[g["year"].isin([year_a, 2025])]
                 cats = ["Clean","Controversial","Other"]
                 gg = g[g["classification"].isin(cats)].copy()
                 gg["exposure_pct"] = pd.to_numeric(gg["exposure_pct"], errors="coerce")
@@ -698,7 +717,7 @@ if mode == "Dashboard":
             else:
                 st.info("year_compare_summary.csv is empty")
 
-        # --- Screen Trends (if populated) ---
+        # --- Screen trends (if/when populated)
         with r1:
             st.markdown('<div class="chart-head"><div class="chart-title">By-screen trends (2017–2025)</div><div class="info-badge has-tip" data-tip="Clean200 and controversial screens; categories overlap.">i</div></div>', unsafe_allow_html=True)
             if not ast.empty:
@@ -708,7 +727,8 @@ if mode == "Dashboard":
                     default=[s for s in screens if s and s.lower() in ["clean200","fossil","weapons","tobacco","prisons","deforestation"]][:4]
                 )
                 aa = ast.copy()
-                if pick: aa = aa[aa["screen_category"].isin(pick)]
+                if pick:
+                    aa = aa[aa["screen_category"].isin(pick)]
                 if "weighting_mode" in aa.columns:
                     aa = aa[aa["weighting_mode"]==wmode]
                 aa["exposure_pct"] = pd.to_numeric(aa["exposure_pct"], errors="coerce")
@@ -730,7 +750,11 @@ if mode == "Dashboard":
         st.markdown('<div class="chart-head"><div class="chart-title">Movers — what drove the change (Year A → 2025)</div><div></div></div>', unsafe_allow_html=True)
         if not mv.empty and {"year_a","year_b"}.issubset(mv.columns):
             mv_pair = mv[(mv["year_a"]==year_a) & (mv["year_b"]==2025)].copy()
-            delta_col = next((c for c in ["delta_contrib_pct_agg","delta_weight_pp","delta_contrib_pp","delta_pct_points","delta"] if c in mv_pair.columns), None)
+
+            # find best available delta/name columns across schemas
+            delta_col = next((c for c in [
+                "delta_contrib_pct_agg","delta_weight_pp","delta_contrib_pp","delta_pct_points","delta"
+            ] if c in mv_pair.columns), None)
             name_cols = [c for c in ["holding_name","name","company_name"] if c in mv_pair.columns]
             tick_col = next((c for c in ["ticker","company_ticker"] if c in mv_pair.columns), None)
             tags_col = next((c for c in ["screen_tags","screens","tags"] if c in mv_pair.columns), None)
@@ -741,11 +765,21 @@ if mode == "Dashboard":
                 mv_pair[delta_col] = pd.to_numeric(mv_pair[delta_col], errors="coerce")
                 top_adds = mv_pair.sort_values(delta_col, ascending=False).head(15)
                 top_drops = mv_pair.sort_values(delta_col, ascending=True).head(15)
+
                 def slim(df):
                     cols = [c for c in [tick_col, name_cols[0], delta_col, tags_col, appear_a, appear_b] if c]
                     out = df[cols].copy()
                     out[delta_col] = out[delta_col].map(lambda v: f"{v:.2f}")
-                    return out
+                    # tidy column titles
+                    rename = {}
+                    if tick_col:   rename[tick_col] = "Ticker"
+                    rename[name_cols[0]] = "Holding"
+                    rename[delta_col] = "Δ contrib (pp)"
+                    if tags_col:   rename[tags_col] = "Screen tags"
+                    if appear_a:   rename[appear_a] = "#ETFs (A)"
+                    if appear_b:   rename[appear_b] = "#ETFs (B)"
+                    return out.rename(columns=rename)
+
                 t1, t2 = st.columns(2)
                 with t1:
                     st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Adds (↑ contribution)</div>', unsafe_allow_html=True)
@@ -754,11 +788,10 @@ if mode == "Dashboard":
                     st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Drops (↓ contribution)</div>', unsafe_allow_html=True)
                     st.dataframe(slim(top_drops), use_container_width=True, hide_index=True)
             else:
-                st.info("Movers file is present but expected delta/name columns weren’t found.")
+                st.info("Movers file is present but the expected delta/name columns weren’t found.")
         else:
             st.info("movers_by_yearpair.csv is empty or missing year_a/year_b.")
 
-    
     # ---------- TRADEOFF LAB ----------
     with tab3:
         st.subheader("Tradeoff Scenarios")
