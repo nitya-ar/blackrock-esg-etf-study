@@ -483,7 +483,8 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-            # ---------- CHANGE SINCE 2017 ----------
+
+        # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures evolved from Year A to 2025. AUM/EW toggle and cohort control affect all visuals below.")
@@ -642,21 +643,27 @@ if mode == "Dashboard":
             unsafe_allow_html=True
         )
 
-                # --- ETF slopes (A -> 2025), facet-sorted by numeric delta (Altair v5-safe) ---
+        # --- ETF slopes (A -> 2025), FACET WITHOUT SortField: rank encoded into label to avoid schema issues
         if "etf_ticker" in eby_masked.columns:
             metric_col = "pct_clean" if slope_metric == "% Clean" else "pct_controversial"
             ef = eby_masked[eby_masked["year"].isin([year_a, 2025])][["etf_ticker","year",metric_col]].dropna()
             if not ef.empty:
                 ef[metric_col] = pd.to_numeric(ef[metric_col], errors="coerce")
-                ef["year"] = ef["year"].astype(str)  # two-point slope
 
                 piv = (
                     eby_masked.pivot_table(index="etf_ticker", columns="year", values=metric_col)
                     .rename(columns={year_a: "A", 2025: "B"})
                 )
                 piv["delta"] = (piv["B"] - piv["A"])
-                delta_map = piv["delta"].to_dict()
-                ef["delta"] = ef["etf_ticker"].map(delta_map)
+                piv = piv.sort_values("delta", ascending=False).reset_index()
+                piv["rank"] = range(1, len(piv)+1)
+
+                # short, ordered label like "01 · ESGU"
+                def make_label(row):
+                    return f"{int(row['rank']):02d} · {row['etf_ticker']}"
+                label_map = {row["etf_ticker"]: make_label(row) for _, row in piv.iterrows()}
+                ef["etf_label"] = ef["etf_ticker"].map(label_map)
+                ef["year"] = ef["year"].astype(str)
 
                 base = alt.Chart(ef).encode(
                     x=alt.X("year:O", title=None),
@@ -665,19 +672,14 @@ if mode == "Dashboard":
                         alt.Tooltip("etf_ticker:N",   title="ETF"),
                         alt.Tooltip("year:O",         title="Year"),
                         alt.Tooltip(f"{metric_col}:Q", title="%", format=".1f"),
-                        alt.Tooltip("delta:Q",        title="Δ (A→2025)", format=".1f"),
+                        # show delta via lookup in tooltip by ETF (string format inside)
                     ],
                 )
                 lines = base.mark_line().encode(detail="etf_ticker:N")
                 pts   = base.mark_point(filled=True, size=35)
 
                 chart = (lines + pts).facet(
-                    facet=alt.Facet(
-                        "etf_ticker:N",
-                        # IMPORTANT: facet sort needs an aggregation op in Altair v5
-                        sort=alt.SortField(field="delta", op="mean", order="descending"),
-                        title=None
-                    ),
+                    facet=alt.Facet("etf_label:N", sort="ascending", title=None),
                     columns=6
                 ).properties(height=120)
 
@@ -687,6 +689,8 @@ if mode == "Dashboard":
         else:
             st.info("exposures_by_fund_year is missing etf_ticker.")
 
+        gap(6)
+        l1, r1 = st.columns([0.55, 0.45])
 
         # --- Year A vs 2025 composition bars (normalized)
         with l1:
@@ -790,6 +794,7 @@ if mode == "Dashboard":
                 st.info("Movers file is present but the expected delta/name columns weren’t found.")
         else:
             st.info("movers_by_yearpair.csv is empty or missing year_a/year_b.")
+
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
