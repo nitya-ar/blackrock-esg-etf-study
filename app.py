@@ -482,9 +482,9 @@ if mode == "Dashboard":
             mime="text/csv",
         )
         
-        # ---------- CHANGE SINCE 2017 ----------
-        
-        with tab2:
+
+            # ---------- CHANGE SINCE 2017 ----------
+    with tab2:
         st.subheader("Change since 2017")
         st.caption("Track how exposures evolved using today’s (2025) classification, applied to past portfolios.")
 
@@ -812,6 +812,7 @@ if mode == "Dashboard":
         st.dataframe(df_show.sort_values(["year","ETF"] if "ETF" in df_show.columns else ["year"]), use_container_width=True, hide_index=True)
         csv_slice = df_show.to_csv(index=False).encode("utf-8")
         st.download_button("Download filtered per-ETF exposures (CSV)", data=csv_slice, file_name="exposures_by_fund_year_filtered.csv", mime="text/csv")
+
 
 
     # ---------------- Tradeoff Scenarios ----------------
