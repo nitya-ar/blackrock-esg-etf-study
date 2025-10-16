@@ -498,7 +498,7 @@ if mode == "Dashboard":
 
         # ---- Load data
         try:
-            by_fund = load_exposures_by_fund_year()   # ETF-level exposures (% clean/controversial/other + AUM)
+            by_fund = load_exposures_by_fund_year()   # ETF-level exposures
             scr_tr  = load_screen_trends()            # aggregate screen trends (may be empty)
         except Exception as e:
             st.error(f"Could not load Analysis 2 CSVs: {e}")
@@ -528,7 +528,7 @@ if mode == "Dashboard":
 
         df_all = by_fund.copy()
 
-        # ---- Controls
+        # ---- Controls row
         topA, topB, topC = st.columns([0.44, 0.28, 0.28])
 
         with topB:
@@ -561,7 +561,7 @@ if mode == "Dashboard":
         # ---- Coverage KPI
         covI = len(cohort)
 
-        # ---- Weighted series from per-fund table (respects ETF selection)
+        # ---- Weighted series (respects ETF selection)
         def _series_from_funds(col_name: str) -> pd.DataFrame:
             if not col_name or col_name not in df.columns or df.empty:
                 return pd.DataFrame(columns=[year_col,"value"])
@@ -651,8 +651,15 @@ if mode == "Dashboard":
 
         gap(8)
 
-        # ---- Screen trends & Composition — side-by-side, equal size, tooltips
-        st.markdown('<div class="chart-title" style="margin-bottom:4px;">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
+        # ===== Screen trends & Composition — aligned headings, side-by-side =====
+        # 1) Headings on same row
+        h_left, h_right = st.columns([0.5, 0.5])
+        with h_left:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
+        with h_right:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Year A vs 2025</div>', unsafe_allow_html=True)
+
+        # 2) Charts on next row — equal size
         left, right = st.columns([0.5, 0.5])
 
         with left:
@@ -665,57 +672,49 @@ if mode == "Dashboard":
                 d = d.rename(columns={"exposure_pct": "value"})
                 if {"screen_category", "value", year_col}.issubset(d.columns):
                     keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
-                    d["_screen"] = (
+                    d["Category"] = (
                         d["screen_category"].astype(str).str.strip().str.title()
                         .replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
                     )
-                    d = d[d["_screen"].isin(keep)]
+                    d = d[d["Category"].isin(keep)]
                     d = d[(d[year_col] >= start_year) & (d[year_col] <= end_year)]
 
+                    # Modern palette (softer on dark)
                     screen_domain = keep
                     screen_range  = [
                         COLORS["clean"],  # Clean200
-                        "#FFB454",        # Prisons
-                        "#4DA3FF",        # Deforestation
-                        "#FF6B6B",        # Fossil Fuel
-                        "#9AD5FF",        # Weapons
-                        "#8A63D2",        # Tobacco
+                        "#EDB458",        # Prisons (muted amber)
+                        "#58A6FF",        # Deforestation (azure)
+                        "#F1686A",        # Fossil Fuel (soft coral)
+                        "#A9C0FF",        # Weapons (periwinkle)
+                        "#B89BE5",        # Tobacco (lavender)
                     ]
 
-                    hover = alt.selection_point(nearest=True, on="mouseover", fields=[year_col], empty=False)
-
-                    base = alt.Chart(d).encode(
+                    chart = alt.Chart(d).mark_line(
+                        point=alt.OverlayMarkDef(size=70), strokeWidth=2.5
+                    ).encode(
                         x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
-                        y=alt.Y("value:Q", title="Exposure (%)",
+                        y=alt.Y("value:Q",
+                                title="Exposure (%)",
                                 axis=alt.Axis(format=".1f"),
                                 scale=alt.Scale(domain=[0, 15])),
-                        color=alt.Color("_screen:N", title=None,
-                                        scale=alt.Scale(domain=screen_domain, range=screen_range))
-                    )
-
-                    lines = base.mark_line()
-                    pts   = base.mark_point(size=55).transform_filter(hover)
-                    rules = alt.Chart(d).mark_rule(opacity=0.15).encode(x=alt.X(f"{year_col}:O")).add_params(hover)
-                    tool  = base.mark_circle(opacity=0).encode(
+                        color=alt.Color("Category:N", title=None,
+                                        scale=alt.Scale(domain=screen_domain, range=screen_range)),
                         tooltip=[
-                            alt.Tooltip("_screen:N", title="Screen"),
+                            alt.Tooltip("Category:N", title="Category"),
                             alt.Tooltip(f"{year_col}:O", title="Year"),
                             alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
-                        ]
-                    )
-
-                    screen_chart = (lines + rules + pts + tool).properties(
-                        height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4}
-                    )
-                    st.altair_chart(screen_chart, use_container_width=True)
+                        ],
+                    ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
+                    st.altair_chart(chart, use_container_width=True)
                 else:
                     st.empty()
             else:
                 st.empty()
 
         with right:
-            st.markdown('<div class="chart-title" style="margin-bottom:2px;">Composition — Year A vs 2025</div>', unsafe_allow_html=True)
-
+            # Build composition compare (same height as left)
+            comp_rows = []
             def _val_series(col):
                 s = _series_from_funds(col)
                 if s.empty: return None, None
@@ -724,7 +723,6 @@ if mode == "Dashboard":
                 return (float(vA.iloc[0]) if len(vA) else None,
                         float(vZ.iloc[0]) if len(vZ) else None)
 
-            comp_rows = []
             for label, col in [("Clean", clean_col), ("Controversial", ctr_col), ("Other", oth_col)]:
                 vA, vZ = _val_series(col)
                 if vA is not None: comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
@@ -750,8 +748,6 @@ if mode == "Dashboard":
                 st.altair_chart(comp_chart, use_container_width=True)
             else:
                 st.empty()
-
-
 
 
 
