@@ -567,8 +567,8 @@ if mode == "Dashboard":
         if "etf_ticker" in eby.columns:
             eby_masked = eby.loc[cohort_mask(eby)].copy()
             if not eby_masked.empty:
-                piv = eby_masked.pivot_table(index="etf_ticker", columns="year", values="pct_clean")
-                num_cleaner = int((piv.get(2025) - piv.get(year_a)).dropna().gt(0).sum())
+                piv_tmp = eby_masked.pivot_table(index="etf_ticker", columns="year", values="pct_clean")
+                num_cleaner = int((piv_tmp.get(2025) - piv_tmp.get(year_a)).dropna().gt(0).sum())
             else:
                 num_cleaner = 0
         else:
@@ -638,54 +638,63 @@ if mode == "Dashboard":
                 st.info("exposure_dispersion_stats.csv is empty")
 
         gap(10)
+        # --- ETF slopes (A -> 2025) — schema-safe, no facet: horizontal slope rules
         st.markdown(
-            '<div class="chart-head"><div class="chart-title">ETF slopes — change from Year A to 2025</div><div class="info-badge has-tip" data-tip="Sorted by largest improvement; cohort filter applies.">i</div></div>',
+            '<div class="chart-head"><div class="chart-title">ETF slopes — change from Year A to 2025</div><div class="info-badge has-tip" data-tip="Each line: ETF. Left point = Year A, Right point = 2025. Green = improved; Red = worsened. Sorted by Δ.">i</div></div>',
             unsafe_allow_html=True
         )
 
-        # --- ETF slopes (A -> 2025), FACET WITHOUT SortField: rank encoded into label to avoid schema issues
         if "etf_ticker" in eby_masked.columns:
             metric_col = "pct_clean" if slope_metric == "% Clean" else "pct_controversial"
-            ef = eby_masked[eby_masked["year"].isin([year_a, 2025])][["etf_ticker","year",metric_col]].dropna()
-            if not ef.empty:
-                ef[metric_col] = pd.to_numeric(ef[metric_col], errors="coerce")
 
-                piv = (
-                    eby_masked.pivot_table(index="etf_ticker", columns="year", values=metric_col)
-                    .rename(columns={year_a: "A", 2025: "B"})
+            piv = (
+                eby_masked[eby_masked["year"].isin([year_a, 2025])]
+                .pivot_table(index="etf_ticker", columns="year", values=metric_col, aggfunc="mean")
+                .rename(columns={year_a: "A", 2025: "B"})
+                .reset_index()
+            )
+            piv = piv.dropna(subset=["A","B"]).copy()
+
+            if not piv.empty:
+                piv["A"] = pd.to_numeric(piv["A"], errors="coerce").clip(0, 100)
+                piv["B"] = pd.to_numeric(piv["B"], errors="coerce").clip(0, 100)
+                piv["delta"] = piv["B"] - piv["A"]
+                piv = piv.sort_values("delta", ascending=False).reset_index(drop=True)
+                piv["rank"] = piv.index + 1
+                piv["etf_label"] = piv.apply(lambda r: f"{int(r['rank']):02d} · {r['etf_ticker']}", axis=1)
+
+                plot_df = piv[["etf_ticker","etf_label","A","B","delta","rank"]].copy()
+
+                color_cond = alt.condition(
+                    alt.datum.delta >= 0,
+                    alt.value(COLORS["clean"]),
+                    alt.value(COLORS["contro"])
                 )
-                piv["delta"] = (piv["B"] - piv["A"])
-                piv = piv.sort_values("delta", ascending=False).reset_index()
-                piv["rank"] = range(1, len(piv)+1)
 
-                # short, ordered label like "01 · ESGU"
-                def make_label(row):
-                    return f"{int(row['rank']):02d} · {row['etf_ticker']}"
-                label_map = {row["etf_ticker"]: make_label(row) for _, row in piv.iterrows()}
-                ef["etf_label"] = ef["etf_ticker"].map(label_map)
-                ef["year"] = ef["year"].astype(str)
+                base = alt.Chart(plot_df)
 
-                base = alt.Chart(ef).encode(
-                    x=alt.X("year:O", title=None),
-                    y=alt.Y(f"{metric_col}:Q", title="%", scale=alt.Scale(domain=[0,100])),
+                rules = base.mark_rule(size=2).encode(
+                    y=alt.Y("etf_label:N", sort=alt.SortField(field="rank", order="ascending"), title=None),
+                    x=alt.X("A:Q", title="%", scale=alt.Scale(domain=[0, 100])),
+                    x2="B:Q",
+                    color=color_cond,
                     tooltip=[
-                        alt.Tooltip("etf_ticker:N",   title="ETF"),
-                        alt.Tooltip("year:O",         title="Year"),
-                        alt.Tooltip(f"{metric_col}:Q", title="%", format=".1f"),
-                        # show delta via lookup in tooltip by ETF (string format inside)
+                        alt.Tooltip("etf_ticker:N", title="ETF"),
+                        alt.Tooltip("A:Q", title=f"{year_a} %", format=".1f"),
+                        alt.Tooltip("B:Q", title="2025 %", format=".1f"),
+                        alt.Tooltip("delta:Q", title="Δ (A→2025)", format=".1f"),
                     ],
                 )
-                lines = base.mark_line().encode(detail="etf_ticker:N")
-                pts   = base.mark_point(filled=True, size=35)
+                pts_A = base.mark_point(filled=True, size=40).encode(y="etf_label:N", x="A:Q", color=color_cond)
+                pts_B = base.mark_point(filled=True, size=40).encode(y="etf_label:N", x="B:Q", color=color_cond)
+                txt   = base.mark_text(align="left", dx=6, baseline="middle").encode(
+                    y="etf_label:N", x="B:Q", text=alt.Text("B:Q", format=".1f"), color=alt.value(COLORS["muted"])
+                )
 
-                chart = (lines + pts).facet(
-                    facet=alt.Facet("etf_label:N", sort="ascending", title=None),
-                    columns=6
-                ).properties(height=120)
-
-                st.altair_chart(chart, use_container_width=True)
+                slope_chart = (rules + pts_A + pts_B + txt).properties(height=max(180, 18 * len(plot_df)))
+                st.altair_chart(slope_chart, use_container_width=True)
             else:
-                st.info("No ETF slope data after filters.")
+                st.info("No ETFs have both Year A and 2025 values after filters.")
         else:
             st.info("exposures_by_fund_year is missing etf_ticker.")
 
@@ -773,7 +782,6 @@ if mode == "Dashboard":
                     cols = [c for c in [tick_col, name_cols[0], delta_col, tags_col, appear_a, appear_b] if c]
                     out = df[cols].copy()
                     out[delta_col] = out[delta_col].map(lambda v: f"{v:.2f}")
-                    # tidy column titles
                     rename = {}
                     if tick_col:   rename[tick_col] = "Ticker"
                     rename[name_cols[0]] = "Holding"
@@ -794,7 +802,6 @@ if mode == "Dashboard":
                 st.info("Movers file is present but the expected delta/name columns weren’t found.")
         else:
             st.info("movers_by_yearpair.csv is empty or missing year_a/year_b.")
-
 
     # ---------- TRADEOFF LAB ----------
     with tab3:
