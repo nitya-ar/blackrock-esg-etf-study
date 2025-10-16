@@ -1,5 +1,5 @@
 # app.py — BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-# Logos removed. Subtle shaded bar charts. Original footer (right-aligned, bold blue links).
+# Logos removed. Subtle shaded bar charts. Original footer (right-aligned, bold blue links)
 
 import os
 from io import StringIO
