@@ -642,7 +642,7 @@ if mode == "Dashboard":
             unsafe_allow_html=True
         )
 
-        # --- ETF slopes (A -> 2025), facet-sorted by numeric delta (Altair v5-safe)
+                # --- ETF slopes (A -> 2025), facet-sorted by numeric delta (Altair v5-safe) ---
         if "etf_ticker" in eby_masked.columns:
             metric_col = "pct_clean" if slope_metric == "% Clean" else "pct_controversial"
             ef = eby_masked[eby_masked["year"].isin([year_a, 2025])][["etf_ticker","year",metric_col]].dropna()
@@ -674,7 +674,8 @@ if mode == "Dashboard":
                 chart = (lines + pts).facet(
                     facet=alt.Facet(
                         "etf_ticker:N",
-                        sort=alt.SortField(field="delta", order="descending"),
+                        # IMPORTANT: facet sort needs an aggregation op in Altair v5
+                        sort=alt.SortField(field="delta", op="mean", order="descending"),
                         title=None
                     ),
                     columns=6
@@ -686,8 +687,6 @@ if mode == "Dashboard":
         else:
             st.info("exposures_by_fund_year is missing etf_ticker.")
 
-        gap(6)
-        l1, r1 = st.columns([0.55, 0.45])
 
         # --- Year A vs 2025 composition bars (normalized)
         with l1:
