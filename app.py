@@ -488,10 +488,10 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-    # ---------- CHANGE SINCE 2017 ----------
+ # ---------- CHANGE SINCE 2017 ----------
 with tab2:
     st.subheader("Change since 2017")
-    st.caption("End year fixed at 2025. Drag the start year. Using a unified 2025 classification applied to all years.")
+    st.caption("End year fixed at 2025. Drag the start year. Using the 2025 classification applied to all years.")
 
     # Reload
     cbtn, _sp = st.columns([0.25, 0.75])
@@ -549,7 +549,8 @@ with tab2:
             f'<div class="info-badge has-tip" data-tip="AUM-weighted = each ETF weighted by assets; Equal-weighted = each ETF counts the same.">i</div></div>',
             unsafe_allow_html=True,
         )
-        weighting = st.segmented_control("Weighting", options=["AUM-weighted","Equal-weighted"], default="AUM-weighted", label_visibility="collapsed")
+        weighting = st.segmented_control("Weighting", options=["AUM-weighted","Equal-weighted"],
+                                         default="AUM-weighted", label_visibility="collapsed")
 
     # Apply ETF filter
     df = by_fund.copy()
@@ -646,10 +647,11 @@ with tab2:
 
     # ---------- Combined trend (Clean & Controversial) ----------
     st.markdown('<div class="chart-title">Combined trend — % Clean / % Controversial (Start → 2025)</div>', unsafe_allow_html=True)
-    comb_df = pd.concat(
-        [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
-        ignore_index=True
-    ) if (not s_clean.empty or not s_contro.empty) else pd.DataFrame(columns=["year","value","category"])
+    comb_df = (
+        pd.concat([s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")], ignore_index=True)
+        if (not s_clean.empty or not s_contro.empty) else
+        pd.DataFrame(columns=["year","value","category"])
+    )
     comb_scale = alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])
     st.altair_chart(
         alt.Chart(comb_df).mark_line(point=True).encode(
@@ -713,10 +715,13 @@ with tab2:
     comp_rows = []
     for label, key in [("Clean","clean200"), ("Controversial","controversial"), ("Other","other")]:
         s = _comp_series(key)
-        if s.empty: continue
+        if s.empty:
+            continue
         vA = _val(s, start_year); vZ = _val(s, end_year)
-        if pd.notna(vA): comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
-        if pd.notna(vZ): comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
+        if pd.notna(vA):
+            comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
+        if pd.notna(vZ):
+            comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
 
     if comp_rows:
         comp_df = pd.DataFrame(comp_rows)
@@ -759,7 +764,10 @@ with tab2:
     gap(8)
 
     # ---------- Biggest movers list ----------
-    st.markdown('<div class="chart-title">Biggest movers — holdings driving change (Start → 2025)</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="chart-title">Biggest movers — holdings driving change (Start → 2025)</div>',
+        unsafe_allow_html=True,
+    )
 
     if movers is None or movers.empty:
         st.info("Movers table unavailable (file missing or empty).")
@@ -774,7 +782,8 @@ with tab2:
         scrc    = mvcols.get("screen") or mvcols.get("classification")
         contrib = mvcols.get("delta_contrib_pct_agg") or mvcols.get("contribution_pp") or mvcols.get("delta_pp")
 
-        if not all([sy, ey, hcol, contrib]):
+        have_required = all([sy, ey, hcol, contrib])
+        if not have_required:
             st.info("Movers table unavailable (need year_a/year_b, holding_name, and contribution column).")
         else:
             mvv = mv[(mv[sy] == start_year) & (mv[ey] == end_year)].copy()
@@ -782,13 +791,19 @@ with tab2:
                 mvv = mvv[mvv[ecol].astype(str).isin(sel_etfs)]
 
             cols = []
-            if ecol in mvv.columns: cols.append(("ETF", ecol))
+            if ecol in mvv.columns:
+                cols.append(("ETF", ecol))
             cols.append(("Holding", hcol))
-            if scrc in mvv.columns: cols.append(("Screen", scrc))
+            if scrc in mvv.columns:
+                cols.append(("Screen", scrc))
             cols.append(("Contribution (pp)", contrib))
 
-            if cols:
-                table = mvv[[c for _, c in cols]].rename(columns={c: lbl for lbl, c in cols}).copy()
+            if len(cols) > 0:
+                table = (
+                    mvv[[c for _, c in cols]]
+                    .rename(columns={c: lbl for lbl, c in cols})
+                    .copy()
+                )
                 table["Contribution (pp)"] = pd.to_numeric(table["Contribution (pp)"], errors="coerce")
                 table["_abs"] = table["Contribution (pp)"].abs()
                 table = table.sort_values("_abs", ascending=False).drop(columns=["_abs"]).head(50)
