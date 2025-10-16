@@ -488,9 +488,7 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-
-
-# ---------- CHANGE SINCE 2017 ----------
+    # ---------- CHANGE SINCE 2017 ----------
 with tab2:
     st.subheader("Change since 2017")
     st.caption("End year fixed at 2025. Drag the start year. Using a unified 2025 classification applied to all years.")
