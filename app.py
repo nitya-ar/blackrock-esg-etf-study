@@ -483,7 +483,7 @@ if mode == "Dashboard":
             mime="text/csv",
         )
 
-    # ---------- CHANGE SINCE 2017 ----------
+        # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         st.subheader("Change since 2017")
         st.caption("How exposures evolved from Year A to 2025. AUM/EW toggle and cohort control affect all visuals below.")
@@ -499,21 +499,24 @@ if mode == "Dashboard":
             eby = eby.rename(columns={"ETF ticker":"etf_ticker"})
 
         if {"year","pct_clean","pct_controversial","pct_other"}.issubset(eby.columns):
-            eby[["pct_clean","pct_controversial","pct_other"]] = eby[["pct_clean","pct_controversial","pct_other"]].apply(pd.to_numeric, errors="coerce")
+            for c in ["pct_clean","pct_controversial","pct_other"]:
+                eby[c] = pd.to_numeric(eby[c], errors="coerce")
             sums = eby[["pct_clean","pct_controversial","pct_other"]].sum(axis=1)
-            valid = sums.replace(0, pd.NA).fillna(1.0)
+            valid = sums.mask(sums<=0, 1.0)  # avoid divide-by-zero
             eby["pct_clean"]         = (eby["pct_clean"] / valid).clip(0,1)*100
             eby["pct_controversial"] = (eby["pct_controversial"] / valid).clip(0,1)*100
             eby["pct_other"]         = (eby["pct_other"] / valid).clip(0,1)*100
 
         yrs_all = sorted(aet["year"].dropna().unique().tolist()) if "year" in aet.columns else sorted(eby["year"].dropna().unique().tolist())
         yrs_a_choices = [y for y in yrs_all if y != 2025]
+
         top_controls = st.columns([0.22, 0.22, 0.22, 0.34])
         with top_controls[0]:
             year_a = st.selectbox("Year A", yrs_a_choices, index=0)
         with top_controls[1]:
             weighting_choice = st.segmented_control(
-                "Weighting", options=["AUM-weighted","Equal-weighted"], default="AUM-weighted", help="AUM uses ETF AUM; EW treats each ETF equally"
+                "Weighting", options=["AUM-weighted","Equal-weighted"], default="AUM-weighted",
+                help="AUM uses ETF AUM; EW treats each ETF equally"
             )
             wmap = {"AUM-weighted":"AUM","Equal-weighted":"EW"}
             wmode = wmap[weighting_choice]
@@ -523,25 +526,26 @@ if mode == "Dashboard":
             slope_metric = st.segmented_control("Slope metric", options=["% Clean","% Controversial"], default="% Clean")
 
         def get_agg(year, cls):
-            df = aet[(aet["year"]==year) & (aet["weighting_mode"]==wmode)]
-            if df.empty:
+            if aet.empty:
                 return None
+            df = aet[(aet["year"]==year) & (aet["weighting_mode"]==wmode)]
+            if df.empty: return None
             key = {"Clean":"pct_clean","Controversial":"pct_controversial","Other":"pct_other"}[cls]
-            return float(df[key].iloc[0])
+            val = pd.to_numeric(df[key], errors="coerce").dropna()
+            return float(val.iloc[0]) if len(val) else None
 
-        clean_a = get_agg(year_a, "Clean")
-        clean_b = get_agg(2025, "Clean")
-        contro_a = get_agg(year_a, "Controversial")
-        contro_b = get_agg(2025, "Controversial")
-        other_a = get_agg(year_a, "Other")
-        other_b = get_agg(2025, "Other")
+        clean_a, clean_b = get_agg(year_a, "Clean"), get_agg(2025, "Clean")
+        contro_a, contro_b = get_agg(year_a, "Controversial"), get_agg(2025, "Controversial")
+        other_a, other_b = get_agg(year_a, "Other"), get_agg(2025, "Other")
 
         k1,k2,k3,k4 = st.columns(4)
-        with k1: kpi_card("Δ Clean (pp)", f"{(clean_b-clean_a):.1f}%" if clean_a is not None and clean_b is not None else "-", tone="green" if (clean_b or 0)-(clean_a or 0)>=0 else "red")
-        with k2: kpi_card("Δ Controversial (pp)", f"{(contro_b-contro_a):.1f}%" if contro_a is not None and contro_b is not None else "-", tone="red" if (contro_b or 0)-(contro_a or 0)>0 else "green")
+        d_clean = (clean_b or 0) - (clean_a or 0) if (clean_a is not None and clean_b is not None) else None
+        d_contro = (contro_b or 0) - (contro_a or 0) if (contro_a is not None and contro_b is not None) else None
+        with k1: kpi_card("Δ Clean (pp)", f"{d_clean:.1f}%" if d_clean is not None else "-", tone="green" if (d_clean or 0) >= 0 else "red")
+        with k2: kpi_card("Δ Controversial (pp)", f"{d_contro:.1f}%" if d_contro is not None else "-", tone="red" if (d_contro or 0) > 0 else "green")
         if "aum_total_usd" in aet.columns:
             aum_2025 = aet[(aet["year"]==2025) & (aet["weighting_mode"]==wmode)]["aum_total_usd"]
-            aum_disp = usd_fmt(aum_2025.iloc[0]) if len(aum_2025) else "-"
+            aum_disp = usd_fmt(aum_2025.dropna().iloc[0]) if len(aum_2025.dropna()) else "-"
         else:
             aum_disp = "-"
         with k3: kpi_card("Total AUM (2025)", aum_disp, tone="neutral")
@@ -557,47 +561,70 @@ if mode == "Dashboard":
         if "etf_ticker" in eby.columns:
             eby_masked = eby.loc[cohort_mask(eby)].copy()
             if not eby_masked.empty:
-                num_cleaner = (
-                    eby_masked.pivot_table(index="etf_ticker", columns="year", values="pct_clean")
-                    .assign(delta=lambda x: x.get(2025)-x.get(year_a))
-                    ["delta"].gt(0).sum()
-                )
+                piv = eby_masked.pivot_table(index="etf_ticker", columns="year", values="pct_clean")
+                num_cleaner = int((piv.get(2025) - piv.get(year_a)).dropna().gt(0).sum())
             else:
                 num_cleaner = 0
         else:
             eby_masked = eby
             num_cleaner = 0
-        with k4: kpi_card("# ETFs cleaner", f"{int(num_cleaner)}", tone="neutral")
+        with k4: kpi_card("# ETFs cleaner", f"{num_cleaner}", tone="neutral")
 
         gap(6)
         c1,c2 = st.columns([0.55, 0.45])
 
+        # --- Aggregate Trend (fix tooltips) ---
         with c1:
-            st.markdown('<div class="chart-head"><div class="chart-title">Aggregate trend (2017–2025) — Clean vs Controversial vs Other</div><div></div></div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="chart-head"><div class="chart-title">Aggregate trend (2017–2025) — Clean vs Controversial vs Other</div><div></div></div>',
+                unsafe_allow_html=True
+            )
             if not aet.empty:
                 show = aet[aet["weighting_mode"]==wmode].copy()
-                show = show.melt(id_vars=["year","weighting_mode"], value_vars=["pct_clean","pct_controversial","pct_other"], var_name="class", value_name="pct")
+                for c in ["pct_clean","pct_controversial","pct_other"]:
+                    show[c] = pd.to_numeric(show[c], errors="coerce")
+                show = show.melt(
+                    id_vars=["year","weighting_mode"],
+                    value_vars=["pct_clean","pct_controversial","pct_other"],
+                    var_name="class", value_name="pct"
+                )
                 show["class"] = show["class"].map({"pct_clean":"Clean","pct_controversial":"Controversial","pct_other":"Other"})
                 color_scale = alt.Scale(domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
                 line = alt.Chart(show).mark_line(point=True).encode(
                     x=alt.X("year:O", title="Year"),
                     y=alt.Y("pct:Q", title="Share of total (%)", scale=alt.Scale(domain=[0,100])),
                     color=alt.Color("class:N", scale=color_scale, title=None),
-                    tooltip=[alt.Tooltip("year:O","Year"), alt.Tooltip("class:N","Class"), alt.Tooltip("pct:Q", title="%", format=".1f")]
+                    tooltip=[
+                        alt.Tooltip("year:O",  title="Year"),
+                        alt.Tooltip("class:N", title="Class"),
+                        alt.Tooltip("pct:Q",   title="%", format=".1f"),
+                    ],
                 ).properties(height=260)
                 st.altair_chart(line, use_container_width=True)
             else:
                 st.info("aggregate_exposure_trends.csv is empty")
 
+        # --- Dispersion Fan (fix tooltips implicit via fields) ---
         with c2:
-            st.markdown('<div class="chart-head"><div class="chart-title">Dispersion fan — p10–p90 with median</div><div class="info-badge has-tip" data-tip="Shows distribution of ETF exposures by year; wide band = dispersion across funds.">i</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="chart-head"><div class="chart-title">Dispersion fan — p10–p90 with median</div><div class="info-badge has-tip" data-tip="Shows distribution of ETF exposures by year; wide band = dispersion across funds.">i</div></div>',
+                unsafe_allow_html=True
+            )
             if not eds.empty:
                 target = st.radio("Target", options=["Clean","Controversial"], horizontal=True, label_visibility="collapsed")
                 e = eds[eds["target"].str.title()==target].copy()
+                for c in ["p10","p50","p90"]:
+                    e[c] = pd.to_numeric(e[c], errors="coerce")
                 band = alt.Chart(e).mark_area(opacity=0.25).encode(
                     x=alt.X("year:O", title="Year"),
-                    y=alt.Y("p10:Q", title="%", scale=alt.Scale(domain=[0,100])),
+                    y=alt.Y("p10:Q",  title="%", scale=alt.Scale(domain=[0,100])),
                     y2="p90:Q",
+                    tooltip=[
+                        alt.Tooltip("year:O", title="Year"),
+                        alt.Tooltip("p10:Q",  title="p10", format=".1f"),
+                        alt.Tooltip("p50:Q",  title="p50", format=".1f"),
+                        alt.Tooltip("p90:Q",  title="p90", format=".1f"),
+                    ],
                 )
                 med = alt.Chart(e).mark_line().encode(
                     x="year:O", y="p50:Q"
@@ -607,23 +634,29 @@ if mode == "Dashboard":
                 st.info("exposure_dispersion_stats.csv is empty")
 
         gap(10)
-        st.markdown('<div class="chart-head"><div class="chart-title">ETF slopes — change from Year A to 2025</div><div class="info-badge has-tip" data-tip="Sorted by largest improvement; cohort filter applies.">i</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">ETF slopes — change from Year A to 2025</div><div class="info-badge has-tip" data-tip="Sorted by largest improvement; cohort filter applies.">i</div></div>',
+            unsafe_allow_html=True
+        )
 
+        # --- ETF Slopes (fix tooltips) ---
         if "etf_ticker" in eby_masked.columns:
             metric_col = "pct_clean" if slope_metric == "% Clean" else "pct_controversial"
             ef = eby_masked[eby_masked["year"].isin([year_a,2025])][["etf_ticker","year",metric_col]].dropna()
             if not ef.empty:
-                base = (
-                    alt.Chart(ef)
-                    .encode(
-                        x=alt.X("year:O", title=None),
-                        y=alt.Y(f"{metric_col}:Q", title="%", scale=alt.Scale(domain=[0,100])),
-                        tooltip=[alt.Tooltip("etf_ticker:N","ETF"), alt.Tooltip("year:O","Year"), alt.Tooltip(metric_col, title="%", format=".1f")]
-                    )
+                for c in [metric_col]:
+                    ef[c] = pd.to_numeric(ef[c], errors="coerce")
+                base = alt.Chart(ef).encode(
+                    x=alt.X("year:O", title=None),
+                    y=alt.Y(f"{metric_col}:Q", title="%", scale=alt.Scale(domain=[0,100])),
+                    tooltip=[
+                        alt.Tooltip("etf_ticker:N", title="ETF"),
+                        alt.Tooltip("year:O",       title="Year"),
+                        alt.Tooltip(f"{metric_col}:Q", title="%", format=".1f"),
+                    ],
                 )
                 lines = base.mark_line().encode(detail="etf_ticker:N")
                 pts = base.mark_point(filled=True, size=35)
-                # sort facets by delta
                 piv = ef.pivot_table(index="etf_ticker", columns="year", values=metric_col).reset_index()
                 piv["delta"] = piv.get(2025) - piv.get(year_a)
                 sort_order = piv.sort_values("delta", ascending=False)["etf_ticker"].tolist()
@@ -636,6 +669,8 @@ if mode == "Dashboard":
 
         gap(6)
         l1,r1 = st.columns([0.55, 0.45])
+
+        # --- Year A vs 2025 Bars (tooltips normalized) ---
         with l1:
             st.markdown('<div class="chart-head"><div class="chart-title">Year A vs 2025 — composition and deltas</div><div></div></div>', unsafe_allow_html=True)
             g = ycs.copy()
@@ -647,32 +682,45 @@ if mode == "Dashboard":
                 g = g[g["year"].isin([year_a,2025])]
                 cats = ["Clean","Controversial","Other"]
                 gg = g[g["classification"].isin(cats)].copy()
+                gg["exposure_pct"] = pd.to_numeric(gg["exposure_pct"], errors="coerce")
                 color_scale = alt.Scale(domain=cats, range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
                 bar = alt.Chart(gg).mark_bar().encode(
                     x=alt.X("year:O", title=None),
                     y=alt.Y("exposure_pct:Q", title="%", stack="normalize"),
                     color=alt.Color("classification:N", scale=color_scale, title=None),
-                    tooltip=[alt.Tooltip("classification:N"), alt.Tooltip("year:O"), alt.Tooltip("exposure_pct:Q", title="%", format=".1f")]
+                    tooltip=[
+                        alt.Tooltip("classification:N", title="Class"),
+                        alt.Tooltip("year:O",          title="Year"),
+                        alt.Tooltip("exposure_pct:Q",  title="%", format=".1f"),
+                    ],
                 ).properties(height=220)
                 st.altair_chart(bar, use_container_width=True)
             else:
                 st.info("year_compare_summary.csv is empty")
 
+        # --- Screen Trends (if populated) ---
         with r1:
             st.markdown('<div class="chart-head"><div class="chart-title">By-screen trends (2017–2025)</div><div class="info-badge has-tip" data-tip="Clean200 and controversial screens; categories overlap.">i</div></div>', unsafe_allow_html=True)
             if not ast.empty:
                 screens = sorted(ast["screen_category"].dropna().unique().tolist())
-                pick = st.multiselect("Screens", screens, default=[s for s in screens if s.lower() in ["clean200","fossil","weapons","tobacco","prisons","deforestation"]][:4])
+                pick = st.multiselect(
+                    "Screens", screens,
+                    default=[s for s in screens if s and s.lower() in ["clean200","fossil","weapons","tobacco","prisons","deforestation"]][:4]
+                )
                 aa = ast.copy()
-                if pick:
-                    aa = aa[aa["screen_category"].isin(pick)]
-                if "weighting_mode" in aa.columns and "weighting_mode" in aet.columns:
+                if pick: aa = aa[aa["screen_category"].isin(pick)]
+                if "weighting_mode" in aa.columns:
                     aa = aa[aa["weighting_mode"]==wmode]
+                aa["exposure_pct"] = pd.to_numeric(aa["exposure_pct"], errors="coerce")
                 ln = alt.Chart(aa).mark_line(point=True).encode(
                     x=alt.X("year:O", title="Year"),
                     y=alt.Y("exposure_pct:Q", title="Share of total (%)", scale=alt.Scale(domain=[0,100])),
                     color=alt.Color("screen_category:N", title=None),
-                    tooltip=[alt.Tooltip("screen_category:N"), alt.Tooltip("year:O"), alt.Tooltip("exposure_pct:Q", title="%", format=".1f")]
+                    tooltip=[
+                        alt.Tooltip("screen_category:N", title="Screen"),
+                        alt.Tooltip("year:O",            title="Year"),
+                        alt.Tooltip("exposure_pct:Q",    title="%", format=".1f"),
+                    ],
                 ).properties(height=240)
                 st.altair_chart(ln, use_container_width=True)
             else:
@@ -682,30 +730,21 @@ if mode == "Dashboard":
         st.markdown('<div class="chart-head"><div class="chart-title">Movers — what drove the change (Year A → 2025)</div><div></div></div>', unsafe_allow_html=True)
         if not mv.empty and {"year_a","year_b"}.issubset(mv.columns):
             mv_pair = mv[(mv["year_a"]==year_a) & (mv["year_b"]==2025)].copy()
-            delta_col = None
-            for cand in ["delta_contrib_pct_agg","delta_weight_pp","delta_contrib_pp","delta_pct_points","delta"]:
-                if cand in mv_pair.columns:
-                    delta_col = cand
-                    break
+            delta_col = next((c for c in ["delta_contrib_pct_agg","delta_weight_pp","delta_contrib_pp","delta_pct_points","delta"] if c in mv_pair.columns), None)
             name_cols = [c for c in ["holding_name","name","company_name"] if c in mv_pair.columns]
-            tick_col = [c for c in ["ticker","company_ticker"] if c in mv_pair.columns]
-            tags_col = [c for c in ["screen_tags","screens","tags"] if c in mv_pair.columns]
-            appear_cols = [c for c in ["appear_in_n_funds_a","funds_a","n_funds_a"] if c in mv_pair.columns] + [c for c in ["appear_in_n_funds_b","funds_b","n_funds_b"] if c in mv_pair.columns]
+            tick_col = next((c for c in ["ticker","company_ticker"] if c in mv_pair.columns), None)
+            tags_col = next((c for c in ["screen_tags","screens","tags"] if c in mv_pair.columns), None)
+            appear_a = next((c for c in ["appear_in_n_funds_a","funds_a","n_funds_a"] if c in mv_pair.columns), None)
+            appear_b = next((c for c in ["appear_in_n_funds_b","funds_b","n_funds_b"] if c in mv_pair.columns), None)
 
             if delta_col and name_cols:
+                mv_pair[delta_col] = pd.to_numeric(mv_pair[delta_col], errors="coerce")
                 top_adds = mv_pair.sort_values(delta_col, ascending=False).head(15)
                 top_drops = mv_pair.sort_values(delta_col, ascending=True).head(15)
                 def slim(df):
-                    cols = []
-                    cols += tick_col[:1]
-                    cols += name_cols[:1]
-                    cols += [delta_col]
-                    cols += tags_col[:1]
-                    cols += appear_cols[:2]
-                    cols = [c for c in cols if c in df.columns]
+                    cols = [c for c in [tick_col, name_cols[0], delta_col, tags_col, appear_a, appear_b] if c]
                     out = df[cols].copy()
-                    if delta_col in out.columns:
-                        out[delta_col] = pd.to_numeric(out[delta_col], errors="coerce").map(lambda v: f"{v:.2f}")
+                    out[delta_col] = out[delta_col].map(lambda v: f"{v:.2f}")
                     return out
                 t1, t2 = st.columns(2)
                 with t1:
