@@ -684,7 +684,7 @@ if mode == "Dashboard":
                     "#EDE7DE",  # bone/porcelain
                     "#B9A07A",  # desert taupe
                     "#00BFA6",  # steel denim
-                    "#A07CC6",  # muted orchid
+                    "#2A2237",  # muted orchid
                 ]
 
                 chart = alt.Chart(d).mark_line(
