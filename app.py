@@ -6,6 +6,9 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
+
+alt.data_transformers.disable_max_rows()
+alt.themes.enable(None)
 # ===================
 # CONFIG
 # ===================
@@ -229,6 +232,31 @@ def load_year_compare():             return load_csv(2, "year_compare_summary.cs
 @st.cache_data(show_spinner=False)
 def load_top_movers_with_names():       return load_csv(2, "top_movers_with_names.csv")
 
+# ---- App-wide prefetch & gate ----
+def prefetch_all():
+    data = {}
+    with st.spinner("Loading data…"):
+        # Analysis 1
+        data["ctx"]      = load_context_summary()
+        data["by"]       = load_by_screen()
+        data["spot"]     = load_spotlight()
+        data["expl_raw"], data["expl_disp"], data["expl_tags"] = load_explorer()
+        # Analysis 2
+        data["fy"]       = load_exposures_by_fund_year()
+        data["agg"]      = load_aggregate_trends()
+        data["disp"]     = load_dispersion_stats()
+        data["scr"]      = load_screen_trends()
+        data["yr"]       = load_year_compare()
+        data["mv"]       = load_top_movers_with_names()
+    return data
+
+if "boot" not in st.session_state:
+    try:
+        st.session_state.boot = prefetch_all()
+    except Exception as e:
+        st.error(f"Startup failed: {e}")
+        st.stop()
+
 # =========================
 # HEADER
 # =========================
@@ -292,9 +320,10 @@ def render_change_since_2017():
 
     # ---- Load data
     try:
-        by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
-        scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
-        movers_df = load_top_movers_with_names()       # Holding deltas for specific year-pairs
+        by_fund   = st.session_state.boot["fy"]
+        scr_tr    = st.session_state.boot["scr"]
+        movers_df = st.session_state.boot["mv"]
+
         
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
@@ -723,9 +752,10 @@ if mode == "Dashboard":
 
         # (RELOADER BUTTON REMOVED AS REQUESTED)
 
-        ctx = load_context_summary()
-        scr = load_by_screen()
-        spot = load_spotlight()
+        ctx  = st.session_state.boot["ctx"]
+        scr  = st.session_state.boot["by"]
+        spot = st.session_state.boot["spot"]
+
 
         # KPIs (tinted)
         k1, k2, k3, k4 = st.columns(4)
@@ -859,7 +889,10 @@ if mode == "Dashboard":
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
 
-        df_raw, df_disp, all_tags = load_explorer()
+        df_raw  = st.session_state.boot["expl_raw"]
+        df_disp = st.session_state.boot["expl_disp"]
+        all_tags= st.session_state.boot["expl_tags"]
+
         fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
         with fc1:
             etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
