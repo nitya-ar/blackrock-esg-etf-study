@@ -294,17 +294,6 @@ if mode == "Dashboard":
         st.subheader("2025 Overview")
         st.caption("Today’s composition and the names/screens that drive it.")
 
-        # NEW: one-click hard refresh so updated CSVs are reloaded
-        btn_col, _sp = st.columns([0.18, 0.82])
-        with btn_col:
-            if st.button("Reload 2025 data", help="Clear cache and reload latest Analysis 1 CSVs"):
-                st.cache_data.clear()
-                st.rerun()
-
-        ctx = load_context_summary()
-        scr = load_by_screen()
-        spot = load_spotlight()
-
         # KPIs (tinted)
         k1, k2, k3, k4 = st.columns(4)
         if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
@@ -629,7 +618,7 @@ if mode == "Dashboard":
         )
         tp_net = _two_points_from_series(s_net)
         if tp_net is not None:
-            st.altair_chart(slope_chart(tp_net, [-10, 10], "#8A93A6"), use_container_width=True)
+            st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
 
     # KPI 2: Clean
     with k2:
