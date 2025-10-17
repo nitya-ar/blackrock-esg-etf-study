@@ -464,7 +464,9 @@ def render_change_since_2017():
         '<div class="chart-head">'
         '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
         '<div class="info-badge has-tip" '
-        'data-tip="The shaded band shows how much ETF exposures vary each year — it covers the typical middle range (35th to 65th percentile) for Clean and Controversial exposures. The lines show the average exposure across ETFs based on your selected weighting.">'
+        'data-tip="The shaded band shows how much ETF exposures vary each year — 
+        it covers the typical middle range (35th to 65th percentile) for Clean and Controversial exposures. 
+        The lines show the average exposure across ETFs based on your selected weighting.">'
         'i</div>'
         '</div>',
         unsafe_allow_html=True,
