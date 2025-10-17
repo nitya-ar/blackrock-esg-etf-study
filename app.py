@@ -472,6 +472,22 @@ def render_change_since_2017():
         t = s[s[year_col].isin([start_year, end_year])][[year_col, "value"]].copy()
         return t if len(t) == 2 else None
 
+    def _round_up_to_5(x):
+        try:
+            import math
+            return int(math.ceil(max(10.0, float(x)) / 5.0) * 5.0)
+        except Exception:
+            return 30
+
+    # Shared y-domain for BOTH Clean and Controversial slope charts
+    ymax_candidates = []
+    if not s_clean.empty:
+        ymax_candidates.append(float(pd.to_numeric(s_clean["value"], errors="coerce").max()))
+    if not s_contro.empty:
+        ymax_candidates.append(float(pd.to_numeric(s_contro["value"], errors="coerce").max()))
+    shared_ymax = _round_up_to_5(max(ymax_candidates) if ymax_candidates else 30)
+    shared_y_domain = [0, shared_ymax]  # SAME for Clean and Controversial
+
     def slope_chart(two_point_df: pd.DataFrame, y_domain, color):
         two = two_point_df.copy()
         two["Year"] = two[year_col].astype(str)
@@ -485,6 +501,7 @@ def render_change_since_2017():
     # ---------- KPI cards ----------
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
+    # KPI 1: Net improvement (level slope: Clean−Contro @ start vs end; fixed domain for clarity)
     with k1:
         st.markdown(
             f"""
@@ -497,24 +514,27 @@ def render_change_since_2017():
         )
         tp_net = _two_points_from_series(s_net)
         if tp_net is not None:
-            st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
+            st.altair_chart(slope_chart(tp_net, [-20, 20], "#8A93A6"), use_container_width=True)
 
+    # KPI 2: Clean — SAME logic and SAME y-axis as Controversial
     with k2:
         d_clean = (cZ - cA) if (pd.notna(cZ) and pd.notna(cA)) else None
         kpi_card("Clean — change since start", f"{d_clean:.1f} pp" if d_clean is not None else "–",
                  tone="green" if (d_clean or 0) >= 0 else "red")
         tp = _two_points_from_series(s_clean)
         if tp is not None:
-            st.altair_chart(slope_chart(tp, [0, 30], COLORS["clean"]), use_container_width=True)
+            st.altair_chart(slope_chart(tp, shared_y_domain, COLORS["clean"]), use_container_width=True)
 
+    # KPI 3: Controversial — SAME logic and SAME y-axis as Clean
     with k3:
         d_ctr = (kZ - kA) if (pd.notna(kZ) and pd.notna(kA)) else None
         kpi_card("Controversial — change since start", f"{d_ctr:.1f} pp" if d_ctr is not None else "–",
                  tone="red" if (d_ctr or 0) > 0 else "green")
         tp = _two_points_from_series(s_contro)
         if tp is not None:
-            st.altair_chart(slope_chart(tp, [0, 30], COLORS["contro"]), use_container_width=True)
+            st.altair_chart(slope_chart(tp, shared_y_domain, COLORS["contro"]), use_container_width=True)
 
+    # KPI 4: Coverage
     with k4:
         st.markdown(
             f"""
@@ -527,6 +547,8 @@ def render_change_since_2017():
         )
 
     gap(8)
+    
+# ---------- Combined trend and the rest (unchanged from your version) ----------
 
     st.markdown(
         '<div class="chart-head">'
