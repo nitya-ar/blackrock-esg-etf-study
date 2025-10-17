@@ -645,7 +645,6 @@ if mode == "Dashboard":
     # ---------- 2025 OVERVIEW ----------
     with tab1:
         st.subheader("2025 Overview")
-        st.caption("Today’s composition and the names/screens that drive it.")
 
         # (RELOADER BUTTON REMOVED AS REQUESTED)
 
