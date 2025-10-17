@@ -459,29 +459,20 @@ def render_change_since_2017():
     gap(8)
 
 
-        # ---------- Combined trend with optional dispersion band ----------
-    st.markdown('<div class="chart-title">Combined trend — % Clean and % Controversial</div>', unsafe_allow_html=True)
+    # ---------- Combined trend with fixed middle dispersion band (35–65%) ----------
+    st.markdown(
+        '<div class="chart-head">'
+        '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
+        '<div class="info-badge has-tip" '
+        'data-tip="Shaded band shows cross-ETF dispersion each year: the middle 35–65% (between the 35th and 65th percentile) '
+        'computed separately for Clean and Controversial. Lines show the cohort mean using your Weighting choice.">'
+        'i</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-    # Control row: dispersion toggle + info badge
-    _lc, _rc = st.columns([0.6, 0.4])
-    with _rc:
-        cA, cB = st.columns([0.82, 0.18])
-        with cA:
-            band_choice = st.segmented_control(
-                "Dispersion band",
-                options=["IQR (25–75%)", "Middle (35–65%)", "Wide (10–90%)", "None"],
-                default="IQR (25–75%)",
-                label_visibility="collapsed",
-            )
-        with cB:
-            st.markdown(
-                '<div class="info-badge has-tip" data-tip="Shaded area shows cohort dispersion across ETFs. '
-                'IQR = middle 50%; Middle = 35–65%; Wide = 10–90%. Set to None to hide the band.">i</div>',
-                unsafe_allow_html=True,
-            )
-
-    # Helper to compute quantile bands
-    def _band_quantiles(df_in: pd.DataFrame, col: str, q_low: float, q_high: float) -> pd.DataFrame:
+    # Helper to compute a percentile band for a given column
+    def _band_quantiles(df_in: pd.DataFrame, col: str, q_low: float = 0.35, q_high: float = 0.65) -> pd.DataFrame:
         if col not in df_in.columns or df_in.empty:
             return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
         dd = df_in[[year_col, col]].copy()
@@ -491,16 +482,11 @@ def render_change_since_2017():
         q["category"] = "Clean" if col == clean_col else "Controversial"
         return q
 
-    # Map selection → quantiles (None = no band)
-    q_map = {
-        "IQR (25–75%)":    (0.25, 0.75),
-        "Middle (35–65%)": (0.35, 0.65),
-        "Wide (10–90%)":   (0.10, 0.90),
-        "None":            None,
-    }
-    q_sel = q_map.get(band_choice, (0.25, 0.75))
+    # Build the 35–65% band for Clean and Controversial
+    band_clean  = _band_quantiles(df, clean_col, 0.35, 0.65)
+    band_contro = _band_quantiles(df, ctr_col,   0.35, 0.65)
 
-    # Prep line series
+    # Mean lines dataframe
     comb = (
         pd.concat(
             [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
@@ -513,35 +499,31 @@ def render_change_since_2017():
     if not comb.empty:
         layers = []
 
-        # Optional band layer (no tooltip defined => none shown)
-        if q_sel is not None:
-            qlo, qhi = q_sel
-            bandC = _band_quantiles(df, clean_col, qlo, qhi)
-            bandK = _band_quantiles(df, ctr_col,   qlo, qhi)
-            band_df = pd.concat([bandC, bandK], ignore_index=True)
-
-            band_layer = (
-                alt.Chart(band_df)
-                .mark_area(opacity=0.10)
-                .encode(
-                    x=alt.X(
-                        f"{year_col}:O",
-                        title=None,
-                        axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
-                    ),
-                    y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
-                    y2="qhi:Q",
-                    color=alt.Color(
-                        "category:N",
-                        legend=None,
-                        scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
-                    ),
-                )
+        # Shaded middle band (no tooltip to avoid confusion)
+        band_df = pd.concat([band_clean, band_contro], ignore_index=True)
+        band_layer = (
+            alt.Chart(band_df)
+            .mark_area(opacity=0.10)
+            .encode(
+                x=alt.X(
+                    f"{year_col}:O",
+                    title=None,
+                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
+                ),
+                y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
+                y2="qhi:Q",
+                color=alt.Color(
+                    "category:N",
+                    legend=None,
+                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
+                ),
+                # No tooltip defined → none shown
             )
-            layers.append(band_layer)
+        )
+        layers.append(band_layer)
 
-        # Mean lines (tooltip only Year, Exposure, Category)
-        lines = (
+        # Lines with a minimal, clear tooltip (Year, Exposure, Category only)
+        line_layer = (
             alt.Chart(comb)
             .mark_line(point=True, clip=True)
             .encode(
@@ -563,7 +545,7 @@ def render_change_since_2017():
                 ],
             )
         )
-        layers.append(lines)
+        layers.append(line_layer)
 
         st.altair_chart(
             alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}),
@@ -571,9 +553,6 @@ def render_change_since_2017():
         )
 
     gap(8)
-
-
-
 
 
     
