@@ -679,12 +679,12 @@ if mode == "Dashboard":
                 # Muted, modern palette
                 screen_domain = keep
                 screen_range = [
-                    "#26212F",  # deep ink plum
-                    "#D08A6F",  # clay peach (not red)
-                    "#F6F2EA",  # soft cream
-                    "#BFB396",  # warm sand
-                    "#847B8D",  # dusty mauve
-                    "#AFA8B5",  # pale lavender-grey
+                    "#2E263A",  # smoky aubergine
+                    "#CC876D",  # apricot clay
+                    "#EFEAE2",  # linen
+                    "#C7B8A4",  # oat
+                    "#6E677A",  # slate-mauve
+                    "#9F9AA3",  # dove grey-lilac
                 ]
 
                 chart = alt.Chart(d).mark_line(
