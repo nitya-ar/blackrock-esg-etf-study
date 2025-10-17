@@ -491,20 +491,21 @@ if mode == "Dashboard":
 
 
 # ---------------- Change Since 2017 ----------------
-    with tab2:
-        st.subheader("Change since 2017")
-        st.caption("All years are evaluated using the 2025 classification.")
+with tab2:
+    st.subheader("Change since 2017")
+    st.caption("All years are evaluated using the 2025 classification.")
 
     # ---- Load data
     try:
-        by_fund = load_exposures_by_fund_year()   # ETF-level exposures per year
-        scr_tr  = load_screen_trends()            # aggregate screen trends (may be empty)
-        mv_raw  = load_movers_by_yearpair()       # movers for the table
+        by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
+        scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
+        # movers file is per holding deltas between a start & end year (independent of weighting)
+        movers_df = load_movers_by_yearpair()
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
         st.stop()
 
-    # ---- Helpers & canonical column names
+    # ---- Helpers & canonical columns
     def _pick(df, *keys):
         keys = [k.lower() for k in keys]
         for c in df.columns:
@@ -530,17 +531,16 @@ if mode == "Dashboard":
 
     # ---- Controls row
     topA, topB, topC = st.columns([0.44, 0.28, 0.28])
-
     with topB:
         start_year = st.slider("Start Year", min_value=min_year, max_value=max(end_year-1, min_year), value=min_year)
 
-    # Intersection cohort for selected start year and end year
-    setA = set(df_all.loc[df_all[year_col]==start_year, etf_col].astype(str)) if etf_col in df_all.columns else set()
-    setZ = set(df_all.loc[df_all[year_col]==end_year,   etf_col].astype(str)) if etf_col in df_all.columns else set()
+    # Intersection cohort (ETFs present in both years)
+    setA = set(df_all.loc[df_all[year_col] == start_year, etf_col].astype(str)) if etf_col in df_all.columns else set()
+    setZ = set(df_all.loc[df_all[year_col] == end_year,   etf_col].astype(str)) if etf_col in df_all.columns else set()
     overlap = sorted(list(setA & setZ))
 
     with topA:
-        sel_etfs = st.multiselect("ETF (present in both selected years)", overlap, default=[])
+        sel_etfs = st.multiselect("ETF", overlap, default=[])
 
     with topC:
         st.markdown(
@@ -557,8 +557,6 @@ if mode == "Dashboard":
     cohort = overlap if not sel_etfs else sel_etfs
     df = df_all[df_all[etf_col].astype(str).isin(cohort)].copy() if etf_col in df_all.columns else df_all.copy()
     df = df[(df[year_col] >= start_year) & (df[year_col] <= end_year)]
-
-    # ---- Coverage KPI
     covI = len(cohort)
 
     # ---- Weighted series (respects ETF selection + weighting)
@@ -586,9 +584,21 @@ if mode == "Dashboard":
         v = pd.to_numeric(s.loc[s[year_col] == yr, "value"], errors="coerce")
         return float(v.iloc[0]) if len(v) else float("nan")
 
-    # ========= KPIs =========
-    # Slope helper
-    def slope_chart(s: pd.DataFrame, color: str, ylim=(0, 30), title="value"):
+    cA, cZ = _val(s_clean, start_year),  _val(s_clean, end_year)
+    kA, kZ = _val(s_contro, start_year), _val(s_contro, end_year)
+
+    # ---------- KPIs ----------
+    # Mini slope for Net Improvement (axis -10..10)
+    def slope_chart_improve(v_start: float, v_end: float, color: str = "#8A93A6"):
+        two = pd.DataFrame({"Year":[str(start_year), str(end_year)], "value":[v_start, v_end]})
+        base = alt.Chart(two).encode(
+            x=alt.X("Year:N", title="year", sort=[str(start_year), str(end_year)]),
+            y=alt.Y("value:Q", title="pp", axis=alt.Axis(format=".1f"),
+                    scale=alt.Scale(domain=[-10, 10]))
+        )
+        return (base.mark_line(color=color, strokeWidth=3) + base.mark_point(color=color, size=110)).properties(height=160)
+
+    def slope_chart(s: pd.DataFrame, color: str):
         if s is None or s.empty:
             return None
         two = s[s[year_col].isin([start_year, end_year])].copy()
@@ -597,116 +607,120 @@ if mode == "Dashboard":
         two["Year"] = two[year_col].astype(str)
         base = alt.Chart(two).encode(
             x=alt.X("Year:N", title="year", sort=[str(start_year), str(end_year)]),
-            y=alt.Y("value:Q", title=title, axis=alt.Axis(format=".1f"),
-                    scale=alt.Scale(domain=list(ylim)))
+            y=alt.Y("value:Q", title="value",
+                    axis=alt.Axis(format=".1f"),
+                    scale=alt.Scale(domain=[0, 30]))
         )
-        line = base.mark_line(color=color, strokeWidth=3)
-        pts  = base.mark_point(color=color, size=110)
-        return (line + pts).properties(height=160)
+        return (base.mark_line(color=color, strokeWidth=3) + base.mark_point(color=color, size=110)).properties(height=160)
 
-    # Net Improvement series = Clean - Controversial
-    net_series = pd.merge(s_clean.rename(columns={"value":"clean"}),
-                          s_contro.rename(columns={"value":"contro"}),
-                          on=year_col, how="inner")
-    net_series["value"] = net_series["clean"] - net_series["contro"]
-
-    def _val_safe(s: pd.DataFrame, yr: int):
-        v = pd.to_numeric(s.loc[s[year_col]==yr, "value"], errors="coerce")
-        return float(v.iloc[0]) if len(v) else float("nan")
-
-    net_start = _val_safe(net_series, start_year)
-    net_end   = _val_safe(net_series, end_year)
-    net_delta = (net_end - net_start) if (pd.notna(net_end) and pd.notna(net_start)) else None
-
-    # Build the three standard diffs
-    cA, cZ = _val(s_clean, start_year),  _val(s_clean, end_year)
-    kA, kZ = _val(s_contro, start_year), _val(s_contro, end_year)
+    # Net improvement = (Clean_end - Clean_start) - (Controversial_end - Controversial_start)
     d_clean = (cZ - cA) if (pd.notna(cZ) and pd.notna(cA)) else None
     d_ctr   = (kZ - kA) if (pd.notna(kZ) and pd.notna(kA)) else None
+    net_imp = (d_clean or 0) - (d_ctr or 0)
 
-    # KPI row: Net Improvement first (grey)
-    k0, k1, k2, k3 = st.columns([0.28, 0.24, 0.24, 0.24])
-    with k0:
-        kpi_card("Net improvement (Clean − Controversial)",
-                 f"{net_delta:.1f} pp" if net_delta is not None else "–",
-                 tone="neutral")
-        ch = slope_chart(net_series[[year_col, "value"]], color="#9BA4B5", ylim=(0, 20), title="pp")
-        if ch: st.altair_chart(ch, use_container_width=True)
+    k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
+
+    # KPI 1: Net improvement (grey card)
     with k1:
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral" style="background:linear-gradient(180deg, rgba(231,235,240,0.06), rgba(255,255,255,0));">
+              <div class="label">Net improvement (Clean − Controversial)</div>
+              <div class="value">{net_imp:+.1f} pp</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.altair_chart(slope_chart_improve(d_clean - d_ctr, 0 + (d_clean - d_ctr)), use_container_width=True)
+
+    # KPI 2: Clean
+    with k2:
         kpi_card("Clean — change since start", f"{d_clean:.1f} pp" if d_clean is not None else "–",
                  tone="green" if (d_clean or 0) >= 0 else "red")
         ch = slope_chart(s_clean, COLORS["clean"])
         if ch: st.altair_chart(ch, use_container_width=True)
-    with k2:
+
+    # KPI 3: Controversial
+    with k3:
         kpi_card("Controversial — change since start", f"{d_ctr:.1f} pp" if d_ctr is not None else "–",
                  tone="red" if (d_ctr or 0) > 0 else "green")
         ch = slope_chart(s_contro, COLORS["contro"])
         if ch: st.altair_chart(ch, use_container_width=True)
-    with k3:
-        kpi_card("ETF coverage", f"{covI} ETFs appear in both {start_year} and {end_year}", tone="neutral")
+
+    # KPI 4: Coverage — big number + small caption
+    with k4:
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral" style="display:flex;align-items:center;gap:14px;">
+              <div style="font-size:44px; font-weight:800; line-height:1;">{covI}</div>
+              <div>
+                <div class="label" style="margin:0;">ETFs appear in both <b>{start_year}</b> and <b>{end_year}</b></div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     gap(8)
 
-    # ========= Combined trend with dispersion bands =========
+    # ---------- Combined trend with *light* dispersion band ----------
     st.markdown('<div class="chart-title">Combined trend — % Clean and % Controversial</div>', unsafe_allow_html=True)
 
-    # Unweighted dispersion (p10 / p90) across ETFs in the cohort
-    def _dispersion(df_funds: pd.DataFrame, value_col: str):
-        t = df_funds[[year_col, value_col]].copy()
-        t[value_col] = pd.to_numeric(t[value_col], errors="coerce")
-        agg = t.groupby(year_col)[value_col].agg(
-            p10=lambda s: s.quantile(0.10),
-            mean="mean",
-            p90=lambda s: s.quantile(0.90)
-        ).reset_index()
-        return agg
+    # Build IQR band (25–75%) from selected cohort (independent per category)
+    def iqr_band(col):
+        if col not in df.columns or df.empty:
+            return pd.DataFrame(columns=[year_col,"q25","q75","category"])
+        dd = df[[year_col, col]].copy()
+        dd[col] = pd.to_numeric(dd[col], errors="coerce")
+        q = dd.groupby(year_col)[col].quantile([0.25, 0.75]).unstack().reset_index()
+        q.columns = [year_col, "q25", "q75"]
+        q["category"] = "Clean" if col == clean_col else "Controversial"
+        return q
 
-    band_clean  = _dispersion(df, clean_col).assign(category="Clean")
-    band_contro = _dispersion(df, ctr_col).assign(category="Controversial")
-    bands = pd.concat([
-        band_clean.rename(columns={"p10":"low","p90":"high"}),
-        band_contro.rename(columns={"p10":"low","p90":"high"})
-    ], ignore_index=True)
+    bandC = iqr_band(clean_col)
+    bandK = iqr_band(ctr_col)
 
     comb = pd.concat([
         s_clean.assign(category="Clean"),
         s_contro.assign(category="Controversial")
     ], ignore_index=True) if (not s_clean.empty or not s_contro.empty) else pd.DataFrame(columns=[year_col,"value","category"])
 
-    if not comb.empty and not bands.empty:
-        color_scale = alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])
-
-        area = alt.Chart(bands).mark_area(opacity=0.13).encode(
-            x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("low:Q"),
-            y2="high:Q",
-            color=alt.Color("category:N", scale=color_scale, legend=None)
+    if not comb.empty:
+        base = alt.Chart().properties(height=300)
+        # very light bands to avoid clutter
+        band_layer = (
+            alt.Chart(pd.concat([bandC, bandK], ignore_index=True))
+            .mark_area(opacity=0.12)
+            .encode(
+                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
+                y=alt.Y("q25:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
+                y2="q75:Q",
+                color=alt.Color("category:N", legend=None,
+                                scale=alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]]))
+            )
         )
-
-        lines = alt.Chart(comb).mark_line(point=True).encode(
-            x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
-            y=alt.Y("value:Q", title="Exposure (%)",
-                    axis=alt.Axis(format=".1f"),
-                    scale=alt.Scale(domain=[0, 30])),
-            color=alt.Color("category:N", title=None, scale=color_scale),
-            tooltip=[alt.Tooltip("category:N", title="Category"),
-                     alt.Tooltip(f"{year_col}:O", title="Year"),
-                     alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
+        lines = (
+            alt.Chart(comb).mark_line(point=True).encode(
+                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0)),
+                y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]), axis=alt.Axis(format=".1f")),
+                color=alt.Color("category:N", title=None,
+                                scale=alt.Scale(domain=["Clean","Controversial"], range=[COLORS["clean"], COLORS["contro"]])),
+                tooltip=[alt.Tooltip("category:N", title="Category"),
+                         alt.Tooltip(f"{year_col}:O", title="Year"),
+                         alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
+            )
         )
-
-        st.altair_chart((area + lines).properties(height=300), use_container_width=True)
+        st.altair_chart(band_layer + lines, use_container_width=True)
 
     gap(8)
 
     # ===== Screen trends & Composition — aligned headings, side-by-side =====
-    # Headings (same row)
     h_left, h_right = st.columns([0.5, 0.5])
     with h_left:
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
     with h_right:
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Year A vs 2025</div>', unsafe_allow_html=True)
 
-    # Charts (same height)
     left, right = st.columns([0.5, 0.5])
 
     with left:
@@ -726,16 +740,8 @@ if mode == "Dashboard":
                 d = d[d["Category"].isin(keep)]
                 d = d[(d[year_col] >= start_year) & (d[year_col] <= end_year)]
 
-                # Palette used in your accepted design
                 screen_domain = keep
-                screen_range  = [
-                    "#4C63B6",  # Clean200 (blue)
-                    "#C77A61",  # Prisons  (terracotta)
-                    "#EAE4DA",  # Deforestation (bone)
-                    "#B5A793",  # Fossil Fuel (sand)
-                    "#2E8A76",  # Weapons (teal-slate)
-                    "#7E6FA5",  # Tobacco (soft purple)
-                ]
+                screen_range  = ["#5C6ACF","#C97F64","#EDE7DE","#B5A793","#2FA08A","#A99ABD"]  # your palette
 
                 chart = alt.Chart(d).mark_line(
                     strokeWidth=2, opacity=0.95,
@@ -753,17 +759,10 @@ if mode == "Dashboard":
                         alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
                     ],
                 ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
-
                 st.altair_chart(chart, use_container_width=True)
-            else:
-                st.empty()
-        else:
-            st.empty()
 
     with right:
-        # Composition compare (same height as left)
         comp_rows = []
-
         def _val_series(col):
             s = _series_from_funds(col)
             if s.empty: return None, None
@@ -778,7 +777,6 @@ if mode == "Dashboard":
             if vZ is not None: comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
 
         comp_df = pd.DataFrame(comp_rows)
-
         if not comp_df.empty:
             comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
             comp_chart = alt.Chart(comp_df).mark_bar(opacity=0.92, stroke="#0A0B0D", strokeWidth=0.6).encode(
@@ -787,66 +785,50 @@ if mode == "Dashboard":
                         axis=alt.Axis(format="%", grid=True),
                         title="Portfolio share"),
                 color=alt.Color("Category:N", title=None,
-                                scale=alt.Scale(domain=["Clean", "Controversial", "Other"],
+                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
                                                 range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                tooltip=[
-                    alt.Tooltip("Year:N", title="Year"),
-                    alt.Tooltip("Category:N", title="Category"),
-                    alt.Tooltip("Value:Q", title="Share (%)", format=".1f")
-                ]
+                tooltip=[alt.Tooltip("Year:N", title="Year"),
+                         alt.Tooltip("Category:N", title="Category"),
+                         alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
             ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
             st.altair_chart(comp_chart, use_container_width=True)
-        else:
-            st.empty()
 
-    # ========= Top Movers (table) =========
-    gap(8)
-    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Movers — holdings (Year A → 2025)</div>', unsafe_allow_html=True)
+    gap(10)
 
-    try:
-        mv = mv_raw.copy()
+    # ---------- Top movers (no filters) ----------
+    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 movers in holdings — Start year → 2025</div>', unsafe_allow_html=True)
+    st.caption("Note: This table uses precomputed holding-level deltas and is not affected by the AUM vs Equal-weighted toggle.")
 
-        def _pick_col(df, *cands):
-            for k in cands:
-                for c in df.columns:
-                    if k.lower() in c.lower():
-                        return c
-            return None
+    movers_view = pd.DataFrame()
+    if not movers_df.empty:
+        # Try to auto-detect column names
+        hold_col = _pick(movers_df, "holding", "name")
+        cat_col  = _pick(movers_df, "category", "class")
+        y0_col   = _pick(movers_df, "start_year", "year_a", "year0")
+        y1_col   = _pick(movers_df, "end_year", "year_b", "year1")
+        d_col    = _pick(movers_df, "delta", "pp", "change")
 
-        col_start = _pick_col(mv, "start_year", "from_year", "year_a")
-        col_end   = _pick_col(mv, "end_year", "to_year", "year_b")
-        col_name  = _pick_col(mv, "holding_name", "holding", "ticker_name", "security")
-        col_cat   = _pick_col(mv, "screen", "category", "cohort", "class")
-        col_delta = _pick_col(mv, "delta_pp", "change_pp", "contribution_pp", "delta")
+        m = movers_df.copy()
+        if y0_col and y1_col:
+            m = m[(m[y0_col] == start_year) & (m[y1_col] == end_year)]
+        if d_col:
+            m["_abs"] = m[d_col].abs()
+            m = m.sort_values("_abs", ascending=False).head(10)
 
-        if col_start and col_end:
-            mv = mv[(mv[col_start]==start_year) & (mv[col_end]==end_year)]
+        movers_view = m.rename(columns={
+            hold_col: "Holding",
+            cat_col:  "Category",
+            d_col:    "Δ (pp)"
+        })[["Holding","Category","Δ (pp)"]].copy()
 
-        mv["_Category"] = mv[col_cat].astype(str).str.title().replace(
-            {"Fossil_fuel":"Fossil Fuel","Prison":"Prisons"}
-        ) if col_cat else "Other"
-        mv["_Name"] = (mv[col_name] if col_name else mv.get("ticker", mv.index)).astype(str)
-        if col_delta is None:
-            st.info("Movers table: couldn't find a delta column in movers_by_yearpair.csv")
-        else:
-            mv["_Delta (pp)"] = pd.to_numeric(mv[col_delta], errors="coerce")
+        # Numeric formatting
+        movers_view["Δ (pp)"] = pd.to_numeric(movers_view["Δ (pp)"], errors="coerce").map(lambda v: f"{v:+.4f}")
 
-            cats = ["All"] + sorted([c for c in mv["_Category"].dropna().unique().tolist() if c])
-            sel_cat = st.selectbox("Category", cats, index=0, help="Filter by Clean / Controversial / specific screen")
-            mv_f = mv.copy()
-            if sel_cat != "All":
-                mv_f = mv_f[mv_f["_Category"]==sel_cat]
+    if movers_view.empty:
+        st.info("No movers found for the selected start year.")
+    else:
+        st.dataframe(movers_view, use_container_width=True, hide_index=True)
 
-            top10 = (
-                mv_f[["_Name","_Category","_Delta (pp)"]]
-                .dropna(subset=["_Delta (pp)"])
-                .sort_values("_Delta (pp)", key=lambda s: s.abs(), ascending=False)
-                .head(10)
-                .rename(columns={"_Name":"Holding", "_Category":"Category"})
-            )
-            st.dataframe(top10, use_container_width=True, hide_index=True)
-    except Exception:
-        st.info("Movers table unavailable.")
 
 
 
