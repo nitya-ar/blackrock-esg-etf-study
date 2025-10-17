@@ -488,11 +488,10 @@ if mode == "Dashboard":
         )
 
 
-
-
-with tab2:
-    st.subheader("Change since 2017")
-    st.caption("All years are evaluated using the 2025 classification.")
+#---------Change since 2017------#
+    with tab2:
+        st.subheader("Change since 2017")
+        st.caption("All years are evaluated using the 2025 classification.")
 
     # ---- Load data
     try:
