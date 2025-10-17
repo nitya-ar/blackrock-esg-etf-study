@@ -459,7 +459,7 @@ def render_change_since_2017():
     gap(8)
 
 
-    # ---------- Combined trend with optional dispersion band ----------
+        # ---------- Combined trend with optional dispersion band ----------
     st.markdown('<div class="chart-title">Combined trend — % Clean and % Controversial</div>', unsafe_allow_html=True)
 
     # Control row: dispersion toggle + info badge
@@ -475,8 +475,8 @@ def render_change_since_2017():
             )
         with cB:
             st.markdown(
-                '<div class="info-badge has-tip" data-tip="Shows cohort dispersion around the mean line. '
-                'IQR=middle 50%; Middle=35–65%; Wide=10–90%. Toggle to None to hide the band.">i</div>',
+                '<div class="info-badge has-tip" data-tip="Shaded area shows cohort dispersion across ETFs. '
+                'IQR = middle 50%; Middle = 35–65%; Wide = 10–90%. Set to None to hide the band.">i</div>',
                 unsafe_allow_html=True,
             )
 
@@ -493,23 +493,27 @@ def render_change_since_2017():
 
     # Map selection → quantiles (None = no band)
     q_map = {
-        "IQR (25–75%)":      (0.25, 0.75),
-        "Middle (35–65%)":   (0.35, 0.65),
-        "Wide (10–90%)":     (0.10, 0.90),
-        "None":              None,
+        "IQR (25–75%)":    (0.25, 0.75),
+        "Middle (35–65%)": (0.35, 0.65),
+        "Wide (10–90%)":   (0.10, 0.90),
+        "None":            None,
     }
     q_sel = q_map.get(band_choice, (0.25, 0.75))
 
     # Prep line series
     comb = (
-        pd.concat([s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")], ignore_index=True)
+        pd.concat(
+            [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
+            ignore_index=True,
+        )
         if (not s_clean.empty or not s_contro.empty)
         else pd.DataFrame(columns=[year_col, "value", "category"])
     )
 
     if not comb.empty:
-        # Optional band layer (tooltip disabled to avoid qlo/qhi surfacing)
         layers = []
+
+        # Optional band layer (no tooltip defined => none shown)
         if q_sel is not None:
             qlo, qhi = q_sel
             bandC = _band_quantiles(df, clean_col, qlo, qhi)
@@ -520,14 +524,18 @@ def render_change_since_2017():
                 alt.Chart(band_df)
                 .mark_area(opacity=0.10)
                 .encode(
-                    x=alt.X(f"{year_col}:O", title=None,
-                            axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
+                    x=alt.X(
+                        f"{year_col}:O",
+                        title=None,
+                        axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
+                    ),
                     y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
                     y2="qhi:Q",
-                    color=alt.Color("category:N", legend=None,
-                                    scale=alt.Scale(domain=["Clean", "Controversial"],
-                                                    range=[COLORS["clean"], COLORS["contro"]])),
-                    tooltip=None,  # <— suppress band tooltips entirely
+                    color=alt.Color(
+                        "category:N",
+                        legend=None,
+                        scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
+                    ),
                 )
             )
             layers.append(band_layer)
@@ -537,13 +545,17 @@ def render_change_since_2017():
             alt.Chart(comb)
             .mark_line(point=True, clip=True)
             .encode(
-                x=alt.X(f"{year_col}:O", title=None,
-                        axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
-                y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]),
-                        axis=alt.Axis(format=".1f")),
-                color=alt.Color("category:N", title=None,
-                                scale=alt.Scale(domain=["Clean", "Controversial"],
-                                                range=[COLORS["clean"], COLORS["contro"]])),
+                x=alt.X(
+                    f"{year_col}:O",
+                    title=None,
+                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
+                ),
+                y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]), axis=alt.Axis(format=".1f")),
+                color=alt.Color(
+                    "category:N",
+                    title=None,
+                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
+                ),
                 tooltip=[
                     alt.Tooltip(f"{year_col}:O", title="Year"),
                     alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
@@ -559,6 +571,7 @@ def render_change_since_2017():
         )
 
     gap(8)
+
 
 
 
