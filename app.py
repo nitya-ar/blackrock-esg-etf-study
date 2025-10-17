@@ -679,7 +679,7 @@ if mode == "Dashboard":
                 # Muted, modern palette
                 screen_domain = keep
                 screen_range = [
-                    "#00BFA6",  # tiffany teal
+                    "#F0A45D",  # tiffany teal
                     "#D07B62",  # terracotta clay
                     "#EDE7DE",  # bone/porcelain
                     "#B9A07A",  # desert taupe
