@@ -1221,23 +1221,8 @@ if mode == "Dashboard":
 
     # ---------------- Tradeoff Scenarios ----------------
     with tab3:
-        st.subheader("Tradeoff Scenarios")
-        st.caption("Baseline vs cleaner scenarios, measuring cost (TE) vs benefit (% Clean).")
-        c1, c2 = st.columns([0.5, 0.5])
-        with c1:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Scenario KPIs — % Clean, % Controversial, TE, Active Share, Drift</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
-            gap(10)
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Baseline vs Scenario — Composition (100% bars)</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Mini frontier — x: TE, y: % Clean (point = ETF)</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Charts coming</div>', unsafe_allow_html=True)
-            gap(10)
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Movers — adds/drops/ups/downs vs baseline</div>', unsafe_allow_html=True)
-            st.markdown('<div class="blx-card">Table coming</div>', unsafe_allow_html=True)
+        render_tradeoffs()
 
-else:
     # ---------------- REPORT ----------------
     st.subheader("Project Overview (Short Report)")
     st.markdown(
