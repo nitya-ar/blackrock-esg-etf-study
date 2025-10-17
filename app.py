@@ -757,8 +757,15 @@ def render_change_since_2017():
 # -------------------------
 def render_tradeoffs_v2():
     import re
+    import pandas as pd
     import altair as alt
-    import plotly.graph_objects as go
+
+    # (optional) Plotly for Sankey; skip if not installed
+    try:
+        import plotly.graph_objects as go
+        _PLOTLY_OK = True
+    except Exception:
+        _PLOTLY_OK = False
 
     st.subheader("Tradeoff Scenarios")
     st.caption("Pick an ETF, click a scenario card, and see cleanliness vs tracking error, what changed, and where the weight moved.")
@@ -803,16 +810,20 @@ def render_tradeoffs_v2():
     ret_col    = _pick(metr, "ann_return", "return") or "ann_return"
     vol_col    = _pick(metr, "ann_vol", "vol") or "ann_vol"
 
+    # Backfills for missing cols
     for c, default in [(scen_col,"Baseline"), (etf_col,"ALL"), (weight_col,"AUM")]:
         if c not in metr.columns: metr[c] = default
 
     metr["_scen"] = metr[scen_col].map(_norm_scen)
-    if deltas is not None and not deltas.empty:
+
+    if deltas is None:
+        deltas = pd.DataFrame()
+    else:
         d_scen = _pick(deltas, "scenario", "scenario_name", "scenario_id") or "scenario"
         if d_scen not in deltas.columns: deltas[d_scen] = "Baseline"
         deltas["_scen"] = deltas[d_scen].map(_norm_scen)
 
-    # ---------- Controls (light) ----------
+    # ---------- Controls ----------
     topA, topB, topC, topD = st.columns([0.30, 0.20, 0.22, 0.28])
     with topA:
         etf_opts = [e for e in sorted(metr[etf_col].dropna().astype(str).unique()) if e.upper()!="ALL"] or ["ALL"]
@@ -824,7 +835,7 @@ def render_tradeoffs_v2():
     with topC:
         nov_exp = st.segmented_control("Mode", ["Novice","Expert"], default="Novice", label_visibility="collapsed")
     with topD:
-        # simple target helpers for the frontier
+        # targets to guide the frontier chart
         max_clean = float(pd.to_numeric(mview[clean_col], errors="coerce").max() or 30)
         max_te    = float(pd.to_numeric(mview[te_col], errors="coerce").max() or 2)
         t_clean = st.slider("Clean target (%)", 0.0, max(40.0, round(max_clean+2,1)), value=min(30.0, max_clean))
@@ -834,7 +845,7 @@ def render_tradeoffs_v2():
         st.warning("No scenario rows for this ETF/weighting.")
         st.stop()
 
-    # ---------- Scenario Gallery (cards) ----------
+    # ---------- Scenario Gallery (segmented) ----------
     cards = (
         mview[[ "_scen", clean_col, te_col ]]
         .dropna(subset=[clean_col, te_col])
@@ -845,8 +856,6 @@ def render_tradeoffs_v2():
     order = (["Baseline"] if "Baseline" in cards["_scen"].values else []) + [s for s in cards["_scen"].values if s!="Baseline"]
     cards["_order"] = cards["_scen"].map({s:i for i,s in enumerate(order)})
     cards = cards.sort_values("_order")
-
-    # pick selection (defaults: Baseline if present else first card)
     default_scen = "Baseline" if "Baseline" in cards["_scen"].values else cards["_scen"].iloc[0]
     sel_scenario = st.segmented_control("Scenario", options=order, default=default_scen, label_visibility="collapsed")
 
@@ -854,7 +863,7 @@ def render_tradeoffs_v2():
     base = mview[mview["_scen"]=="Baseline"].head(1)
     pick = mview[mview["_scen"]==sel_scenario].head(1)
 
-    # ---------- Headline KPIs (1 row, dead simple) ----------
+    # ---------- Headline KPIs ----------
     k1,k2,k3,k4 = st.columns([0.25,0.25,0.25,0.25])
     b_clean = _num(base[clean_col].iloc[0]) if not base.empty else None
     s_clean = _num(pick[clean_col].iloc[0]) if not pick.empty else None
@@ -876,7 +885,6 @@ def render_tradeoffs_v2():
     gap(6)
 
     # ================= VISUALS =================
-
     left, right = st.columns([0.55, 0.45])
 
     # ---- A) Frontier (Clean vs TE) with targets & quadrant shading ----
@@ -888,8 +896,8 @@ def render_tradeoffs_v2():
         else:
             # background shading (below TE cap & above Clean target)
             bg = pd.DataFrame({
-                "x1":[0], "x2":[dfp["TE"].max()*1.05 or 2.0],
-                "y1":[t_clean], "y2":[dfp["CleanPct"].max()*1.05 or 30.0]
+                "x1":[0], "x2":[(dfp["TE"].max() or 2.0)*1.05],
+                "y1":[t_clean], "y2":[(dfp["CleanPct"].max() or 30.0)*1.05]
             })
             rect = alt.Chart(bg).mark_rect(opacity=0.06, stroke=COLORS["primary"], strokeWidth=1).encode(
                 x="x1:Q", x2="x2:Q", y="y1:Q", y2="y2:Q"
@@ -915,10 +923,8 @@ def render_tradeoffs_v2():
                 {"Label": sel_scenario, "Value": s_clean - b_clean, "Type":"delta"},
                 {"Label":"Scenario", "Value": s_clean, "Type":"total"},
             ])
-            color_map = {"base":"#8892A6","delta":COLORS["clean"] if s_clean>=b_clean else COLORS["contro"], "total":COLORS["primary"]}
-            bar = alt.Chart(wf).transform_window(
-                order="row_number()"
-            ).mark_bar().encode(
+            color_map = {"base":"#8892A6","delta":COLORS["clean"] if (s_clean or 0) >= (b_clean or 0) else COLORS["contro"], "total":COLORS["primary"]}
+            bar = alt.Chart(wf).mark_bar().encode(
                 x=alt.X("Label:N", title=None),
                 y=alt.Y("Value:Q", title="% Clean"),
                 color=alt.Color("Type:N", legend=None, scale=alt.Scale(domain=list(color_map), range=list(color_map.values()))),
@@ -928,15 +934,17 @@ def render_tradeoffs_v2():
 
     gap(10)
 
-    # ---- C) Sankey: weight flow among cohorts (Baseline → Scenario) ----
+    # ---- C) Sankey: weight flow Baseline → Scenario (bucketed) ----
     st.markdown('<div class="chart-title" style="margin-bottom:6px;">Weight flow — Baseline → Scenario (Clean / Controversial / Other)</div>', unsafe_allow_html=True)
-    if deltas is None or deltas.empty:
+    if not _PLOTLY_OK:
+        st.caption("Plotly not available; skipping flow chart.")
+    elif deltas.empty:
         st.info("No deltas file; flow chart unavailable.")
     else:
-        d_etf  = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
-        d_class= _pick(deltas, "classification", "class") or "classification"
-        base_w = _pick(deltas, "baseline_weight") or _pick(deltas, "weight_base_pct")
-        scen_w = _pick(deltas, "scenario_weight") or _pick(deltas, "weight_scn_pct")
+        d_etf   = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
+        d_class = _pick(deltas, "classification", "class") or "classification"
+        base_w  = _pick(deltas, "baseline_weight", "weight_base_pct")
+        scen_w  = _pick(deltas, "scenario_weight", "weight_scn_pct")
         if not all(c in deltas.columns for c in [d_etf, "_scen", d_class, base_w, scen_w]):
             st.info("Flow chart needs classification & baseline/scenario weights.")
         else:
@@ -944,44 +952,39 @@ def render_tradeoffs_v2():
             if dv.empty:
                 st.info("No deltas for this selection.")
             else:
-                # collapse to three buckets
                 def _bucket(x):
                     x = str(x).strip().lower()
                     if x == "clean": return "Clean"
                     if x == "controversial": return "Controversial"
                     return "Other"
                 dv["_bucket"] = dv[d_class].map(_bucket)
-                agg = pd.DataFrame({
-                    "BaseClean":[pd.to_numeric(dv.loc[dv["_bucket"]=="Clean", base_w], errors="coerce").sum()],
-                })
-                base_b = dv.groupby("_bucket")[base_w].sum().to_dict()
-                scen_b = dv.groupby("_bucket")[scen_w].sum().to_dict()
+
                 buckets = ["Clean","Controversial","Other"]
+                base_b = dv.groupby("_bucket")[base_w].sum().reindex(buckets).fillna(0).to_dict()
+                scen_b = dv.groupby("_bucket")[scen_w].sum().reindex(buckets).fillna(0).to_dict()
+
                 sources = [f"Base {b}" for b in buckets]
                 targets = [f"Scen {b}" for b in buckets]
-                # build nodes
                 nodes = sources + targets
                 node_index = {n:i for i,n in enumerate(nodes)}
-                # links (same bucket flow only — simple, intuitive)
-                values = [float(scen_b.get(b,0)) for b in buckets]
                 link = dict(
                     source=[node_index[f"Base {b}"] for b in buckets],
                     target=[node_index[f"Scen {b}"] for b in buckets],
-                    value=values
+                    value=[float(scen_b[b]) for b in buckets],
                 )
                 node = dict(label=nodes, pad=18, thickness=16)
                 fig = go.Figure(go.Sankey(node=node, link=link))
                 st.plotly_chart(fig, use_container_width=True, theme=None)
 
-    # ---- D) Sector drift (lollipops) if we have sector weights ----
+    # ---- D) Sector drift (lollipops) if present ----
     st.markdown('<div class="chart-title" style="margin-bottom:6px;">Sector drift — Scenario vs Baseline (pp)</div>', unsafe_allow_html=True)
-    if deltas is None or deltas.empty:
+    if deltas.empty:
         st.caption("Sector breakdown not available.")
     else:
         d_etf  = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
         d_sect = _pick(deltas, "sector")
-        base_w = _pick(deltas, "baseline_weight") or _pick(deltas, "weight_base_pct")
-        scen_w = _pick(deltas, "scenario_weight") or _pick(deltas, "weight_scn_pct")
+        base_w = _pick(deltas, "baseline_weight", "weight_base_pct")
+        scen_w = _pick(deltas, "scenario_weight", "weight_scn_pct")
         if not all(c in deltas.columns for c in [d_etf, "_scen", d_sect, base_w, scen_w]):
             st.caption("Sector drift needs sector, baseline, and scenario weights.")
         else:
@@ -1004,7 +1007,7 @@ def render_tradeoffs_v2():
 
     # ---- E) Movers (compact bars, top 5 adds / drops) ----
     st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top movers — adds & drops</div>', unsafe_allow_html=True)
-    if deltas is None or deltas.empty:
+    if deltas.empty:
         st.info("No position deltas file.")
     else:
         d_etf  = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
@@ -1014,15 +1017,15 @@ def render_tradeoffs_v2():
         cls_c  = _pick(deltas, "classification", "class")
 
         dv = deltas[(deltas[d_etf].astype(str).eq(sel_etf)) & (deltas["_scen"].astype(str).eq(sel_scenario))].copy()
-        if dv.empty or aw_col not in dv.columns:
+        if dv.empty or (aw_col not in dv.columns) or (tick_c not in dv.columns) or (name_c not in dv.columns):
             st.info("No movers for this selection.")
         else:
             dv[aw_col] = pd.to_numeric(dv[aw_col], errors="coerce")
             adds  = dv.sort_values(aw_col, ascending=False).head(5).copy()
             drops = dv.sort_values(aw_col, ascending=True).head(5).copy()
 
-            def _bars(df, title, color):
-                if df.empty: return st.caption(f"{title}: none")
+            def _bars(df, color):
+                df = df.copy()
                 df["_label"] = df[[tick_c, name_c]].astype(str).agg(lambda r: f"{r[0]} — {r[1]}", axis=1)
                 chart = alt.Chart(df).mark_bar().encode(
                     x=alt.X(f"{aw_col}:Q", title="Active Δ (pp)"),
@@ -1033,17 +1036,21 @@ def render_tradeoffs_v2():
                              alt.Tooltip(cls_c,  title="Class"),
                              alt.Tooltip(aw_col, title="Active Δ (pp)", format="+.3f")]
                 ).properties(height=180)
-                st.altair_chart(chart, use_container_width=True)
+                return chart
 
             c1, c2 = st.columns([0.5,0.5])
-            with c1: _bars(adds, "Adds / Overweights", COLORS["clean"])
-            with c2: _bars(drops, "Removals / Underweights", COLORS["contro"])
+            with c1:
+                st.caption("Adds / Overweights")
+                st.altair_chart(_bars(adds, COLORS["clean"]), use_container_width=True)
+            with c2:
+                st.caption("Removals / Underweights")
+                st.altair_chart(_bars(drops, COLORS["contro"]), use_container_width=True)
 
-    # ---- Expert toggles (show raw tables) ----
+    # ---- Expert toggles (raw tables) ----
     if nov_exp == "Expert":
         with st.expander("Raw metrics (current ETF + weighting)"):
             st.dataframe(mview.drop(columns=["_scen"]), use_container_width=True, hide_index=True)
-        if deltas is not None and not deltas.empty:
+        if not deltas.empty:
             with st.expander("Raw deltas (current ETF + scenario)"):
                 d_etf  = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
                 sub = deltas[(deltas[d_etf].astype(str).eq(sel_etf)) & (deltas["_scen"].astype(str).eq(sel_scenario))]
@@ -1055,6 +1062,10 @@ def render_tradeoffs_v2():
                        data=mview.drop(columns=["_scen"]).to_csv(index=False).encode("utf-8"),
                        file_name=f"{sel_etf}_{sel_weight}_metrics.csv", mime="text/csv")
 
+
+# Back-compat shim so existing call sites don't crash
+def render_tradeoffs():
+    return render_tradeoffs_v2()
 
 
 
