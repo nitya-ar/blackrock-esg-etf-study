@@ -683,7 +683,7 @@ if mode == "Dashboard":
                     "#D07B62",  # terracotta clay
                     "#EDE7DE",  # bone/porcelain
                     "#B9A07A",  # desert taupe
-                    "#5673B8",  # steel denim
+                    "#00BFA6",  # steel denim
                     "#A07CC6",  # muted orchid
                 ]
 
