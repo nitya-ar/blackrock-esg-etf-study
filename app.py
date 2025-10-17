@@ -499,8 +499,14 @@ def render_change_since_2017():
     if not comb.empty:
         layers = []
 
-        # Shaded middle band (no tooltip to avoid confusion)
+        # Shaded middle band with a clean, customized tooltip
         band_df = pd.concat([band_clean, band_contro], ignore_index=True)
+        band_tooltip = [
+            alt.Tooltip(f"{year_col}:O", title="Year"),
+            alt.Tooltip("qlo:Q",        title="Middle 35–65% — low",  format=".1f"),
+            alt.Tooltip("qhi:Q",        title="Middle 35–65% — high", format=".1f"),
+            alt.Tooltip("category:N",   title="Category"),
+        ]
         band_layer = (
             alt.Chart(band_df)
             .mark_area(opacity=0.10)
@@ -517,7 +523,7 @@ def render_change_since_2017():
                     legend=None,
                     scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
                 ),
-                # No tooltip defined → none shown
+                tooltip=band_tooltip,  # Custom tooltip; no _category_sort_index; friendlier labels
             )
         )
         layers.append(band_layer)
@@ -540,8 +546,8 @@ def render_change_since_2017():
                 ),
                 tooltip=[
                     alt.Tooltip(f"{year_col}:O", title="Year"),
-                    alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
-                    alt.Tooltip("category:N", title="Category"),
+                    alt.Tooltip("value:Q",       title="Exposure (%)", format=".1f"),
+                    alt.Tooltip("category:N",    title="Category"),
                 ],
             )
         )
@@ -553,6 +559,7 @@ def render_change_since_2017():
         )
 
     gap(8)
+
 
 
     
