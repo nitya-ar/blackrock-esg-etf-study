@@ -805,7 +805,7 @@ if mode == "Dashboard":
                         range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
                     )
 
-                        chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                    chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
                         x=alt.X("sum(share):Q", stack="normalize",
                                 axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
                         y=alt.Y("o:O", title=None, axis=None),
@@ -814,6 +814,7 @@ if mode == "Dashboard":
                         tooltip=[alt.Tooltip("classification:N"),
                                  alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
                     ).properties(height=120)
+
                     st.altair_chart(chart, use_container_width=True)
                 else:
                     st.warning("composition columns missing in context_summary_2025.csv")
