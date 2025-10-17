@@ -607,8 +607,7 @@ def render_change_since_2017():
                     st.altair_chart(comp_chart, use_container_width=True)
 
             gap(10)
-            st.markdown('<div class="chart-head"><div class="chart-title">Top movers — holdings (Year A → 2025)</div><div class="info-badge">i</div></div>', unsafe_allow_html=True)
-
+            
 # ---------- Top movers (no filters) ----------
     st.markdown(
         '<div class="chart-head">'
