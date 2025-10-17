@@ -458,60 +458,132 @@ def render_change_since_2017():
 
     gap(8)
 
-    # ---------- Combined trend with *narrow* dispersion band ----------
-    st.markdown('<div class="chart-title">Combined trend — % Clean and % Controversial</div>', unsafe_allow_html=True)
 
-    # Trim band to 35–65% to reduce overlap; also avoid clipped x-labels
-    def band_q(df_in: pd.DataFrame, col: str, q_low=0.35, q_high=0.65) -> pd.DataFrame:
-        if col not in df_in.columns or df_in.empty:
-            return pd.DataFrame(columns=[year_col,"qlo","qhi","category"])
-        dd = df_in[[year_col, col]].copy()
-        dd[col] = pd.to_numeric(dd[col], errors="coerce")
-        q = dd.groupby(year_col)[col].quantile([q_low, q_high]).unstack().reset_index()
-        q.columns = [year_col, "qlo", "qhi"]
-        q["category"] = "Clean" if col == clean_col else "Controversial"
-        return q
+    # ---------- Combined trend with dispersion toggle (default IQR 25–75%) ----------
+st.markdown(
+    '<div class="chart-head">'
+    '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
+    '<div style="display:flex;align-items:center;gap:10px;">'
+    '<div class="info-badge has-tip" '
+    'data-tip="The band shows per-year cohort dispersion. IQR (25–75%) is the middle half of ETFs. '
+    'Wide (10–90%) shows a broader spread. Turn Off to view mean lines only.">i</div>'
+    '</div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 
-    bandC = band_q(df, clean_col)
-    bandK = band_q(df, ctr_col)
+band_mode = st.segmented_control(
+    "Dispersion band",
+    options=["IQR (25–75%)", "Off", "Wide (10–90%)"],
+    default="IQR (25–75%)",
+    label_visibility="collapsed",
+)
 
-    comb = pd.concat([
-        s_clean.assign(category="Clean"),
-        s_contro.assign(category="Controversial")
-    ], ignore_index=True) if (not s_clean.empty or not s_contro.empty) else pd.DataFrame(columns=[year_col,"value","category"])
+def band_q(df_in: pd.DataFrame, col: str, q_low: float, q_high: float) -> pd.DataFrame:
+    """Compute per-year quantile bands for a given exposure column."""
+    if col not in df_in.columns or df_in.empty:
+        return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
+    dd = df_in[[year_col, col]].copy()
+    dd[col] = pd.to_numeric(dd[col], errors="coerce")
+    q = dd.groupby(year_col)[col].quantile([q_low, q_high]).unstack().reset_index()
+    q.columns = [year_col, "qlo", "qhi"]
+    q["category"] = "Clean" if col == clean_col else "Controversial"
+    return q
 
-    if not comb.empty:
+# Select quantiles based on the toggle
+if band_mode == "IQR (25–75%)":
+    qlo, qhi = 0.25, 0.75
+elif band_mode == "Wide (10–90%)":
+    qlo, qhi = 0.10, 0.90
+else:
+    qlo, qhi = None, None  # Off
+
+# Mean series for lines
+comb = (
+    pd.concat(
+        [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
+        ignore_index=True,
+    )
+    if (not s_clean.empty or not s_contro.empty)
+    else pd.DataFrame(columns=[year_col, "value", "category"])
+)
+
+if not comb.empty:
+    layers = []
+
+    # Optional dispersion band
+    if qlo is not None and qhi is not None:
+        bandC = band_q(df, clean_col, qlo, qhi)
+        bandK = band_q(df, ctr_col, qlo, qhi)
+        band_data = pd.concat([bandC, bandK], ignore_index=True)
+
         band_layer = (
-            alt.Chart(pd.concat([bandC, bandK], ignore_index=True))
-            .mark_area(opacity=0.10)
+            alt.Chart(band_data)
+            .mark_area(opacity=0.10, clip=True)
             .encode(
-                x=alt.X(f"{year_col}:O", title=None,
-                        axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
+                x=alt.X(
+                    f"{year_col}:O",
+                    title=None,
+                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
+                ),
                 y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
                 y2="qhi:Q",
-                color=alt.Color("category:N", legend=None,
-                                scale=alt.Scale(domain=["Clean","Controversial"],
-                                                range=[COLORS["clean"], COLORS["contro"]]))
+                color=alt.Color(
+                    "category:N",
+                    legend=None,
+                    scale=alt.Scale(
+                        domain=["Clean", "Controversial"],
+                        range=[COLORS["clean"], COLORS["contro"]],
+                    ),
+                ),
+                tooltip=[],  # keep tooltip clean (no qlo/qhi shown)
             )
         )
-        lines = (
-            alt.Chart(comb).mark_line(point=True, clip=True).encode(
-                x=alt.X(f"{year_col}:O", title=None,
-                        axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
-                y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]),
-                        axis=alt.Axis(format=".1f")),
-                color=alt.Color("category:N", title=None,
-                                scale=alt.Scale(domain=["Clean","Controversial"],
-                                                range=[COLORS["clean"], COLORS["contro"]])),
-                tooltip=[alt.Tooltip("category:N", title="Category"),
-                         alt.Tooltip(f"{year_col}:O", title="Year"),
-                         alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")]
-            )
+        layers.append(band_layer)
+
+    # Mean lines (clean tooltip: Year, Exposure %, Category)
+    line_layer = (
+        alt.Chart(comb)
+        .mark_line(point=True, clip=True)
+        .encode(
+            x=alt.X(
+                f"{year_col}:O",
+                title=None,
+                axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
+            ),
+            y=alt.Y(
+                "value:Q",
+                title="Exposure (%)",
+                scale=alt.Scale(domain=[0, 30]),
+                axis=alt.Axis(format=".1f"),
+            ),
+            color=alt.Color(
+                "category:N",
+                title=None,
+                scale=alt.Scale(
+                    domain=["Clean", "Controversial"],
+                    range=[COLORS["clean"], COLORS["contro"]],
+                ),
+            ),
+            tooltip=[
+                alt.Tooltip(f"{year_col}:O", title="Year"),
+                alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
+                alt.Tooltip("category:N", title="Category"),
+            ],
         )
-        st.altair_chart((band_layer + lines).properties(height=300, padding={"left": 8, "right": 8}), use_container_width=True)
+    )
+    layers.append(line_layer)
 
-    gap(8)
+    st.altair_chart(
+        alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}),
+        use_container_width=True,
+    )
 
+gap(8)
+
+
+
+    
     # ===== Screen trends & Composition — aligned headings, side-by-side =====
     h_left, h_right = st.columns([0.5, 0.5])
     with h_left:
