@@ -283,206 +283,12 @@ mode = st.segmented_control(
 
 divider()
 
-# =========================
-# BODY
-# =========================
-if mode == "Dashboard":
-    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
-
-        # ---------- 2025 OVERVIEW ----------
-    with tab1:
-        st.subheader("2025 Overview")
-        st.caption("Today’s composition and the names/screens that drive it.")
-
-        # KPIs (tinted)
-        k1, k2, k3, k4 = st.columns(4)
-        if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-            clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
-            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"].sum()
-        else:
-            clean_pct = contro_pct = None
-        total_aum = ctx.get("total_aum_usd")
-        total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
-        num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0]) if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()) else None
-
-        with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
-        with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
-        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="neutral")
-        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-", tone="neutral")
-
-        gap(6)
-
-        # Charts row
-        c1, c2 = st.columns([0.5, 0.5])
-
-        with c1:
-            st.markdown(
-                """<div class="chart-head">
-                      <div class="chart-title">2025 Composition — Clean vs Controversial vs Other</div>
-                      <div></div>
-                   </div>""",
-                unsafe_allow_html=True,
-            )
-
-            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-                comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
-                comp["classification"] = comp["classification"].map({
-                    "Clean":"Clean","Controversial":"Controversial","Other":"Other",
-                    "clean":"Clean","controversial":"Controversial","other":"Other"
-                })
-                comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
-                comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
-
-                color_scale = alt.Scale(
-                    domain=["Clean","Controversial","Other"],
-                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
-                )
-
-                chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
-                    x=alt.X("sum(share):Q", stack="normalize",
-                            axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
-                    y=alt.Y("o:O", title=None, axis=None),
-                    color=alt.Color("classification:N", scale=color_scale,
-                                    legend=alt.Legend(orient="top", title=None)),
-                    tooltip=[alt.Tooltip("classification:N"),
-                             alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
-                ).properties(height=120)
-                st.altair_chart(chart, use_container_width=True)
-            else:
-                st.warning("composition columns missing in context_summary_2025.csv")
-
-        with c2:
-            st.markdown(
-                """<div class="chart-head">
-                      <div class="chart-title">By-screen exposures — share of total AUM</div>
-                      <div class="info-badge has-tip" data-tip="Categories can overlap; not intended to sum to overall controversial exposure.">i</div>
-                   </div>""",
-                unsafe_allow_html=True,
-            )
-
-            parts = []
-            clean200 = 0.0
-            if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
-                s2 = scr.copy()
-                s2["classification"] = s2["classification"].str.title()
-                s_con = s2[s2["classification"]=="Controversial"].groupby(
-                    "screen_category", as_index=False
-                )["share_of_total_aum_pct"].sum()
-                parts.append(s_con)
-                c2_row = scr.loc[
-                    scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
-                    "share_of_total_aum_pct"
-                ].sum()
-                clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
-
-            parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
-
-            scr_all = pd.concat(parts, ignore_index=True)
-            scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
-            scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
-            scr_all["color"] = scr_all["screen_category"].apply(
-                lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
-            )
-
-            chart2 = alt.Chart(scr_all).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
-                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
-                y=alt.Y("screen_category:N", sort="-x", title=None),
-                color=alt.Color("color:N", legend=None, scale=None),
-                tooltip=[alt.Tooltip("screen_category:N", title="Category"),
-                         alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
-            ).properties(height=240)
-            st.altair_chart(chart2, use_container_width=True)
-
-        s1, s2 = st.columns([0.5, 0.5])
-        with s1:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
-            if "cohort" in spot.columns:
-                cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
-                if "rank_within_cohort" in cont.columns:
-                    cont = cont.sort_values("rank_within_cohort").head(10)
-                cont_disp = cont.rename(columns={
-                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
-                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
-                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-                if "Share of AUM (%)" in cont_disp.columns:
-                    cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(cont_disp, use_container_width=True, hide_index=True)
-        with s2:
-            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
-            if "cohort" in spot.columns:
-                clean = spot[spot["cohort"].str.lower()=="clean"].copy()
-                if "rank_within_cohort" in clean.columns:
-                    clean = clean.sort_values("rank_within_cohort").head(10)
-                clean_disp = clean.rename(columns={
-                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
-                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
-                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-                if "Share of AUM (%)" in clean_disp.columns:
-                    clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(clean_disp, use_container_width=True, hide_index=True)
-
-        gap(8)
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
-
-        df_raw, df_disp, all_tags = load_explorer()
-        fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
-        with fc1:
-            etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
-            sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
-        with fc2:
-            classes = ["Clean","Controversial","Other"]
-            sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
-        with fc3:
-            sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
-        with fc4:
-            sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
-            sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
-        with fc5:
-            regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
-            sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
-
-        q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
-
-        mask = pd.Series(True, index=df_raw.index)
-        if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
-        if sel_class:  mask &= df_disp["Class"].isin(sel_class)
-        if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
-        if sel_region: mask &= df_disp["Region"].isin(sel_region)
-        if sel_tags:   mask &= df_raw["_screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
-        if q:
-            qcols = [c for c in ["Ticker","Holding","ETF Name"] if c in df_disp.columns]
-            if qcols:
-                qmask = False
-                for c in qcols:
-                    qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
-                mask &= qmask
-
-        df_f = df_disp.loc[mask].copy()
-        default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
-        if default_sort:
-            df_f = df_f.sort_values(by=default_sort, ascending=False)
-
-        df_view = df_f
-        for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
-            if c in df_view.columns:
-                df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-        st.dataframe(df_view, use_container_width=True, hide_index=True)
-
-        csv_bytes = df_f.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "Download filtered rows (CSV)",
-            data=csv_bytes,
-            file_name="holdings_explorer_filtered.csv",
-            mime="text/csv",
-        )
-
-
-
-
-# ---------------- Change Since 2017 ----------------
-    with tab2:
-        st.subheader("Change since 2017")
-        st.caption("All years are evaluated using the 2025 classification.")
+# -------------------------
+# RENDERER FOR TAB 2
+# -------------------------
+def render_change_since_2017():
+    st.subheader("Change since 2017")
+    st.caption("All years are evaluated using the 2025 classification.")
 
     # ---- Load data
     try:
@@ -618,7 +424,7 @@ if mode == "Dashboard":
         )
         tp_net = _two_points_from_series(s_net)
         if tp_net is not None:
-            st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
+            st.altair_chart(slope_chart(tp_net, [-10, 10], "#8A93A6"), use_container_width=True)
 
     # KPI 2: Clean
     with k2:
@@ -752,6 +558,8 @@ if mode == "Dashboard":
                     ],
                 ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
                 st.altair_chart(chart, use_container_width=True)
+        else:
+            st.empty()
 
     with right:
         comp_rows = []
@@ -785,6 +593,8 @@ if mode == "Dashboard":
                          alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
             ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
             st.altair_chart(comp_chart, use_container_width=True)
+        else:
+            st.empty()
 
     gap(10)
 
@@ -826,13 +636,210 @@ if mode == "Dashboard":
         st.dataframe(movers_view, use_container_width=True, hide_index=True)
 
 
+# =========================
+# BODY
+# =========================
+if mode == "Dashboard":
+    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
+    # ---------- 2025 OVERVIEW ----------
+    with tab1:
+        st.subheader("2025 Overview")
+        st.caption("Today’s composition and the names/screens that drive it.")
 
+        # (RELOADER BUTTON REMOVED AS REQUESTED)
 
+        ctx = load_context_summary()
+        scr = load_by_screen()
+        spot = load_spotlight()
 
+        # KPIs (tinted)
+        k1, k2, k3, k4 = st.columns(4)
+        if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+            clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
+            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"].sum()
+        else:
+            clean_pct = contro_pct = None
+        total_aum = ctx.get("total_aum_usd")
+        total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
+        num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0]) if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()) else None
 
+        with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
+        with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
+        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="neutral")
+        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-", tone="neutral")
 
+        gap(6)
 
+        # Charts row
+        c1, c2 = st.columns([0.5, 0.5])
+
+        with c1:
+            st.markdown(
+                """<div class="chart-head">
+                      <div class="chart-title">2025 Composition — Clean vs Controversial vs Other</div>
+                      <div></div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
+
+            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+                comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
+                comp["classification"] = comp["classification"].map({
+                    "Clean":"Clean","Controversial":"Controversial","Other":"Other",
+                    "clean":"Clean","controversial":"Controversial","other":"Other"
+                })
+                comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
+                comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
+
+                color_scale = alt.Scale(
+                    domain=["Clean","Controversial","Other"],
+                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+                )
+
+                chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                    x=alt.X("sum(share):Q", stack="normalize",
+                            axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
+                    y=alt.Y("o:O", title=None, axis=None),
+                    color=alt.Color("classification:N", scale=color_scale,
+                                    legend=alt.Legend(orient="top", title=None)),
+                    tooltip=[alt.Tooltip("classification:N"),
+                             alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
+                ).properties(height=120)
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.warning("composition columns missing in context_summary_2025.csv")
+
+        with c2:
+            st.markdown(
+                """<div class="chart-head">
+                      <div class="chart-title">By-screen exposures — share of total AUM</div>
+                      <div class="info-badge has-tip" data-tip="Categories can overlap; not intended to sum to overall controversial exposure.">i</div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
+
+            parts = []
+            clean200 = 0.0
+            if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
+                s2 = scr.copy()
+                s2["classification"] = s2["classification"].str.title()
+                s_con = s2[s2["classification"]=="Controversial"].groupby(
+                    "screen_category", as_index=False
+                )["share_of_total_aum_pct"].sum()
+                parts.append(s_con)
+                c2_row = scr.loc[
+                    scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                    "share_of_total_aum_pct"
+                ].sum()
+                clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
+
+            parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
+
+            scr_all = pd.concat(parts, ignore_index=True)
+            scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
+            scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
+            scr_all["color"] = scr_all["screen_category"].apply(
+                lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
+            )
+
+            chart2 = alt.Chart(scr_all).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
+                y=alt.Y("screen_category:N", sort="-x", title=None),
+                color=alt.Color("color:N", legend=None, scale=None),
+                tooltip=[alt.Tooltip("screen_category:N", title="Category"),
+                         alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
+            ).properties(height=240)
+            st.altair_chart(chart2, use_container_width=True)
+
+        s1, s2 = st.columns([0.5, 0.5])
+        with s1:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
+            spot = load_spotlight()
+            if "cohort" in spot.columns:
+                cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
+                if "rank_within_cohort" in cont.columns:
+                    cont = cont.sort_values("rank_within_cohort").head(10)
+                cont_disp = cont.rename(columns={
+                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                if "Share of AUM (%)" in cont_disp.columns:
+                    cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                st.dataframe(cont_disp, use_container_width=True, hide_index=True)
+        with s2:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
+            spot = load_spotlight()
+            if "cohort" in spot.columns:
+                clean = spot[spot["cohort"].str.lower()=="clean"].copy()
+                if "rank_within_cohort" in clean.columns:
+                    clean = clean.sort_values("rank_within_cohort").head(10)
+                clean_disp = clean.rename(columns={
+                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                if "Share of AUM (%)" in clean_disp.columns:
+                    clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                st.dataframe(clean_disp, use_container_width=True, hide_index=True)
+
+        gap(8)
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
+
+        df_raw, df_disp, all_tags = load_explorer()
+        fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
+        with fc1:
+            etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
+            sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
+        with fc2:
+            classes = ["Clean","Controversial","Other"]
+            sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
+        with fc3:
+            sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
+        with fc4:
+            sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
+            sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
+        with fc5:
+            regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
+            sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
+
+        q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
+
+        mask = pd.Series(True, index=df_raw.index)
+        if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
+        if sel_class:  mask &= df_disp["Class"].isin(sel_class)
+        if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
+        if sel_region: mask &= df_disp["Region"].isin(sel_region)
+        if sel_tags:   mask &= df_raw["_screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
+        if q:
+            qcols = [c for c in ["Ticker","Holding","ETF Name"] if c in df_disp.columns]
+            if qcols:
+                qmask = False
+                for c in qcols:
+                    qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
+                mask &= qmask
+
+        df_f = df_disp.loc[mask].copy()
+        default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
+        if default_sort:
+            df_f = df_f.sort_values(by=default_sort, ascending=False)
+
+        df_view = df_f
+        for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
+            if c in df_view.columns:
+                df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
+        st.dataframe(df_view, use_container_width=True, hide_index=True)
+
+        csv_bytes = df_f.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Download filtered rows (CSV)",
+            data=csv_bytes,
+            file_name="holdings_explorer_filtered.csv",
+            mime="text/csv",
+        )
+
+    # ---------- CHANGE SINCE 2017 ----------
+    with tab2:
+        render_change_since_2017()
 
     # ---------------- Tradeoff Scenarios ----------------
     with tab3:
