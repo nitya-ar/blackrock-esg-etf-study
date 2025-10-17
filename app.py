@@ -42,6 +42,84 @@ COLORS = {
 # =========================
 # STYLES
 # =========================
+import streamlit as st
+
+st.markdown("""
+<style>
+/* Force browsers (incl. Safari private) to render as dark */
+:root { color-scheme: dark; }
+
+/* App backgrounds */
+html, body, [data-testid="stAppViewContainer"] {
+  background: #0B0F14 !important;
+}
+[data-testid="stHeader"] {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Cards / containers */
+.block-container, [data-testid="stVerticalBlock"] > div, [data-testid="stHorizontalBlock"] > div {
+  color: #E7EBF0 !important;
+}
+
+/* Inputs, selects, multiselect pills, sliders */
+.stTextInput > div > div, .stSelectbox > div > div, .stMultiSelect > div > div,
+[data-baseweb="input"] > div, [data-baseweb="select"] > div, [data-baseweb="slider"] {
+  background-color: #151A21 !important;
+  color: #E7EBF0 !important;
+  border-color: #1C2027 !important;
+}
+.stMultiSelect [data-baseweb="tag"] {
+  background-color: #1C2027 !important;
+  color: #E7EBF0 !important;
+  border-color: #1C2027 !important;
+}
+
+/* Buttons, toggles */
+.stButton > button, .stDownloadButton > button {
+  background: #1C2027 !important;
+  color: #E7EBF0 !important;
+  border: 1px solid #2A2F38 !important;
+  box-shadow: none !important;
+}
+.stButton > button:hover, .stDownloadButton > button:hover {
+  border-color: #E53935 !important;
+}
+
+/* Dataframe/table backgrounds */
+[data-testid="stDataFrame"] {
+  background: #0B0F14 !important;
+}
+[data-testid="stDataFrame"] div[role="grid"] {
+  background: #0B0F14 !important;
+  color: #E7EBF0 !important;
+}
+[data-testid="stDataFrame"] thead, [data-testid="stDataFrame"] tbody {
+  background: #0B0F14 !important;
+}
+[data-testid="stDataFrame"] [role="row"] {
+  border-color: #1C2027 !important;
+}
+
+/* Markdown tables */
+table {
+  background: #0B0F14 !important;
+  color: #E7EBF0 !important;
+  border-color: #1C2027 !important;
+}
+thead th { background: #151A21 !important; }
+
+/* Altair embeds: keep transparent canvases (you already do this) */
+.vega-embed, .vega-embed > div {
+  background: transparent !important;
+}
+
+/* Hide the viewer toolbar to avoid user side theme switches */
+[data-testid="stToolbar"] { display: none !important; }
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown(
     f"""
     <style>
