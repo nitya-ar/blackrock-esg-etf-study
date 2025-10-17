@@ -681,11 +681,11 @@ if mode == "Dashboard":
                 # Muted, modern palette
                 screen_domain = keep
                 screen_range  = [
-                    "#49539C",  # Clean200 (indigo)
+                    "#2E8A76",  # Clean200 (indigo)
                     "#C97F64",  # Prisons  (clay)
                     "#EDE7DE",  # Deforestation (bone)
                     "#B5A793",  # Fossil Fuel (sand stone)
-                    "#2E8A76",  # Weapons (teal-slate)
+                    "#49539C",  # Weapons (teal-slate)
                     "#A99ABD",  # Tobacco (very light plum)
                 ]
 
