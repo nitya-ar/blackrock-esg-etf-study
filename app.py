@@ -1115,9 +1115,8 @@ if mode == "Dashboard":
 
     # ---------- CHANGE SINCE 2017 ----------
     with tab2:
-    with blx_loading("Refreshing charts…"):
-        render_change_since_2017()
-
+        with blx_loading("Refreshing charts…"):
+            render_change_since_2017()
 
     # ---------------- Tradeoff Scenarios ----------------
     with tab3:
