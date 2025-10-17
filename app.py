@@ -227,7 +227,7 @@ def load_screen_trends():            return load_csv(2, "aggregate_screen_trends
 def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
 
 @st.cache_data(show_spinner=False)
-def load_movers_by_yearpair():       return load_csv(2, "movers_by_yearpair.csv")
+def load_top_movers_with_names():       return load_csv(2, "top_movers_with_names.csv")
 
 # =========================
 # HEADER
@@ -294,7 +294,8 @@ def render_change_since_2017():
     try:
         by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
         scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
-        movers_df = load_movers_by_yearpair()       # Holding deltas for specific year-pairs
+        movers_df = load_top_movers_with_names()       # Holding deltas for specific year-pairs
+        
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
         st.stop()
@@ -648,37 +649,61 @@ def render_change_since_2017():
 
     gap(10)
 
-    # ---------- Top movers (no filters) ----------
+        # ---------- Top movers (no filters) ----------
     st.markdown(
         '<div class="chart-head">'
-        '<div class="chart-title">Top 10 movers in holdings — Start year → 2025</div>'
-        '<div class="info-badge has-tip" data-tip="This table uses precomputed holding-level deltas and is not affected by the AUM vs Equal-weighted toggle.">i</div>'
+        '<div class="chart-title">Top movers — holdings (Year A → 2025)</div>'
+        '<div class="info-badge has-tip" '
+        'data-tip="Precomputed holding-level exposure changes from the selected start year to 2025; not affected by the AUM vs Equal-weighted toggle.">'
+        'i</div>'
         '</div>',
         unsafe_allow_html=True,
     )
 
-    movers_view = pd.DataFrame()
-    if movers_df is not None and not movers_df.empty:
-        # Auto-detect column names
-        hold_col = _pick(movers_df, "holding", "name")
-        cat_col  = _pick(movers_df, "category", "class")
-        y0_col   = _pick(movers_df, "start_year", "year_a", "year0")
-        y1_col   = _pick(movers_df, "end_year", "year_b", "year1")
-        d_col    = _pick(movers_df, "delta", "pp", "change")
+    # Try to use the richer file with 2025 names; fallback to movers_df if not available
+    try:
+        topm_df = load_csv(2, "top_movers_with_names.csv")
+    except Exception:
+        topm_df = movers_df.copy() if (movers_df is not None and not movers_df.empty) else pd.DataFrame()
 
-        m = movers_df.copy()
-        # Filter to selected year-pair if present (many files only contain 2017→2025)
-        if y0_col and y1_col and start_year in pd.unique(m[y0_col]) and end_year in pd.unique(m[y1_col]):
+    movers_view = pd.DataFrame()
+    if topm_df is not None and not topm_df.empty:
+        # Auto-detect columns (be resilient to naming)
+        name25_col = _pick(topm_df, "name_2025", "holding_2025", "security_name_2025")
+        base_name  = _pick(topm_df, "holding", "name", "security_name")
+        cat_col    = _pick(topm_df, "category", "class")
+        y0_col     = _pick(topm_df, "start_year", "year_a", "year0")
+        y1_col     = _pick(topm_df, "end_year", "year_b", "year1")
+        d_col      = _pick(topm_df, "delta", "delta_pp", "pp", "change")
+
+        m = topm_df.copy()
+
+        # Filter to the selected year pair (Start → 2025) if possible
+        if y0_col and y1_col:
             m = m[(m[y0_col] == start_year) & (m[y1_col] == end_year)]
         else:
+            # If the file doesn't carry explicit year columns, assume it's for 2017→2025 only
             m = m.head(0)
 
-        if d_col in m.columns and not m.empty:
+        if d_col in (m.columns if m is not None else []) and not m.empty:
+            # Sort by absolute change and take top 10
             m["_abs"] = pd.to_numeric(m[d_col], errors="coerce").abs()
             m = m.sort_values("_abs", ascending=False).head(10)
-            if hold_col and cat_col:
-                movers_view = m.rename(columns={hold_col:"Holding", cat_col:"Category", d_col:"Δ (pp)"}).loc[:, ["Holding","Category","Δ (pp)"]]
-                movers_view["Δ (pp)"] = pd.to_numeric(movers_view["Δ (pp)"], errors="coerce").map(lambda v: f"{v:+.4f}")
+
+            # Choose best display name: Name_2025 if present, else base name
+            if name25_col and name25_col in m.columns:
+                holding_name = m[name25_col]
+            elif base_name and base_name in m.columns:
+                holding_name = m[base_name]
+            else:
+                holding_name = pd.Series(["—"] * len(m), index=m.index)
+
+            # Build display table
+            movers_view = pd.DataFrame({
+                "Holding (2025)": holding_name,
+                "Category": m[cat_col] if cat_col in m.columns else "—",
+                "Δ exposure (pp)": pd.to_numeric(m[d_col], errors="coerce").map(lambda v: f"{v:+.4f}")
+            })
 
     if movers_view.empty:
         st.info("No movers found for the selected start year.")
