@@ -7,36 +7,28 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-# Altair global setup (dark-friendly + no row limits)
 alt.data_transformers.disable_max_rows()
+alt.themes.enable(None)  # keep this as you asked
 
-def _blx_dark_theme():
-    # Uses your CSS palette so charts always match, regardless of Streamlit viewer theme
+# NEW: ensure Altair canvases are transparent + borderless by default
+def _blx_transparent_theme():
     return {
         "config": {
-            "background": "transparent",                 # no white box
-            "view": {"stroke": "transparent"},           # remove default gray border
+            "background": "transparent",
+            "view": {"stroke": "transparent"},
             "axis": {
-                "labelColor": "#E7EBF0",                 # COLORS['text']
-                "titleColor": "#97A2B0",                 # COLORS['muted']
-                "gridColor":  "#1C2027",                 # COLORS['border']
-                "domainColor":"#1C2027",
-                "tickColor":  "#1C2027",
-            },
-            "legend": {
                 "labelColor": "#E7EBF0",
                 "titleColor": "#97A2B0",
+                "gridColor": "#1C2027",
+                "tickColor": "#1C2027",
             },
+            "legend": {"labelColor": "#E7EBF0", "titleColor": "#97A2B0"},
             "title": {"color": "#E7EBF0"},
-            "header": {
-                "labelColor": "#E7EBF0",
-                "titleColor": "#97A2B0",
-            },
         }
     }
 
-alt.themes.register("blx_dark", _blx_dark_theme)
-alt.themes.enable("blx_dark")
+alt.themes.register("blx_transparent", _blx_transparent_theme)
+alt.themes.enable("blx_transparent")
 
 
 # ===================
