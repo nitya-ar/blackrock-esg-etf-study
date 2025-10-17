@@ -1,3 +1,6 @@
+
+
+
 import os
 from io import StringIO
 import urllib.parse
@@ -6,63 +9,6 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
-
-# --- Altair: dark theme + large-row support ---
-alt.data_transformers.disable_max_rows()
-
-def _blx_altair_theme():
-    return {
-        "config": {
-            # make the whole canvas transparent so your page bg shows through
-            "background": "transparent",
-            "view": {"stroke": "transparent"},
-            # text colors
-            "title": {"color": "#E7EBF0", "font": "Inter", "fontSize": 16, "fontWeight": 700},
-            "axis": {
-                "labelColor": "#E7EBF0",
-                "titleColor": "#97A2B0",
-                "gridColor": "#1C2027",
-                "tickColor": "#1C2027",
-                "labelFont": "Inter",
-                "titleFont": "Inter",
-            },
-            "legend": {
-                "labelColor": "#E7EBF0",
-                "titleColor": "#97A2B0",
-                "labelFont": "Inter",
-                "titleFont": "Inter",
-                "orient": "top",
-            },
-
-            # default mark styling (so bars/areas/rects don't have white edges)
-            "bar":   {"cornerRadius": 3, "opacity": 0.92, "stroke": "#0A0B0D", "strokeWidth": 0.6},
-            "area":  {"opacity": 0.10},
-            "line":  {"strokeWidth": 2},
-            "point": {"size": 80},
-
-            # set ranges so categorical charts stay on-brand by default
-            "range": {
-                "category": ["#0E8F66", "#C63C41", "#768397", "#5C6ACF", "#2FA08A", "#C97F64", "#A99ABD", "#B5A793"],
-                "heatmap":  {"scheme": "darkblue"},
-            },
-
-            # DARK TOOLTIP (Vega-Lite style key)
-            "style": {
-                "tooltip": {
-                    "backgroundColor": "#0B0D12",
-                    "border": "1px solid #1C2027",
-                    "color": "#E7EBF0",
-                    "font": "Inter",
-                    "padding": 8,
-                    "boxShadow": "0 10px 24px rgba(0,0,0,.45)"
-                }
-            },
-        }
-    }
-
-alt.themes.register("blx_dark", _blx_altair_theme)
-alt.themes.enable("blx_dark")
-
 # ===================
 # CONFIG
 # ===================
@@ -119,12 +65,7 @@ st.markdown(
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }}
 
-      h1, h2, h3, h4, h5, .chart-title {{
-        color: var(--text) !important;
-        letter-spacing: .1px;
-        opacity: 1 !important;
-      }}
-
+      h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
       .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
       .blx-muted {{ color: var(--muted); }}
 
@@ -145,79 +86,18 @@ st.markdown(
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
 
-      .kpi.kpi-red    {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
-      .kpi.kpi-green  {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
-      .kpi.kpi-neutral{{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
 
-      /* Tabs */
-      .stTabs [data-baseweb="tab-list"] {{
-        background: transparent !important;
-        border-bottom: 1px solid var(--border) !important;
-      }}
-      .stTabs [data-baseweb="tab-list"] button {{
-        background: #0C0E13 !important;
-        color: var(--muted) !important;
-        border: 1px solid var(--border) !important;
-      }}
-      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
-        color: var(--text) !important;
-        border-color: var(--primary) !important;
-        background: #0E1015 !important;
-      }}
+      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{ border-color: var(--primary) !important; }}
 
-      /* Segmented controls (Dashboard/Report, AUM/EW, etc.) */
-      [data-baseweb="segmented-control"] {{
-        background: #0C0E13 !important;
-        border: 1px solid var(--border) !important;
-      }}
-      [data-baseweb="segmented-control"] div[role="tab"] {{
-        background: transparent !important;
-        color: var(--muted) !important;
-      }}
-      [data-baseweb="segmented-control"] div[role="tab"][aria-selected="true"] {{
-        background: #0E1015 !important;
-        color: var(--text) !important;
-        border: 1px solid var(--primary) !important;
-      }}
-
-      /* Inputs: select/multiselect/text/slider */
-      .stSelectbox > div, .stMultiSelect > div, .stTextInput > div, .stSlider > div {{
-        background: #0C0E13 !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text) !important;
-      }}
-      .stMultiSelect [data-baseweb="tag"] {{
-        background: #0E1015 !important;
-        color: var(--text) !important;
-        border: 1px solid var(--border) !important;
-      }}
-
-      /* Streamlit popovers & tooltips */
-      [data-baseweb="tooltip"], .stTooltipContent, .stPopover {{
-        background: #0B0D12 !important;
-        color: var(--text) !important;
-        border: 1px solid var(--border) !important;
-      }}
-
-      /* Dataframe (headers, rows, toolbar) */
-      div[data-testid="stDataframe"] thead tr th {{
-        background: #0C0E13 !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
-      }}
+      div[data-testid="stDataframe"] thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
       div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
-      div[data-testid="stDataframe"] * {{
-        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-        font-size: 13px !important;
-      }}
-      div[data-testid="stDataFrameToolbar"] {{
-        background: #0C0E13 !important;
-        border: 1px solid var(--border) !important;
-      }}
+      div[data-testid="stDataframe"] * {{ font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important; font-size: 13px !important; }}
 
       .chart-head {{ display:flex; align-items:center; justify-content:space-between; margin: 4px 2px 8px 2px; }}
       .chart-title {{ font-weight: 600; color: var(--text); letter-spacing:.1px; }}
-
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         height: 24px; min-width: 24px; border-radius: 14px;
@@ -238,55 +118,13 @@ st.markdown(
       }}
       .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
 
-      /* Footer */
       .footer-wrap {{ display:flex; align-items:center; justify-content:space-between; width:100%; }}
       .footer-left {{ color: var(--muted); font-size: 13px; }}
       .footer-links {{ display:flex; gap:24px; align-items:center; justify-content:flex-end; width:100%; }}
       .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
       .footer-links a:hover {{ text-decoration: underline; }}
-
-            /* BaseWeb select/multiselect dropdown menu (the portal) */
-      [data-baseweb="select"] [role="listbox"],
-      [data-baseweb="menu"] {{
-          background: #0B0D12 !important;
-          color: var(--text) !important;
-          border: 1px solid var(--border) !important;
-      }}
-      [data-baseweb="option"] {{
-          background: transparent !important;
-          color: var(--text) !important;
-      }}
-      [data-baseweb="option"][aria-selected="true"],
-      [data-baseweb="option"]:hover {{
-          background: #0E1015 !important;
-          color: var(--text) !important;
-      }}
-      
-      /* Sliders */
-      .stSlider [role="slider"] {{ background: var(--primary) !important; }}
-      .stSlider .st-c2, .stSlider .st-c3 {{ background: #0E1015 !important; }}
-      
-      /* Buttons (incl. download) */
-      .stButton > button, .stDownloadButton > button {{
-          background: #0E1015 !important;
-          color: var(--text) !important;
-          border: 1px solid var(--border) !important;
-      }}
-      .stButton > button:hover, .stDownloadButton > button:hover {{
-          border-color: var(--primary) !important;
-      }}
-      
-      /* Alerts (st.info / st.warning / st.error) */
-      .stAlert {{
-          background: #0C0E13 !important;
-          color: var(--text) !important;
-          border: 1px solid var(--border) !important;
-      }}
-      
-      .stAlert [data-testid="stMarkdown"] {{ color: var(--text) !important; }}
     </style>
     """,
-    
     unsafe_allow_html=True,
 )
 
@@ -295,13 +133,6 @@ def divider():
 
 def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
-
-from contextlib import contextmanager
-
-@contextmanager
-def blx_loading(label="Loading…"):
-    with st.spinner(label):
-        yield
 
 # =========================
 # DATA LOADER
@@ -401,31 +232,6 @@ def load_year_compare():             return load_csv(2, "year_compare_summary.cs
 @st.cache_data(show_spinner=False)
 def load_top_movers_with_names():       return load_csv(2, "top_movers_with_names.csv")
 
-# ---- App-wide prefetch & gate ----
-def prefetch_all():
-    data = {}
-    with st.spinner("Loading data…"):
-        # Analysis 1
-        data["ctx"]      = load_context_summary()
-        data["by"]       = load_by_screen()
-        data["spot"]     = load_spotlight()
-        data["expl_raw"], data["expl_disp"], data["expl_tags"] = load_explorer()
-        # Analysis 2
-        data["fy"]       = load_exposures_by_fund_year()
-        data["agg"]      = load_aggregate_trends()
-        data["disp"]     = load_dispersion_stats()
-        data["scr"]      = load_screen_trends()
-        data["yr"]       = load_year_compare()
-        data["mv"]       = load_top_movers_with_names()
-    return data
-
-if "boot" not in st.session_state:
-    try:
-        st.session_state.boot = prefetch_all()
-    except Exception as e:
-        st.error(f"Startup failed: {e}")
-        st.stop()
-
 # =========================
 # HEADER
 # =========================
@@ -489,10 +295,9 @@ def render_change_since_2017():
 
     # ---- Load data
     try:
-        by_fund   = st.session_state.boot["fy"]
-        scr_tr    = st.session_state.boot["scr"]
-        movers_df = st.session_state.boot["mv"]
-
+        by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
+        scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
+        movers_df = load_top_movers_with_names()       # Holding deltas for specific year-pairs
         
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
@@ -921,10 +726,9 @@ if mode == "Dashboard":
 
         # (RELOADER BUTTON REMOVED AS REQUESTED)
 
-        ctx  = st.session_state.boot["ctx"]
-        scr  = st.session_state.boot["by"]
-        spot = st.session_state.boot["spot"]
-
+        ctx = load_context_summary()
+        scr = load_by_screen()
+        spot = load_spotlight()
 
         # KPIs (tinted)
         k1, k2, k3, k4 = st.columns(4)
@@ -1058,10 +862,7 @@ if mode == "Dashboard":
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
 
-        df_raw  = st.session_state.boot["expl_raw"]
-        df_disp = st.session_state.boot["expl_disp"]
-        all_tags= st.session_state.boot["expl_tags"]
-
+        df_raw, df_disp, all_tags = load_explorer()
         fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
         with fc1:
             etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
@@ -1115,8 +916,7 @@ if mode == "Dashboard":
 
     # ---------- CHANGE SINCE 2017 ----------
     with tab2:
-        with blx_loading("Refreshing charts…"):
-            render_change_since_2017()
+        render_change_since_2017()
 
     # ---------------- Tradeoff Scenarios ----------------
     with tab3:
