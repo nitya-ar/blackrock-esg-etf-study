@@ -8,8 +8,6 @@ import requests
 import pandas as pd
 import streamlit as st
 import altair as alt
-import plotly.io as pio
-pio.templates.default = "plotly_dark"
 alt.data_transformers.disable_max_rows()
 def _blx_transparent_theme():
     return {
