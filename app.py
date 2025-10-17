@@ -805,7 +805,7 @@ if mode == "Dashboard":
                         range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
                     )
 
-                                        chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                        chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
                         x=alt.X("sum(share):Q", stack="normalize",
                                 axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
                         y=alt.Y("o:O", title=None, axis=None),
