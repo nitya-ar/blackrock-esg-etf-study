@@ -609,37 +609,66 @@ def render_change_since_2017():
             gap(10)
             st.markdown('<div class="chart-head"><div class="chart-title">Top movers — holdings (Year A → 2025)</div><div class="info-badge">i</div></div>', unsafe_allow_html=True)
 
-            # Movers: year-filter if columns exist; else fallback to overall top 10
-            topm_df = movers_df.copy() if (movers_df is not None and not movers_df.empty) else pd.DataFrame()
-            movers_view = pd.DataFrame()
-            if not topm_df.empty:
-                cols = {c.lower(): c for c in topm_df.columns}
-                name25_col = next((cols[c] for c in cols if "name_2025" in c or "holding_2025" in c), None)
-                base_name  = next((cols[c] for c in cols if c in ["holding","name","security_name"]), None)
-                cat_col    = next((cols[c] for c in cols if "category" in c or c=="class"), None)
-                y0_col     = next((cols[c] for c in cols if "start_year" in c or "year_a" in c or "year0" in c), None)
-                y1_col     = next((cols[c] for c in cols if "end_year" in c or "year_b" in c or "year1" in c), None)
-                d_col      = next((cols[c] for c in cols if c in ["delta","delta_pp","pp","change"]), None)
+# ---------- Top movers (no filters) ----------
+    st.markdown(
+        '<div class="chart-head">'
+        '<div class="chart-title">Top movers — holdings (Year A → 2025)</div>'
+        '<div class="info-badge has-tip" '
+        'data-tip="Precomputed holding-level exposure changes from the selected start year to 2025; not affected by the AUM vs Equal-weighted toggle.">'
+        'i</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
-                m = topm_df.copy()
-                if y0_col and y1_col:
-                    m = m[(m[y0_col] == start_year) & (m[y1_col] == 2025)]
-                # else: keep all rows as fallback
+    # Try to use the richer file with 2025 names; fallback to movers_df if not available
+    try:
+        topm_df = load_csv(2, "top_movers_with_names.csv")
+    except Exception:
+        topm_df = movers_df.copy() if (movers_df is not None and not movers_df.empty) else pd.DataFrame()
 
-                if d_col in m.columns and not m.empty:
-                    m["_abs"] = pd.to_numeric(m[d_col], errors="coerce").abs()
-                    m = m.sort_values("_abs", ascending=False).head(10)
-                    holding_name = m[name25_col] if (name25_col and name25_col in m.columns) else (m[base_name] if base_name in m.columns else pd.Series(["—"] * len(m), index=m.index))
-                    movers_view = pd.DataFrame({
-                        "Holding (2025)": holding_name,
-                        "Category": m[cat_col] if (cat_col and cat_col in m.columns) else "—",
-                        "Δ exposure (pp)": pd.to_numeric(m[d_col], errors="coerce").map(lambda v: f"{v:+.4f}")
-                    })
+    movers_view = pd.DataFrame()
+    if topm_df is not None and not topm_df.empty:
+        # Auto-detect columns (be resilient to naming)
+        name25_col = _pick(topm_df, "name_2025", "holding_2025", "security_name_2025")
+        base_name  = _pick(topm_df, "holding", "name", "security_name")
+        cat_col    = _pick(topm_df, "category", "class")
+        y0_col     = _pick(topm_df, "start_year", "year_a", "year0")
+        y1_col     = _pick(topm_df, "end_year", "year_b", "year1")
+        d_col      = _pick(topm_df, "delta", "delta_pp", "pp", "change")
 
-            if movers_view.empty:
-                st.info("No movers found for the selected start year.")
+        m = topm_df.copy()
+
+        # Filter to the selected year pair (Start → 2025) if possible
+        if y0_col and y1_col:
+            m = m[(m[y0_col] == start_year) & (m[y1_col] == end_year)]
+        else:
+            # If the file doesn't carry explicit year columns, assume it's for 2017→2025 only
+            m = m.head(0)
+
+        if d_col in (m.columns if m is not None else []) and not m.empty:
+            # Sort by absolute change and take top 10
+            m["_abs"] = pd.to_numeric(m[d_col], errors="coerce").abs()
+            m = m.sort_values("_abs", ascending=False).head(10)
+
+            # Choose best display name: Name_2025 if present, else base name
+            if name25_col and name25_col in m.columns:
+                holding_name = m[name25_col]
+            elif base_name and base_name in m.columns:
+                holding_name = m[base_name]
             else:
-                st.dataframe(movers_view, use_container_width=True, hide_index=True)
+                holding_name = pd.Series(["—"] * len(m), index=m.index)
+
+            # Build display table
+            movers_view = pd.DataFrame({
+                "Holding (2025)": holding_name,
+                "Category": m[cat_col] if cat_col in m.columns else "—",
+                "Δ exposure (pp)": pd.to_numeric(m[d_col], errors="coerce").map(lambda v: f"{v:+.4f}")
+            })
+
+    if movers_view.empty:
+        st.info("No movers found for the selected start year.")
+    else:
+        st.dataframe(movers_view, use_container_width=True, hide_index=True)
 
 # =========================
 # BODY
