@@ -594,7 +594,7 @@ if mode == "Dashboard":
         base = alt.Chart(two).encode(
             x=alt.X("Year:N", title="year", sort=[str(start_year), str(end_year)]),
             y=alt.Y("value:Q", title="pp", axis=alt.Axis(format=".1f"),
-                    scale=alt.Scale(domain=[-10, 10]))
+                    scale=alt.Scale(domain=[-10, 5]))
         )
         return (base.mark_line(color=color, strokeWidth=3) + base.mark_point(color=color, size=110)).properties(height=160)
 
