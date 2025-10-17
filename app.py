@@ -6,7 +6,7 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
-# ===================
+# ==================
 # CONFIG
 # ===================
 st.set_page_config(
@@ -227,7 +227,7 @@ def load_screen_trends():            return load_csv(2, "aggregate_screen_trends
 def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
 
 @st.cache_data(show_spinner=False)
-def load_movers_by_yearpair():       return load_csv(2, "movers_by_yearpair.csv")
+def load_top_movers_with_names():       return load_csv(2, "top_movers_with_names.csv")
 
 # =========================
 # HEADER
@@ -294,7 +294,8 @@ def render_change_since_2017():
     try:
         by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
         scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
-        movers_df = load_movers_by_yearpair()       # Holding deltas for specific year-pairs
+        movers_df = load_top_movers_with_names()       # Holding deltas for specific year-pairs
+        
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
         st.stop()
@@ -459,67 +460,56 @@ def render_change_since_2017():
     gap(8)
 
 
-    # ---------- Combined trend with dispersion toggle (default IQR 25–75%) ----------
-st.markdown(
-    '<div class="chart-head">'
-    '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
-    '<div style="display:flex;align-items:center;gap:10px;">'
-    '<div class="info-badge has-tip" '
-    'data-tip="The band shows per-year cohort dispersion. IQR (25–75%) is the middle half of ETFs. '
-    'Wide (10–90%) shows a broader spread. Turn Off to view mean lines only.">i</div>'
-    '</div>'
-    '</div>',
-    unsafe_allow_html=True,
-)
-
-band_mode = st.segmented_control(
-    "Dispersion band",
-    options=["IQR (25–75%)", "Off", "Wide (10–90%)"],
-    default="IQR (25–75%)",
-    label_visibility="collapsed",
-)
-
-def band_q(df_in: pd.DataFrame, col: str, q_low: float, q_high: float) -> pd.DataFrame:
-    """Compute per-year quantile bands for a given exposure column."""
-    if col not in df_in.columns or df_in.empty:
-        return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
-    dd = df_in[[year_col, col]].copy()
-    dd[col] = pd.to_numeric(dd[col], errors="coerce")
-    q = dd.groupby(year_col)[col].quantile([q_low, q_high]).unstack().reset_index()
-    q.columns = [year_col, "qlo", "qhi"]
-    q["category"] = "Clean" if col == clean_col else "Controversial"
-    return q
-
-# Select quantiles based on the toggle
-if band_mode == "IQR (25–75%)":
-    qlo, qhi = 0.25, 0.75
-elif band_mode == "Wide (10–90%)":
-    qlo, qhi = 0.10, 0.90
-else:
-    qlo, qhi = None, None  # Off
-
-# Mean series for lines
-comb = (
-    pd.concat(
-        [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
-        ignore_index=True,
+    # ---------- Combined trend with fixed middle dispersion band (35–65%) ----------
+    st.markdown(
+        '<div class="chart-head">'
+        '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
+        '<div class="info-badge has-tip" '
+        'data-tip="The shaded band shows how much ETF exposures vary each year — it covers the typical middle range (35th to 65th percentile) for Clean and Controversial exposures. The lines show the average exposure across ETFs based on your selected weighting.">'
+        'i</div>'
+        '</div>',
+        unsafe_allow_html=True,
     )
-    if (not s_clean.empty or not s_contro.empty)
-    else pd.DataFrame(columns=[year_col, "value", "category"])
-)
 
-if not comb.empty:
-    layers = []
+    # Helper to compute a percentile band for a given column
+    def _band_quantiles(df_in: pd.DataFrame, col: str, q_low: float = 0.35, q_high: float = 0.65) -> pd.DataFrame:
+        if col not in df_in.columns or df_in.empty:
+            return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
+        dd = df_in[[year_col, col]].copy()
+        dd[col] = pd.to_numeric(dd[col], errors="coerce")
+        q = dd.groupby(year_col)[col].quantile([q_low, q_high]).unstack().reset_index()
+        q.columns = [year_col, "qlo", "qhi"]
+        q["category"] = "Clean" if col == clean_col else "Controversial"
+        return q
 
-    # Optional dispersion band
-    if qlo is not None and qhi is not None:
-        bandC = band_q(df, clean_col, qlo, qhi)
-        bandK = band_q(df, ctr_col, qlo, qhi)
-        band_data = pd.concat([bandC, bandK], ignore_index=True)
+    # Build the 35–65% band for Clean and Controversial
+    band_clean  = _band_quantiles(df, clean_col, 0.35, 0.65)
+    band_contro = _band_quantiles(df, ctr_col,   0.35, 0.65)
 
+    # Mean lines dataframe
+    comb = (
+        pd.concat(
+            [s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")],
+            ignore_index=True,
+        )
+        if (not s_clean.empty or not s_contro.empty)
+        else pd.DataFrame(columns=[year_col, "value", "category"])
+    )
+
+    if not comb.empty:
+        layers = []
+
+        # Shaded middle band with a clean, customized tooltip
+        band_df = pd.concat([band_clean, band_contro], ignore_index=True)
+        band_tooltip = [
+            alt.Tooltip(f"{year_col}:O", title="Year"),
+            alt.Tooltip("qlo:Q",        title="Middle 35–65% — low",  format=".1f"),
+            alt.Tooltip("qhi:Q",        title="Middle 35–65% — high", format=".1f"),
+            alt.Tooltip("category:N",   title="Category"),
+        ]
         band_layer = (
-            alt.Chart(band_data)
-            .mark_area(opacity=0.10, clip=True)
+            alt.Chart(band_df)
+            .mark_area(opacity=0.10)
             .encode(
                 x=alt.X(
                     f"{year_col}:O",
@@ -531,55 +521,44 @@ if not comb.empty:
                 color=alt.Color(
                     "category:N",
                     legend=None,
-                    scale=alt.Scale(
-                        domain=["Clean", "Controversial"],
-                        range=[COLORS["clean"], COLORS["contro"]],
-                    ),
+                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
                 ),
-                tooltip=[],  # keep tooltip clean (no qlo/qhi shown)
+                tooltip=band_tooltip,  # Custom tooltip; no _category_sort_index; friendlier labels
             )
         )
         layers.append(band_layer)
 
-    # Mean lines (clean tooltip: Year, Exposure %, Category)
-    line_layer = (
-        alt.Chart(comb)
-        .mark_line(point=True, clip=True)
-        .encode(
-            x=alt.X(
-                f"{year_col}:O",
-                title=None,
-                axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
-            ),
-            y=alt.Y(
-                "value:Q",
-                title="Exposure (%)",
-                scale=alt.Scale(domain=[0, 30]),
-                axis=alt.Axis(format=".1f"),
-            ),
-            color=alt.Color(
-                "category:N",
-                title=None,
-                scale=alt.Scale(
-                    domain=["Clean", "Controversial"],
-                    range=[COLORS["clean"], COLORS["contro"]],
+        # Lines with a minimal, clear tooltip (Year, Exposure, Category only)
+        line_layer = (
+            alt.Chart(comb)
+            .mark_line(point=True, clip=True)
+            .encode(
+                x=alt.X(
+                    f"{year_col}:O",
+                    title=None,
+                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
                 ),
-            ),
-            tooltip=[
-                alt.Tooltip(f"{year_col}:O", title="Year"),
-                alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
-                alt.Tooltip("category:N", title="Category"),
-            ],
+                y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]), axis=alt.Axis(format=".1f")),
+                color=alt.Color(
+                    "category:N",
+                    title=None,
+                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
+                ),
+                tooltip=[
+                    alt.Tooltip(f"{year_col}:O", title="Year"),
+                    alt.Tooltip("value:Q",       title="Exposure (%)", format=".1f"),
+                    alt.Tooltip("category:N",    title="Category"),
+                ],
+            )
         )
-    )
-    layers.append(line_layer)
+        layers.append(line_layer)
 
-    st.altair_chart(
-        alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}),
-        use_container_width=True,
-    )
+        st.altair_chart(
+            alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}),
+            use_container_width=True,
+        )
 
-gap(8)
+    gap(8)
 
 
 
@@ -670,37 +649,61 @@ gap(8)
 
     gap(10)
 
-    # ---------- Top movers (no filters) ----------
+        # ---------- Top movers (no filters) ----------
     st.markdown(
         '<div class="chart-head">'
-        '<div class="chart-title">Top 10 movers in holdings — Start year → 2025</div>'
-        '<div class="info-badge has-tip" data-tip="This table uses precomputed holding-level deltas and is not affected by the AUM vs Equal-weighted toggle.">i</div>'
+        '<div class="chart-title">Top movers — holdings (Year A → 2025)</div>'
+        '<div class="info-badge has-tip" '
+        'data-tip="Precomputed holding-level exposure changes from the selected start year to 2025; not affected by the AUM vs Equal-weighted toggle.">'
+        'i</div>'
         '</div>',
         unsafe_allow_html=True,
     )
 
-    movers_view = pd.DataFrame()
-    if movers_df is not None and not movers_df.empty:
-        # Auto-detect column names
-        hold_col = _pick(movers_df, "holding", "name")
-        cat_col  = _pick(movers_df, "category", "class")
-        y0_col   = _pick(movers_df, "start_year", "year_a", "year0")
-        y1_col   = _pick(movers_df, "end_year", "year_b", "year1")
-        d_col    = _pick(movers_df, "delta", "pp", "change")
+    # Try to use the richer file with 2025 names; fallback to movers_df if not available
+    try:
+        topm_df = load_csv(2, "top_movers_with_names.csv")
+    except Exception:
+        topm_df = movers_df.copy() if (movers_df is not None and not movers_df.empty) else pd.DataFrame()
 
-        m = movers_df.copy()
-        # Filter to selected year-pair if present (many files only contain 2017→2025)
-        if y0_col and y1_col and start_year in pd.unique(m[y0_col]) and end_year in pd.unique(m[y1_col]):
+    movers_view = pd.DataFrame()
+    if topm_df is not None and not topm_df.empty:
+        # Auto-detect columns (be resilient to naming)
+        name25_col = _pick(topm_df, "name_2025", "holding_2025", "security_name_2025")
+        base_name  = _pick(topm_df, "holding", "name", "security_name")
+        cat_col    = _pick(topm_df, "category", "class")
+        y0_col     = _pick(topm_df, "start_year", "year_a", "year0")
+        y1_col     = _pick(topm_df, "end_year", "year_b", "year1")
+        d_col      = _pick(topm_df, "delta", "delta_pp", "pp", "change")
+
+        m = topm_df.copy()
+
+        # Filter to the selected year pair (Start → 2025) if possible
+        if y0_col and y1_col:
             m = m[(m[y0_col] == start_year) & (m[y1_col] == end_year)]
         else:
+            # If the file doesn't carry explicit year columns, assume it's for 2017→2025 only
             m = m.head(0)
 
-        if d_col in m.columns and not m.empty:
+        if d_col in (m.columns if m is not None else []) and not m.empty:
+            # Sort by absolute change and take top 10
             m["_abs"] = pd.to_numeric(m[d_col], errors="coerce").abs()
             m = m.sort_values("_abs", ascending=False).head(10)
-            if hold_col and cat_col:
-                movers_view = m.rename(columns={hold_col:"Holding", cat_col:"Category", d_col:"Δ (pp)"}).loc[:, ["Holding","Category","Δ (pp)"]]
-                movers_view["Δ (pp)"] = pd.to_numeric(movers_view["Δ (pp)"], errors="coerce").map(lambda v: f"{v:+.4f}")
+
+            # Choose best display name: Name_2025 if present, else base name
+            if name25_col and name25_col in m.columns:
+                holding_name = m[name25_col]
+            elif base_name and base_name in m.columns:
+                holding_name = m[base_name]
+            else:
+                holding_name = pd.Series(["—"] * len(m), index=m.index)
+
+            # Build display table
+            movers_view = pd.DataFrame({
+                "Holding (2025)": holding_name,
+                "Category": m[cat_col] if cat_col in m.columns else "—",
+                "Δ exposure (pp)": pd.to_numeric(m[d_col], errors="coerce").map(lambda v: f"{v:+.4f}")
+            })
 
     if movers_view.empty:
         st.info("No movers found for the selected start year.")
