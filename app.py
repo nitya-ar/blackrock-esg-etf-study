@@ -679,12 +679,12 @@ if mode == "Dashboard":
                 # Muted, modern palette
                 screen_domain = keep
                 screen_range  = [
-                    "#74B8A9",  # Clean200
-                    "#C9A66B",  # Prisons
-                    "#7FA3C7",  # Deforestation
-                    "#C98888",  # Fossil Fuel
-                    "#9AA7C9",  # Weapons
-                    "#B7A2C5",  # Tobacco
+                    "#16A085",  # Clean200 — teal
+                    "#B07D62",  # Prisons  — muted ochre/brown
+                    "#5B8E7D",  # Deforestation — sage/evergreen
+                    "#C46A6A",  # Fossil Fuel — muted brick
+                    "#6C82B6",  # Weapons — desaturated steel blue
+                    "#9C88B8",  # Tobacco — soft mauve
                 ]
 
                 chart = alt.Chart(d).mark_line(
