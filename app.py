@@ -245,45 +245,45 @@ st.markdown(
       .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
       .footer-links a:hover {{ text-decoration: underline; }}
 
-      /* BaseWeb select/multiselect dropdown menu (the portal) */
+            /* BaseWeb select/multiselect dropdown menu (the portal) */
       [data-baseweb="select"] [role="listbox"],
-      [data-baseweb="menu"] {
+      [data-baseweb="menu"] {{
           background: #0B0D12 !important;
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
-      }
-      [data-baseweb="option"] {
+      }}
+      [data-baseweb="option"] {{
           background: transparent !important;
           color: var(--text) !important;
-      }
+      }}
       [data-baseweb="option"][aria-selected="true"],
-      [data-baseweb="option"]:hover {
+      [data-baseweb="option"]:hover {{
           background: #0E1015 !important;
           color: var(--text) !important;
-      }
+      }}
       
       /* Sliders */
-      .stSlider [role="slider"] { background: var(--primary) !important; }
-      .stSlider .st-c2, .stSlider .st-c3 { background: #0E1015 !important; }
+      .stSlider [role="slider"] {{ background: var(--primary) !important; }}
+      .stSlider .st-c2, .stSlider .st-c3 {{ background: #0E1015 !important; }}
       
       /* Buttons (incl. download) */
-      .stButton > button, .stDownloadButton > button {
+      .stButton > button, .stDownloadButton > button {{
           background: #0E1015 !important;
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
-      }
-      .stButton > button:hover, .stDownloadButton > button:hover {
+      }}
+      .stButton > button:hover, .stDownloadButton > button:hover {{
           border-color: var(--primary) !important;
-      }
+      }}
       
       /* Alerts (st.info / st.warning / st.error) */
-      .stAlert {
+      .stAlert {{
           background: #0C0E13 !important;
           color: var(--text) !important;
           border: 1px solid var(--border) !important;
-      }
+      }}
       
-      .stAlert [data-testid="stMarkdown"] { color: var(--text) !important; }
+      .stAlert [data-testid="stMarkdown"] {{ color: var(--text) !important; }}
     </style>
     """,
     
