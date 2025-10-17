@@ -1243,6 +1243,8 @@ if mode == "Dashboard":
     with tab3:
         render_tradeoffs()
 
+else:
+
     # ---------------- REPORT ----------------
     st.subheader("Project Overview (Short Report)")
     st.markdown(
