@@ -7,6 +7,9 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
+# =========================
+# Altair global setup
+# =========================
 alt.data_transformers.disable_max_rows()
 alt.themes.enable(None)  # keep this as you asked
 
@@ -29,7 +32,6 @@ def _blx_transparent_theme():
 
 alt.themes.register("blx_transparent", _blx_transparent_theme)
 alt.themes.enable("blx_transparent")
-
 
 # ===================
 # CONFIG
@@ -62,7 +64,7 @@ COLORS = {
 }
 
 # =========================
-# STYLES (adds hard dark mode + loading overlay)
+# STYLES (adds hard dark mode + loader + dark widgets/tooltips)
 # =========================
 st.markdown(
     f"""
@@ -70,7 +72,7 @@ st.markdown(
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
       :root {{
-        color-scheme: dark;               /* force dark form controls/tooltips */
+        color-scheme: dark;
         --bg: {COLORS['bg']};
         --card: {COLORS['card']};
         --border: {COLORS['border']};
@@ -115,9 +117,13 @@ st.markdown(
 
       .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{ border-color: var(--primary) !important; }}
 
+      /* Dataframe */
       div[data-testid="stDataframe"] thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
       div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
       div[data-testid="stDataframe"] * {{ font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important; font-size: 13px !important; }}
+      div[data-testid="stDataFrame"] thead th,
+      div[data-testid="stDataFrame"] tbody td {{ border-color: var(--border) !important; color: var(--text) !important; }}
+      div[data-testid="stDataFrame"] tbody tr:hover {{ background: rgba(255,255,255,0.03) !important; }}
 
       .chart-head {{ display:flex; align-items:center; justify-content:space-between; margin: 4px 2px 8px 2px; }}
       .chart-title {{ font-weight: 600; color: var(--text); letter-spacing:.1px; }}
@@ -162,6 +168,65 @@ st.markdown(
       }}
       @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
       .blx-loading-text{{ color:#E7EBF0; margin-top:14px; font-weight:600; letter-spacing:.2px; text-align:center;}}
+
+      /* ===== Dark Altair/Vega tooltip ===== */
+      .vega-tooltip {{
+        background: #0B0D12 !important;
+        color: #E7EBF0 !important;
+        border: 1px solid #1C2027 !important;
+        box-shadow: 0 10px 24px rgba(0,0,0,.45) !important;
+      }}
+      .vega-embed .vega-actions a {{ color: #97A2B0 !important; }}
+
+      /* ===== Streamlit widgets (Select, Menu, Inputs, Segmented, Slider, Buttons) ===== */
+      [data-baseweb="select"] > div {{
+        background: var(--card) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }}
+      [data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
+
+      [data-baseweb="popover"] {{ background: transparent !important; }}
+      [data-baseweb="menu"] {{
+        background: var(--card) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--border) !important;
+      }}
+      [data-baseweb="menu"] [role="option"] {{ background: transparent !important; color: var(--text) !important; }}
+      [data-baseweb="menu"] [role="option"]:hover {{ background: rgba(255,255,255,0.04) !important; }}
+
+      div[role="radiogroup"] > div > div {{
+        background: var(--card) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--border) !important;
+      }}
+      div[role="radiogroup"] button[aria-checked="true"],
+      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{
+        background: #171A1F !important;
+        color: var(--text) !important;
+        border-color: var(--primary) !important;
+      }}
+      div[role="radiogroup"] button[aria-checked="false"] {{ color: var(--muted) !important; }}
+
+      div[data-baseweb="input"] > div {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+      }}
+      div[data-baseweb="input"] input {{ color: var(--text) !important; }}
+
+      [data-testid="stSlider"] [role="slider"] {{
+        background: var(--primary) !important;
+        border: 2px solid var(--primary) !important;
+      }}
+      [data-testid="stSlider"] .stSlider > div > div > div:nth-child(2) {{ background: var(--primary) !important; }}
+      [data-testid="stSlider"] .stSlider > div > div > div:nth-child(1) {{ background: #2A2F36 !important; }}
+
+      .stButton > button, .stDownloadButton > button {{
+        background: var(--card) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--border) !important;
+      }}
+      .stButton > button:hover, .stDownloadButton > button:hover {{ background: rgba(255,255,255,0.04) !important; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -257,7 +322,7 @@ def load_explorer():
     if "screen_categories" in df.columns:
         scn = (
             df["screen_categories"].astype(str)
-            .str.split(r"\s*\|\s*")
+            .str.split(r"\\s*\\|\\s*")
             .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
         )
     else:
@@ -475,7 +540,7 @@ def render_change_since_2017():
     cA, cZ = _val(s_clean, start_year),  _val(s_clean, end_year)
     kA, kZ = _val(s_contro, start_year), _val(s_contro, end_year)
 
-# ---- Net series (level = %Clean − %Controversial)
+    # ---- Net series (level = %Clean − %Controversial)
     s_net = None
     if not s_clean.empty and not s_contro.empty:
         s_net = pd.merge(s_clean, s_contro, on=year_col, how="inner", suffixes=("_clean", "_contro"))
@@ -505,7 +570,6 @@ def render_change_since_2017():
     # ---------- KPI cards ----------
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
-    # KPI 1: Net improvement (level slope: Clean−Contro @ start vs end; fixed −10..10)
     with k1:
         st.markdown(
             f"""
@@ -520,7 +584,6 @@ def render_change_since_2017():
         if tp_net is not None:
             st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
 
-    # KPI 2: Clean
     with k2:
         d_clean = (cZ - cA) if (pd.notna(cZ) and pd.notna(cA)) else None
         kpi_card("Clean — change since start", f"{d_clean:.1f} pp" if d_clean is not None else "–",
@@ -529,7 +592,6 @@ def render_change_since_2017():
         if tp is not None:
             st.altair_chart(slope_chart(tp, [0, 30], COLORS["clean"]), use_container_width=True)
 
-    # KPI 3: Controversial
     with k3:
         d_ctr = (kZ - kA) if (pd.notna(kZ) and pd.notna(kA)) else None
         kpi_card("Controversial — change since start", f"{d_ctr:.1f} pp" if d_ctr is not None else "–",
@@ -538,7 +600,6 @@ def render_change_since_2017():
         if tp is not None:
             st.altair_chart(slope_chart(tp, [0, 30], COLORS["contro"]), use_container_width=True)
 
-    # KPI 4: Coverage — big number, smaller caption with bolded years
     with k4:
         st.markdown(
             f"""
@@ -552,9 +613,7 @@ def render_change_since_2017():
 
     gap(8)
 
-    
-# ---------- Combined trend and the rest (unchanged from your version) ----------
-
+    # ---------- Combined trend ----------
     st.markdown(
         '<div class="chart-head">'
         '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
@@ -1034,11 +1093,4 @@ st.markdown(
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
       <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
-        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">LinkedIn</a>
-        <a href="https://github.com/nitya-ar" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">GitHub</a>
-        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500;"><strong>Send Feedback</strong></a>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank" style="color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;">LinkedIn</
