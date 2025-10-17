@@ -754,17 +754,8 @@ def render_change_since_2017():
 # RENDERER FOR TAB 3
 # -------------------------
 def render_tradeoffs():
-    """
-    Tradeoff Studio:
-    - Controls: ETF, Weighting, Scenario, targets, pins
-    - KPIs: Δ Clean, TE, Active Share, Return Δ, Vol Δ
-    - Frontier: %Clean vs Tracking Error with Pareto overlay + target lines
-    - Composition: Baseline vs Scenario (and pinned compare)
-    - Movers + Constraint drift
-    - Downloads
-    """
     st.subheader("Tradeoff Scenarios")
-    st.caption("Pick scenarios, set targets, and inspect the cost/benefit (cleanliness vs tracking error) and what changed.")
+    st.caption("Pick scenarios, set targets, and inspect cleanliness vs tracking error; then see what changed under the hood.")
 
     # ---------- Load ----------
     try:
@@ -774,105 +765,132 @@ def render_tradeoffs():
         st.error(f"Could not load scenario metrics/deltas: {e}")
         st.stop()
 
-    try:
-        prog = load_scenario_progress()
-    except Exception:
-        prog = pd.DataFrame()
-    try:
-        rets = load_returns_top_per_etf_2025()
-    except Exception:
-        rets = pd.DataFrame()
-    try:
-        universe = load_universe_2025_xlsx()
-    except Exception:
-        universe = pd.DataFrame()
+    # Optional inputs
+    try:    prog = load_scenario_progress()
+    except: prog = pd.DataFrame()
+    try:    universe = load_universe_2025_xlsx()
+    except: universe = pd.DataFrame()
 
     # ---------- Helpers ----------
     def _pick(df, *keys):
-        if df is None or df.empty:
-            return None
+        if df is None or df.empty: return None
         keys = [k.lower() for k in keys]
         for c in df.columns:
             cl = str(c).lower()
-            if any(k in cl for k in keys):
-                return c
+            if any(k in cl for k in keys): return c
         return None
 
     def _num(df, col):
-        try:
-            return float(pd.to_numeric(df[col], errors="coerce").iloc[0])
-        except Exception:
-            return None
+        try: return float(pd.to_numeric(df[col], errors="coerce").iloc[0])
+        except: return None
 
     def _pp(x):
-        try:
-            return f"{float(x):.1f}%"
-        except Exception:
-            return "–"
+        try: return f"{float(x):.1f}%"
+        except: return "–"
 
-    # ---------- Column detection ----------
-    scen_col   = _pick(metr, "scenario", "scenario_name", "scenario_id", "name")
-    etf_col    = _pick(metr, "etf_ticker", "fund", "etf")
-    weight_col = _pick(metr, "weighting", "mode")
-    clean_col  = _pick(metr, "pct_clean", "clean")
-    ctr_col    = _pick(metr, "pct_controversial", "controversial", "contro")
-    oth_col    = _pick(metr, "pct_other", "other")
-    te_col     = _pick(metr, "tracking_error", "te")
-    ret_col    = _pick(metr, "ann_return", "annual_return", "return")
-    vol_col    = _pick(metr, "ann_vol", "annual_vol", "vol")
-    act_col    = _pick(metr, "active_share", "active")
+    # --- Column names
+    scen_col   = _pick(metr, "scenario", "scenario_name", "scenario_id", "name") or "scenario"
+    etf_col    = _pick(metr, "etf_ticker", "fund", "etf") or "etf"
+    weight_col = _pick(metr, "weighting", "mode") or "weighting"
+    clean_col  = _pick(metr, "pct_clean", "clean") or "pct_clean"
+    ctr_col    = _pick(metr, "pct_controversial", "controversial", "contro") or "pct_controversial"
+    oth_col    = _pick(metr, "pct_other", "other") or "pct_other"
+    te_col     = _pick(metr, "tracking_error", "te") or "tracking_error"
+    ret_col    = _pick(metr, "ann_return", "annual_return", "return") or "ann_return"
+    vol_col    = _pick(metr, "ann_vol", "annual_vol", "vol") or "ann_vol"
+    act_col    = _pick(metr, "active_share", "active") or "active_share"
 
-    # ---- Fallback minimal columns (FIXED syntax) ----
-    if not scen_col:
-        scen_col = "scenario"
-        if scen_col not in metr.columns:
-            metr[scen_col] = "Baseline"
-    if not etf_col:
-        etf_col = "etf"
-        if etf_col not in metr.columns:
-            metr[etf_col] = "ALL"
-    if not weight_col:
-        weight_col = "weighting"
-        if weight_col not in metr.columns:
-            metr[weight_col] = "AUM"
+    # Ensure required columns exist (avoid KeyError later)
+    for c, default in [(scen_col,"Baseline"), (etf_col,"ALL"), (weight_col,"AUM"),
+                       (clean_col, None), (ctr_col, None), (oth_col, None),
+                       (te_col, None), (ret_col, None), (vol_col, None), (act_col, None)]:
+        if c not in metr.columns: metr[c] = default
+
+    # --- Normalize scenario names (kill timestamp suffixes; unify Baseline)
+    import re
+    def _norm(s):
+        s = str(s)
+        if s.lower().startswith("baseline"):
+            return "Baseline"  # collapse Baseline_* → Baseline
+        return re.sub(r"\s+", " ", s).strip()
+    metr["_scen_norm"] = metr[scen_col].map(_norm)
+
+    # Do the same for deltas if present
+    if not deltas.empty:
+        d_scen = _pick(deltas, "scenario", "scenario_name", "scenario_id", "name") or "scenario"
+        if d_scen not in deltas.columns: deltas[d_scen] = "Baseline"
+        deltas["_scen_norm"] = deltas[d_scen].map(_norm)
 
     # ---------- Controls ----------
-    etf_vals = sorted([e for e in metr[etf_col].dropna().astype(str).unique().tolist() if e and e.upper() != "ALL"]) or ["ALL"]
-    cA, cB, cC = st.columns([0.32, 0.32, 0.36])
+    etfs = sorted(metr[etf_col].dropna().astype(str).unique().tolist())
+    # prefer single-ETF mode; if ALL exists and others exist, exclude ALL from dropdown
+    etf_opts = [e for e in etfs if e.upper() != "ALL"] or ["ALL"]
+    cA, cB, cC = st.columns([0.34, 0.33, 0.33])
     with cA:
-        sel_etf = st.selectbox("ETF", etf_vals, index=0)
+        sel_etf = st.selectbox("ETF", etf_opts, index=0)
     with cB:
-        weight_opts = sorted(metr[weight_col].dropna().astype(str).unique().tolist()) or ["AUM"]
+        weight_opts = sorted(metr[weight_col].dropna().astype(str).unique().tolist()) or ["AUM", "EW"]
         sel_weight = st.selectbox("Weighting", weight_opts, index=0,
                                   help="AUM = bigger funds count more; EW = each ETF counts the same.")
-
     mview = metr[(metr[etf_col].astype(str).eq(sel_etf)) &
                  (metr[weight_col].astype(str).eq(sel_weight))].copy()
 
-    scen_list = mview[scen_col].dropna().astype(str).unique().tolist()
-    scen_list = ([s for s in scen_list if str(s).lower().startswith("baseline")] +
-                 [s for s in scen_list if not str(s).lower().startswith("baseline")]) or ["Baseline"]
+    if mview.empty:
+        st.warning("No rows in scenario metrics for this ETF/weight selection.")
+        st.stop()
+
+    scen_list = mview["_scen_norm"].dropna().astype(str).unique().tolist()
+    scen_list = (["Baseline"] if "Baseline" in scen_list else []) + [s for s in scen_list if s != "Baseline"]
     with cC:
         sel_scenario = st.selectbox("Scenario", scen_list, index=0)
 
-    # Targets + pins
-    t1, t2, t3 = st.columns([0.25, 0.25, 0.50])
+    # Targets & pinning
+    t1, t2, t3 = st.columns([0.28, 0.28, 0.44])
     with t1:
-        clean_vals = pd.to_numeric(mview.get(clean_col, pd.Series(dtype=float)), errors="coerce")
-        c_max = float(clean_vals.max()) if clean_vals.notna().any() else 40.0
-        target_clean = st.slider("Clean target (%)", min_value=0.0, max_value=max(40.0, round(c_max + 2, 1)),
-                                 value=float(round(min(30.0, c_max if c_max == c_max else 30.0), 1)))
+        cmax = float(pd.to_numeric(mview[clean_col], errors="coerce").max() or 30.0)
+        target_clean = st.slider("Clean target (%)", 0.0, max(40.0, round(cmax+2,1)), value=min(30.0, cmax))
     with t2:
-        te_vals = pd.to_numeric(mview.get(te_col, pd.Series(dtype=float)), errors="coerce")
-        te_max = float(te_vals.max()) if te_vals.notna().any() else 2.5
-        te_budget = st.slider("TE budget (ann. %)", min_value=0.0, max_value=max(0.5, round(te_max + 0.2, 2)),
-                              step=0.05, value=float(round(min(1.0, te_max if te_max == te_max else 1.0), 2)))
+        temax = float(pd.to_numeric(mview[te_col], errors="coerce").max() or 2.0)
+        te_budget = st.slider("TE budget (ann. %)", 0.0, max(0.5, round(temax+0.2,2)), step=0.05, value=min(1.0, temax))
     with t3:
         pinned = st.multiselect("Pin scenarios (compare below)", options=scen_list, default=[sel_scenario])
 
-    # ---------- Choose baseline & selected rows ----------
-    base = mview[mview[scen_col].astype(str).str.lower().str.startswith("baseline")].copy().head(1)
-    pick = mview[mview[scen_col].astype(str).eq(sel_scenario)].copy().head(1)
+    # ---------- Data health strip (tells you why stuff is empty) ----------
+    with st.expander("Data health (debug)"):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.write("**Metrics present**")
+            st.write({
+                "rows": int(len(mview)),
+                "scenarios": sorted(mview["_scen_norm"].unique().tolist()),
+                "has_return": bool(pd.to_numeric(mview[ret_col], errors="coerce").notna().any()),
+                "has_vol": bool(pd.to_numeric(mview[vol_col], errors="coerce").notna().any()),
+            })
+        with c2:
+            if not deltas.empty:
+                dv = deltas.copy()
+                d_etf = _pick(dv, "etf_ticker", "fund", "etf") or etf_col
+                if d_etf not in dv.columns: dv[d_etf] = "ALL"
+                dv = dv[dv[d_etf].astype(str).eq(sel_etf)]
+                st.write("**Deltas present**")
+                st.write({
+                    "rows": int(len(dv)),
+                    "scenarios": sorted(dv["_scen_norm"].unique().tolist()) if "_scen_norm" in dv.columns else "—",
+                })
+            else:
+                st.write("**Deltas present**")
+                st.write({"rows": 0})
+        with c3:
+            if not universe.empty:
+                st.write("**Universe loaded**")
+                st.write({"rows": int(len(universe))})
+            else:
+                st.write("**Universe loaded**")
+                st.write({"rows": 0})
+
+    # ---------- Baseline & pick rows ----------
+    base = mview[mview["_scen_norm"] == "Baseline"].copy().head(1)
+    pick = mview[mview["_scen_norm"] == sel_scenario].copy().head(1)
 
     # ---------- KPIs ----------
     b_clean, s_clean = _num(base, clean_col), _num(pick, clean_col)
@@ -881,13 +899,11 @@ def render_tradeoffs():
     b_te,    s_te    = _num(base, te_col),    _num(pick, te_col)
     b_ret,   s_ret   = _num(base, ret_col),   _num(pick, ret_col)
     b_vol,   s_vol   = _num(base, vol_col),   _num(pick, vol_col)
-    b_act,   s_act   = _num(base, act_col),   _num(pick, act_col)
 
-    k1, k2, k3, k4, k5 = st.columns([0.2, 0.2, 0.2, 0.2, 0.2])
+    k1,k2,k3,k4,k5 = st.columns(5)
     with k1: kpi_card("% Clean (Baseline)", _pp(b_clean), "neutral")
-    with k2: kpi_card("% Clean (Scenario)", _pp(s_clean),
-                      "green" if (s_clean or -1) >= (b_clean or -1) else "red")
-    with k3: kpi_card("Tracking Error (ann.)", _pp(s_te), "red" if (s_te or 0) > 0.75 else "neutral")
+    with k2: kpi_card("% Clean (Scenario)", _pp(s_clean), "green" if (s_clean or -1) >= (b_clean or -1) else "red")
+    with k3: kpi_card("Tracking Error (ann.)", _pp(s_te), "red" if (s_te or 0) > te_budget else "neutral")
     with k4:
         d_ret = None if (s_ret is None or b_ret is None) else (s_ret - b_ret)
         kpi_card("Return Δ (ann.)", f"{d_ret:+.2f}%" if d_ret is not None else "–",
@@ -899,216 +915,131 @@ def render_tradeoffs():
 
     gap(6)
 
-    # ---------- Frontier with Pareto & Targets ----------
+    # ---------- Frontier ----------
     L, R = st.columns([0.55, 0.45])
     with L:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — % Clean vs Tracking Error</div>',
-                    unsafe_allow_html=True)
-        dfp = mview[[scen_col, clean_col, te_col]].copy()
-        dfp = dfp.rename(columns={scen_col: "Scenario", clean_col: "CleanPct", te_col: "TE"})
-        dfp["CleanPct"] = pd.to_numeric(dfp["CleanPct"], errors="coerce")
-        dfp["TE"] = pd.to_numeric(dfp["TE"], errors="coerce")
-        dfp = dfp.dropna(subset=["CleanPct", "TE"])
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — % Clean vs Tracking Error</div>', unsafe_allow_html=True)
+        dfp = mview[[clean_col, te_col, "_scen_norm"]].rename(
+            columns={clean_col:"CleanPct", te_col:"TE", "_scen_norm":"Scenario"}
+        ).dropna(subset=["CleanPct","TE"])
         if dfp.empty:
-            st.info("No scenarios found for this ETF/weighting.")
+            st.info("No scenarios with both Clean% and TE for this ETF/weight.")
         else:
-            # Pareto (maximize Clean, minimize TE)
-            pf = []
-            df_sorted = dfp.sort_values(["TE", "CleanPct"], ascending=[True, False]).reset_index(drop=True)
-            best = -1e9
+            # Pareto: max Clean, min TE
+            df_sorted = dfp.sort_values(["TE","CleanPct"], ascending=[True, False]).reset_index(drop=True)
+            pareto_rows, best = [], -1e9
             for _, r in df_sorted.iterrows():
                 if r["CleanPct"] > best + 1e-9:
-                    pf.append(r)
+                    pareto_rows.append(r)
                     best = r["CleanPct"]
-            pareto = pd.DataFrame(pf) if pf else pd.DataFrame(columns=dfp.columns)
+            pareto = pd.DataFrame(pareto_rows)
 
-            base_line = alt.Chart(pd.DataFrame({"y": [target_clean]})).mark_rule(strokeDash=[4, 4]).encode(y="y:Q")
-            te_line = alt.Chart(pd.DataFrame({"x": [te_budget]})).mark_rule(strokeDash=[4, 4]).encode(x="x:Q")
-
+            tgt_clean = alt.Chart(pd.DataFrame({"y":[target_clean]})).mark_rule(strokeDash=[4,4]).encode(y="y:Q")
+            tgt_te    = alt.Chart(pd.DataFrame({"x":[te_budget]})).mark_rule(strokeDash=[4,4]).encode(x="x:Q")
             pts = alt.Chart(dfp).mark_circle(size=110, opacity=0.85).encode(
                 x=alt.X("TE:Q", title="Tracking Error (ann. %)"),
                 y=alt.Y("CleanPct:Q", title="% Clean"),
-                tooltip=["Scenario:N",
-                         alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"),
-                         alt.Tooltip("TE:Q", title="TE", format=".2f")],
-                color=alt.value("#7aa2ff")
+                color=alt.value("#7aa2ff"),
+                tooltip=["Scenario:N", alt.Tooltip("CleanPct:Q", format=".1f"), alt.Tooltip("TE:Q", format=".2f")]
             )
-
-            if not pareto.empty:
-                line = alt.Chart(pareto.sort_values("TE")).mark_line(strokeWidth=2).encode(
-                    x="TE:Q", y="CleanPct:Q", color=alt.value(COLORS["primary"])
-                )
-            else:
-                # empty, harmless chart for layering
-                line = alt.Chart(pd.DataFrame({"TE": [], "CleanPct": []})).mark_line().encode(
-                    x="TE:Q", y="CleanPct:Q"
-                )
-
-            sel_df = dfp[dfp["Scenario"].isin([sel_scenario])]
-            sel_mark = alt.Chart(sel_df).mark_point(size=280, shape="diamond").encode(
+            hl = alt.Chart(dfp[dfp["Scenario"]==sel_scenario]).mark_point(size=260, shape="diamond").encode(
                 x="TE:Q", y="CleanPct:Q", color=alt.value("#FFD166")
             )
+            line = (alt.Chart(pareto.sort_values("TE")).mark_line(strokeWidth=2).encode(
+                x="TE:Q", y="CleanPct:Q", color=alt.value(COLORS["primary"])
+            ) if not pareto.empty else alt.Chart(pd.DataFrame({"TE":[],"CleanPct":[]})).mark_line().encode(x="TE:Q", y="CleanPct:Q"))
 
-            best_tecap = dfp[dfp["TE"] <= te_budget].sort_values(["CleanPct", "TE"], ascending=[False, True]).head(1)
-            best_clean = dfp[dfp["CleanPct"] >= target_clean].sort_values(["TE", "CleanPct"], ascending=[True, False]).head(1)
+            st.altair_chart((pts + hl + line + tgt_clean + tgt_te).properties(height=340), use_container_width=True)
 
-            marks = alt.Chart(pd.DataFrame({"TE": [], "CleanPct": []})).mark_point()
-            if not best_tecap.empty:
-                marks = marks + alt.Chart(best_tecap).mark_point(size=240, shape="triangle-up").encode(
-                    x="TE:Q", y="CleanPct:Q", color=alt.value(COLORS["clean"]))
-            if not best_clean.empty:
-                marks = marks + alt.Chart(best_clean).mark_point(size=240, shape="triangle-down").encode(
-                    x="TE:Q", y="CleanPct:Q", color=alt.value(COLORS["contro"]))
-
-            st.altair_chart((pts + line + sel_mark + base_line + te_line + marks).properties(height=340),
-                            use_container_width=True)
-
-    # ---------- Composition compare (Baseline, Scenario, Pins) ----------
+    # ---------- Composition ----------
     with R:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Selected (and pins)</div>',
-                    unsafe_allow_html=True)
-        show_scen = [s for s in pinned if s in scen_list]
-        if sel_scenario not in show_scen:
-            show_scen = [sel_scenario] + show_scen
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Selected (and pins)</div>', unsafe_allow_html=True)
+        show = list(dict.fromkeys([sel_scenario] + [p for p in pinned if p in scen_list]))[:3]
+
+        def rows_for(label, row_df):
+            return [
+                {"View":label, "Category":"Clean",         "Value": _num(row_df, clean_col)},
+                {"View":label, "Category":"Controversial", "Value": _num(row_df, ctr_col)},
+                {"View":label, "Category":"Other",         "Value": _num(row_df, oth_col)},
+            ]
 
         rows = []
-
-        def _row_for(label, row):
-            rows.extend([
-                {"View": label, "Category": "Clean",         "Value": _num(row, clean_col)},
-                {"View": label, "Category": "Controversial", "Value": _num(row, ctr_col)},
-                {"View": label, "Category": "Other",         "Value": _num(row, oth_col)},
-            ])
-
-        if not base.empty:
-            _row_for("Baseline", base)
-        for sc in show_scen[:3]:  # cap to 3 pins
-            r = mview[mview[scen_col].astype(str).eq(sc)].copy().head(1)
-            if not r.empty:
-                _row_for(sc, r)
-
+        if not base.empty: rows += rows_for("Baseline", base)
+        for sc in show:
+            r = mview[mview["_scen_norm"]==sc].head(1)
+            if not r.empty: rows += rows_for(sc, r)
         comp = pd.DataFrame([r for r in rows if r["Value"] is not None])
-        if not comp.empty:
-            comp["View"] = pd.Categorical(
-                comp["View"],
-                ordered=True,
-                categories=["Baseline"] + [v for v in show_scen if v != "Baseline"]
-            )
+        if comp.empty:
+            st.info("No composition data for this selection.")
+        else:
+            comp["View"] = pd.Categorical(comp["View"], ordered=True, categories=["Baseline"] + [s for s in show if s!="Baseline"])
             ch = alt.Chart(comp).mark_bar(opacity=0.92).encode(
                 x=alt.X("View:N", title=None),
                 y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
                 color=alt.Color("Category:N", title=None,
-                                scale=alt.Scale(domain=["Clean", "Controversial", "Other"],
+                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
                                                 range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"),
-                         alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
+                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
             ).properties(height=320)
             st.altair_chart(ch, use_container_width=True)
-        else:
-            st.info("No composition data for the current selection.")
 
     gap(8)
 
-    # ---------- Movers (adds/drops) ----------
-    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Movers — scenario vs baseline</div>',
-                unsafe_allow_html=True)
-    d = deltas.copy()
-    d_scen    = _pick(d, "scenario", "scenario_name", "scenario_id", "name") or scen_col
-    d_etf     = _pick(d, "etf_ticker", "fund", "etf") or etf_col
-    aw_col    = _pick(d, "active_weight", "delta_weight", "delta_weight_pct", "dw")
-    name_col  = _pick(d, "name", "holding_name", "security")
-    tick_col  = _pick(d, "ticker", "company_ticker")
-    class_col = _pick(d, "classification", "class")
-    sector_col= _pick(d, "sector")
-    region_col= _pick(d, "region", "location", "country")
-    base_w    = _pick(d, "baseline_weight", "weight_base_pct")
-    scen_w    = _pick(d, "scenario_weight", "weight_scn_pct")
-
-    if d_etf in d.columns and d_scen in d.columns:
-        d = d[d[d_etf].astype(str).eq(sel_etf) & d[d_scen].astype(str).eq(sel_scenario)].copy()
+    # ---------- Movers ----------
+    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top Movers — scenario vs baseline</div>', unsafe_allow_html=True)
+    if deltas.empty:
+        st.info("No position deltas file loaded.")
     else:
-        d = pd.DataFrame()
+        dv = deltas.copy()
+        d_etf    = _pick(dv, "etf_ticker", "fund", "etf") or etf_col
+        d_scen   = _pick(dv, "scenario", "scenario_name", "scenario_id", "name") or scen_col
+        aw_col   = _pick(dv, "active_weight", "delta_weight", "delta_weight_pct", "dw")
+        name_col = _pick(dv, "name", "holding_name", "security")
+        tick_col = _pick(dv, "ticker", "company_ticker")
+        class_col= _pick(dv, "classification", "class")
+        sector_col=_pick(dv, "sector")
+        region_col=_pick(dv, "region", "country")
+        base_w   = _pick(dv, "baseline_weight", "weight_base_pct")
+        scen_w   = _pick(dv, "scenario_weight", "weight_scn_pct")
 
-    if not d.empty and aw_col in d.columns:
-        d[aw_col] = pd.to_numeric(d[aw_col], errors="coerce")
-        adds  = d.sort_values(aw_col, ascending=False).head(10)
-        drops = d.sort_values(aw_col, ascending=True).head(10)
+        for c, default in [(d_etf, "ALL"), (d_scen, "Baseline")]:
+            if c not in dv.columns: dv[c] = default
+        dv["_scen_norm"] = dv[d_scen].map(_norm)
+        sub = dv[(dv[d_etf].astype(str).eq(sel_etf)) & (dv["_scen_norm"].astype(str).eq(sel_scenario))].copy()
 
-        def _fmt(df):
-            return pd.DataFrame({
-                "Ticker": df.get(tick_col, pd.Series(["—"] * len(df))).astype(str),
-                "Holding": df.get(name_col, pd.Series(["—"] * len(df))).astype(str),
-                "Class": df.get(class_col, pd.Series(["—"] * len(df))).astype(str),
-                "Sector": df.get(sector_col, pd.Series(["—"] * len(df))).astype(str) if sector_col in df.columns else "—",
-                "Region": df.get(region_col, pd.Series(["—"] * len(df))).astype(str) if region_col in df.columns else "—",
-                "Baseline Wt (%)": pd.to_numeric(df.get(base_w, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
-                "Scenario Wt (%)": pd.to_numeric(df.get(scen_w, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
-                "Active Δ (pp)":   pd.to_numeric(df.get(aw_col, 0), errors="coerce").map(lambda v: f"{v:+.3f}")
-            })
-
-        a1, a2 = st.columns([0.5, 0.5])
-        with a1:
-            st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
-            st.dataframe(_fmt(adds), use_container_width=True, hide_index=True)
-        with a2:
-            st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
-            st.dataframe(_fmt(drops), use_container_width=True, hide_index=True)
-    else:
-        st.info("No position deltas available for this selection.")
-
-    gap(8)
-
-    # ---------- Constraint drift ----------
-    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Constraint checks — Sector & Region drift</div>',
-                unsafe_allow_html=True)
-    if 'd' in locals() and not d.empty and base_w in d.columns and scen_w in d.columns:
-        if sector_col in d.columns:
-            g = d.groupby(sector_col)[[base_w, scen_w]].sum().reset_index()
-            g["Drift_pp"] = pd.to_numeric(g[scen_w], errors="coerce") - pd.to_numeric(g[base_w], errors="coerce")
-            g = g.rename(columns={sector_col: "Sector", base_w: "Baseline (%)", scen_w: "Scenario (%)"})
-            chs = alt.Chart(g).transform_calculate(abs_drift="abs(datum.Drift_pp)").mark_bar().encode(
-                x=alt.X("Drift_pp:Q", title="Δ (pp)"),
-                y=alt.Y("Sector:N", sort="-x"),
-                color=alt.condition("datum.Drift_pp >= 0", alt.value(COLORS["clean"]), alt.value(COLORS["contro"])),
-                tooltip=[alt.Tooltip("Sector:N"),
-                         alt.Tooltip("Baseline (%):Q", format=".2f"),
-                         alt.Tooltip("Scenario (%):Q", format=".2f"),
-                         alt.Tooltip("Drift_pp:Q", title="Δ (pp)", format="+.2f")]
-            ).properties(height=260)
-            st.altair_chart(chs, use_container_width=True)
+        if sub.empty or aw_col not in sub.columns:
+            st.info("No position deltas available for this selection. Try another scenario or ETF.")
         else:
-            st.caption("Sector breakdown unavailable.")
+            sub[aw_col] = pd.to_numeric(sub[aw_col], errors="coerce")
+            adds  = sub.sort_values(aw_col, ascending=False).head(10)
+            drops = sub.sort_values(aw_col, ascending=True).head(10)
 
-        if region_col in d.columns:
-            r = d.groupby(region_col)[[base_w, scen_w]].sum().reset_index()
-            r["Drift_pp"] = pd.to_numeric(r[scen_w], errors="coerce") - pd.to_numeric(r[base_w], errors="coerce")
-            r = r.rename(columns={region_col: "Region", base_w: "Baseline (%)", scen_w: "Scenario (%)"})
-            chr_ = alt.Chart(r).transform_calculate(abs_drift="abs(datum.Drift_pp)").mark_bar().encode(
-                x=alt.X("Drift_pp:Q", title="Δ (pp)"),
-                y=alt.Y("Region:N", sort="-x"),
-                color=alt.condition("datum.Drift_pp >= 0", alt.value(COLORS["clean"]), alt.value(COLORS["contro"])),
-                tooltip=[alt.Tooltip("Region:N"),
-                         alt.Tooltip("Baseline (%):Q", format=".2f"),
-                         alt.Tooltip("Scenario (%):Q", format=".2f"),
-                         alt.Tooltip("Drift_pp:Q", title="Δ (pp)", format="+.2f")]
-            ).properties(height=220)
-            st.altair_chart(chr_, use_container_width=True)
-    else:
-        st.caption("Constraint diagnostics unavailable for current selection.")
+            def _fmt(df):
+                return pd.DataFrame({
+                    "Ticker": df.get(tick_col, pd.Series(["—"]*len(df))).astype(str),
+                    "Holding": df.get(name_col, pd.Series(["—"]*len(df))).astype(str),
+                    "Class": df.get(class_col, pd.Series(["—"]*len(df))).astype(str),
+                    "Sector": df.get(sector_col, pd.Series(["—"]*len(df))).astype(str) if sector_col in df.columns else "—",
+                    "Region": df.get(region_col, pd.Series(["—"]*len(df))).astype(str) if region_col in df.columns else "—",
+                    "Baseline Wt (%)": pd.to_numeric(df.get(base_w, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
+                    "Scenario Wt (%)": pd.to_numeric(df.get(scen_w, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
+                    "Active Δ (pp)":   pd.to_numeric(df.get(aw_col, 0), errors="coerce").map(lambda v: f"{v:+.3f}")
+                })
+
+            a1, a2 = st.columns([0.5,0.5])
+            with a1:
+                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
+                st.dataframe(_fmt(adds), use_container_width=True, hide_index=True)
+            with a2:
+                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
+                st.dataframe(_fmt(drops), use_container_width=True, hide_index=True)
 
     # ---------- Downloads ----------
-    gap(8)
-    dl1, dl2 = st.columns([0.5, 0.5])
-    with dl1:
-        if not mview.empty:
-            st.download_button("Download scenario metrics (filtered)",
-                               data=mview.to_csv(index=False).encode("utf-8"),
-                               file_name=f"{sel_etf}_metrics_filtered.csv", mime="text/csv")
-    with dl2:
-        if 'd' in locals() and not d.empty:
-            st.download_button("Download position deltas (current scenario)",
-                               data=d.to_csv(index=False).encode("utf-8"),
-                               file_name=f"{sel_etf}_{sel_scenario}_deltas.csv", mime="text/csv")
+    gap(6)
+    if not mview.empty:
+        st.download_button("Download scenario metrics (filtered)",
+                           data=mview.drop(columns=["_scen_norm"]).to_csv(index=False).encode("utf-8"),
+                           file_name=f"{sel_etf}_{sel_weight}_metrics.csv", mime="text/csv")
 
 
 # =========================
