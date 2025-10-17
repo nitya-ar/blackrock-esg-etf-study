@@ -486,13 +486,9 @@ if mode == "Dashboard":
             file_name="holdings_explorer_filtered.csv",
             mime="text/csv",
         )
+        # ---------------- Change Since 2017 ----------------
 
-
-
-
-
-# ---------------- Change Since 2017 ----------------
-with tab2:
+    with tab2:
     st.subheader("Change since 2017")
     st.caption("All years are evaluated using the 2025 classification.")
 
@@ -752,9 +748,6 @@ with tab2:
             st.altair_chart(comp_chart, use_container_width=True)
         else:
             st.empty()
-
-
-
 
 
 
