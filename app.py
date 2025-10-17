@@ -4,11 +4,26 @@
 import os
 from io import StringIO
 import urllib.parse
-
 import requests
 import pandas as pd
-import altair as alt
 import streamlit as st
+import altair as alt
+import plotly.io as pio
+pio.templates.default = "plotly_dark"
+alt.data_transformers.disable_max_rows()
+def _blx_transparent_theme():
+    return {
+        "config": {
+            "background": "transparent",
+            "view": {"stroke": "transparent"},
+            "axis": {"labelColor": "#E7EBF0", "titleColor": "#97A2B0", "gridColor": "#1C2027", "tickColor": "#1C2027"},
+            "legend": {"labelColor": "#E7EBF0", "titleColor": "#97A2B0"},
+            "title": {"color": "#E7EBF0"},
+        }
+    }
+alt.themes.register("blx_transparent", _blx_transparent_theme)
+alt.themes.enable("blx_transparent")
+
 # ===================
 # CONFIG
 # ===================
