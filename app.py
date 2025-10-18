@@ -165,28 +165,49 @@ section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
 }}
 .vega-embed, .vega-embed * {{ background: transparent !important; }}
 
-/* ---------- DATAFRAMES / TABLES ---------- */
-div[data-testid="stDataframe"] {{
+/* ===== Dataframes & Tables – dark mode ===== */
+
+/* Hit both spellings just in case */
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
   border-radius: 12px !important;
 }}
-div[data-testid="stDataframe"] thead tr th {{
+
+/* Grid container + everything inside */
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{
+  background: var(--card) !important;
+}}
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{
+  background: #0E1015 !important;
+}}
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
   background: #0C0E13 !important;
   color: var(--text) !important;
   border-bottom: 1px solid var(--border) !important;
 }}
-div[data-testid="stDataframe"] tbody tr {{
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
   background: #0E1015 !important;
   color: var(--text) !important;
 }}
-div[data-testid="stDataframe"] ::-webkit-scrollbar-thumb {{
-  background: #2A2F36 !important;
-  border-radius: 6px;
+
+/* st.table (static table) */
+:where([data-testid="stTable"]) table {{
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
 }}
-div[data-testid="stDataframe"] ::-webkit-scrollbar-track {{
-  background: #0B0D12 !important;
+:where([data-testid="stTable"]) thead th {{
+  background: #0C0E13 !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid var(--border) !important;
 }}
+:where([data-testid="stTable"]) tbody td {{
+  background: #0E1015 !important;
+  color: var(--text) !important;
+  border-top: 1px solid #12151C !important;
+}}
+
 
 /* ---------- INPUTS: SELECT / MULTISELECT / TEXT INPUT ---------- */
 [data-baseweb="select"], [data-baseweb="select"] * {{
