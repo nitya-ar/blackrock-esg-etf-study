@@ -1307,7 +1307,7 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
     )
 
 # =========================
-# FOOTER
+# FOOTER (replacement)
 # =========================
 gap(28)
 divider()
