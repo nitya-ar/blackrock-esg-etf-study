@@ -910,10 +910,11 @@ def render_change_since_2017():
 # -------------------------
 def render_tradeoffs():
     import re
-    st.subheader("Tradeoff Scenarios")
-    st.caption("Pick an ETF, pick a scenario, and see cleanliness vs tracking error, what changed, and where the weight moved.")
 
-    # --- Load data (Analysis 3) ---
+    st.subheader("Tradeoff Scenarios")
+    st.caption("Pick an ETF, choose a scenario, and inspect cleanliness vs tracking error, what changed, and where the weight moved.")
+
+    # ===== Load data (Analysis 3) =====
     try:
         metr   = load_scenario_metrics()          # scenario_portfolio_metrics.csv
         deltas = load_scenario_deltas()           # scenario_position_deltas.csv
@@ -924,10 +925,10 @@ def render_tradeoffs():
     # Optional enrichers (best-effort)
     try:    prog = load_scenario_progress()
     except: prog = pd.DataFrame()
-    try:    uni = load_universe_2025_xlsx()
-    except: uni = pd.DataFrame()
+    try:    _ = load_universe_2025_xlsx()  # not strictly needed here
+    except: pass
 
-    # --- Helper: fuzzy column picker ---
+    # ===== Helpers =====
     def _pick(df, *keys):
         if df is None or df.empty: return None
         keys = [k.lower() for k in keys]
@@ -937,62 +938,124 @@ def render_tradeoffs():
                 return c
         return None
 
-    # --- Canonical column names in metrics ---
-    scen_col   = _pick(metr, "scenario", "name")
-    etf_col    = _pick(metr, "etf_ticker", "etf", "fund")
-    weight_col = _pick(metr, "weighting", "mode")
-    clean_col  = _pick(metr, "pct_clean", "clean")
-    ctr_col    = _pick(metr, "pct_controversial", "contro")
-    oth_col    = _pick(metr, "pct_other", "other")
-    te_col     = _pick(metr, "tracking_error", "tracking err", "te")
-    ret_col    = _pick(metr, "ann_return", "return")
-    vol_col    = _pick(metr, "ann_vol", "vol")
+    # Robust column resolver for scenario_portfolio_metrics.csv
+    def resolve_metric_cols(df: pd.DataFrame):
+        def simp(s): return re.sub(r"[^a-z0-9]+", "", str(s).lower())
+        bysimp = {simp(c): c for c in df.columns}
 
-    # Guard rails: must have these to function
-    must_have = [scen_col, etf_col, weight_col, clean_col, te_col]
-    if any(c is None for c in must_have):
-        st.error("scenario_portfolio_metrics.csv is missing required columns. "
-                 "Expected (any case/fuzzy): scenario, etf_ticker, weighting, pct_clean, tracking_error.")
-        st.stop()
+        def pick(*synonyms, numeric=False, pct=False, allow_regex=None):
+            # direct synonym match
+            for s in synonyms:
+                k = re.sub(r"[^a-z0-9]+", "", s.lower())
+                if k in bysimp: 
+                    return bysimp[k]
+            # regex fallback
+            if allow_regex:
+                patt = re.compile(allow_regex, re.I)
+                for c in df.columns:
+                    if patt.search(c): 
+                        return c
+            # heuristic fallback: contains token
+            token = re.sub(r"[^a-z0-9]+", "", synonyms[0].lower())
+            for c in df.columns:
+                if token in simp(c):
+                    if numeric:
+                        s = pd.to_numeric(df[c], errors="coerce")
+                        if s.notna().sum() == 0: 
+                            continue
+                        if pct:
+                            v = s.dropna()
+                            ok = (
+                                ((v >= 0) & (v <= 100)).mean() > 0.7 or
+                                ((v >= 0) & (v <= 1)).mean()  > 0.7
+                            )
+                            if not ok: 
+                                continue
+                    return c
+            return None
 
-    # Normalize scenario IDs and pretty labels
+        scen   = pick("scenario", "scenario_id", "scenario_name", "name", allow_regex=r"^scenario")
+        etf    = pick("etf_ticker", "etf", "fund", "ticker", "symbol", allow_regex=r"(etf|fund).*(tick|sym)")
+        weight = pick("weighting", "mode", "weight_mode", allow_regex=r"weight.*(mode|ing)")
+        clean  = pick("pct_clean", "clean_pct", "percent_clean", "clean", numeric=True, pct=True)
+        te     = pick("tracking_error", "te", "te_ann", "te_pct", allow_regex=r"track.*err", numeric=True, pct=True)
+        ctr    = pick("pct_controversial", "controversial_pct", "contro", "contro_pct", numeric=True, pct=True)
+        oth    = pick("pct_other", "other_pct", numeric=True, pct=True)
+        retc   = pick("ann_return", "return", "ret_ann", "annual_return", numeric=True, pct=True)
+        volc   = pick("ann_vol", "vol", "volatility", "stdev", numeric=True, pct=True)
+
+        # Convert 0–1 to % for numeric pct-like columns
+        def ensure_pct(colname):
+            if not colname or colname not in df.columns: return
+            s = pd.to_numeric(df[colname], errors="coerce")
+            if s.dropna().between(0, 1).mean() > 0.7:
+                df[colname] = s * 100.0
+
+        for c in [clean, te, ctr, oth, retc, volc]:
+            ensure_pct(c)
+
+        missing = [("scenario", scen), ("etf_ticker", etf), ("weighting", weight), ("pct_clean", clean), ("tracking_error", te)]
+        if any(v is None for _, v in missing):
+            st.error(
+                "Your metrics file is missing required columns after fuzzy mapping.\n\n"
+                "**Required (any case/fuzzy):** scenario, etf_ticker, weighting, pct_clean, tracking_error\n\n"
+                f"**Found columns:** {list(df.columns)}"
+            )
+            st.stop()
+
+        return dict(
+            scen=scen, etf=etf, weight=weight,
+            clean=clean, te=te, ctr=ctr, oth=oth,
+            ret=retc, vol=volc,
+        )
+
+    # ===== Resolve columns and normalize scenarios =====
+    col = resolve_metric_cols(metr)
+    scen_col   = col["scen"]
+    etf_col    = col["etf"]
+    weight_col = col["weight"]
+    clean_col  = col["clean"]
+    te_col     = col["te"]
+    ctr_col    = col["ctr"]
+    oth_col    = col["oth"]
+    ret_col    = col["ret"]
+    vol_col    = col["vol"]
+
+    metr = metr.copy()
+
     def _norm_scen(s: str) -> str:
         s = str(s or "")
-        if s.lower().startswith("baseline"): return "Baseline"
-        return s
+        return "Baseline" if s.lower().startswith("baseline") else s
+
     def _pretty_name(s: str) -> str:
         s = str(s or "")
         if s.lower().startswith("baseline"): return "Baseline"
-        s = re.sub(r"^\w+_", "", s)                      # strip leading type_
-        s = re.sub(r"_\d{8}t?\d{6,}$", "", s, flags=re.I) # strip timestamp
+        # strip type_ and trailing timestamps like _20250101T171545
+        s = re.sub(r"^\w+_", "", s)
+        s = re.sub(r"_\d{8}t?\d{6,}$", "", s, flags=re.I)
         return (s.replace("_", " ").strip().title() or "Scenario")
 
-    metr = metr.copy()
     metr["_scen"]  = metr[scen_col].map(_norm_scen)
     metr["_label"] = metr[scen_col].map(_pretty_name)
 
-    # --- Controls row ---
+    # ===== Controls =====
     topL, topM, topR = st.columns([0.34, 0.34, 0.32])
 
-    # ETF
     with topL:
         etfs = sorted(metr[etf_col].dropna().astype(str).unique().tolist())
         sel_etf = st.selectbox("ETF", etfs, index=0 if etfs else None)
 
-    # Weighting
     with topM:
         wopts = sorted(metr[weight_col].dropna().astype(str).unique().tolist())
-        # Prefer "AUM" if present
         default_idx = wopts.index("AUM") if "AUM" in wopts else 0
         sel_weight = st.selectbox("Weighting", wopts, index=default_idx)
 
-    # Scenario segmented control (built after ETF/weight filter)
     mview = metr[(metr[etf_col].astype(str).eq(sel_etf)) & (metr[weight_col].astype(str).eq(sel_weight))].copy()
     if mview.empty:
         st.info("No scenario rows for this ETF + weighting selection.")
         st.stop()
 
-    # Build ordered scenario list: Baseline first, then by (low TE, high Clean)
+    # scenario cards for current ETF+weight
     cards = (
         mview[["_scen", "_label", clean_col, te_col, ctr_col, oth_col]]
         .dropna(subset=[clean_col, te_col], how="any")
@@ -1012,39 +1075,38 @@ def render_tradeoffs():
             help="Pick which portfolio to visualize. Baseline is the original ETF."
         )
 
-    # Optional targets (if progress file defines knobs)
-    # Default to the current scenario’s clean% and TE if targets missing
+    # Optional targets (from scenario_progress if present)
     tgtL, tgtR = st.columns([0.5, 0.5])
     with tgtL:
         cw_col = _pick(prog, "clean_target", "clean_overweight", "clean tilt", "target_clean")
+        cur_clean = float(pd.to_numeric(mview.loc[mview["_scen"]==sel_scenario, clean_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
         if cw_col in (prog.columns if not prog.empty else []):
             vals = sorted(pd.to_numeric(prog[cw_col], errors="coerce").dropna().unique().tolist())
-            t_clean = st.select_slider("Clean target (%)", options=vals, value=vals[0] if vals else 0.0)
+            t_clean = st.select_slider("Clean target (%)", options=vals, value=vals[0] if vals else cur_clean)
         else:
-            cur_clean = float(pd.to_numeric(mview.loc[mview["_scen"]==sel_scenario, clean_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
             t_clean = st.slider("Clean target (%)", min_value=0.0, max_value=max(30.0, cur_clean), value=cur_clean, step=0.1)
     with tgtR:
         tebud_col = _pick(prog, "te_budget", "te cap", "te_cap", "tracking_error_budget")
+        cur_te = float(pd.to_numeric(mview.loc[mview["_scen"]==sel_scenario, te_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
         if tebud_col in (prog.columns if not prog.empty else []):
             vals = sorted(pd.to_numeric(prog[tebud_col], errors="coerce").dropna().unique().tolist())
-            t_te = st.select_slider("TE cap (ann. %)", options=vals, value=vals[0] if vals else 0.5)
+            t_te = st.select_slider("TE cap (ann. %)", options=vals, value=vals[0] if vals else max(cur_te, 0.5))
         else:
-            cur_te = float(pd.to_numeric(mview.loc[mview["_scen"]==sel_scenario, te_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
             t_te = st.slider("TE cap (ann. %)", min_value=0.0, max_value=max(2.0, cur_te*1.5 + 0.2), value=max(cur_te, 0.5), step=0.05)
 
-    # --- Data health (debug) ---
+    # Debug info
     with st.expander("Data health (debug)", expanded=False):
         st.write({
             "metrics_rows_for_selection": len(mview),
-            "has_returns": ret_col in mview.columns,
-            "has_vol": vol_col in mview.columns,
+            "columns_in_metrics": list(metr.columns),
+            "has_returns": ret_col in metr.columns if ret_col else False,
+            "has_vol": vol_col in metr.columns if vol_col else False,
             "deltas_rows_all": (0 if deltas is None or deltas.empty else len(deltas)),
         })
 
-    # --- Pull baseline & selected scenario rows (closest if multiple param points) ---
+    # Nearest row to target (if multiple points per scenario)
     def _nearest_by_targets(df: pd.DataFrame):
         df = df.copy()
-        # distance in target space (clean, te)
         df["_d"] = (
             (pd.to_numeric(df[clean_col], errors="coerce") - float(t_clean))**2 +
             (pd.to_numeric(df[te_col],    errors="coerce") - float(t_te))**2
@@ -1056,12 +1118,10 @@ def render_tradeoffs():
     base = _nearest_by_targets(base) if len(base) > 1 else base
     cur  = _nearest_by_targets(cur)  if len(cur)  > 1 else cur
 
-    # --- Extract numbers safely ---
+    # Extract values
     def _get(df, col):
-        try:
-            return float(pd.to_numeric(df[col], errors="coerce").iloc[0])
-        except Exception:
-            return None
+        try:    return float(pd.to_numeric(df[col], errors="coerce").iloc[0])
+        except: return None
 
     b_clean = _get(base, clean_col); s_clean = _get(cur, clean_col)
     b_ctr   = _get(base, ctr_col);   s_ctr   = _get(cur, ctr_col)
@@ -1072,30 +1132,31 @@ def render_tradeoffs():
     b_vol   = _get(base, vol_col) if vol_col else None
     s_vol   = _get(cur,  vol_col) if vol_col else None
 
-    # --- KPIs ---
+    # ===== KPIs =====
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
     with k1:
         kpi_card("% Clean", f"{(s_clean if s_clean is not None else 0):.1f}%")
     with k2:
         kpi_card("Tracking Error", f"{(s_te if s_te is not None else 0):.2f}%")
     with k3:
-        d_ret = (None if (s_ret is None or b_ret is None) else (s_ret - b_ret))
+        d_ret = None if (s_ret is None or b_ret is None) else (s_ret - b_ret)
         kpi_card("Return Δ (ann.)", "-" if d_ret is None else f"{d_ret:+.2f}%")
     with k4:
-        d_vol = (None if (s_vol is None or b_vol is None) else (s_vol - b_vol))
+        d_vol = None if (s_vol is None or b_vol is None) else (s_vol - b_vol)
         kpi_card("Volatility Δ (ann.)", "-" if d_vol is None else f"{d_vol:+.2f}%")
 
-    # --- Frontier: Clean% vs TE (points = scenarios), with target box ---
+    # ===== Frontier & Composition =====
     left, right = st.columns([0.52, 0.48])
+
+    # Frontier: Clean% vs TE with target box
     with left:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — Clean% vs TE (click a point)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — Clean% vs TE (points = scenarios)</div>', unsafe_allow_html=True)
         dfp = cards.rename(columns={clean_col:"CleanPct", te_col:"TE", "_scen":"Scenario"}).copy()
         if dfp.empty:
             st.info("No scenarios with both Clean% and TE for this ETF/weight.")
         else:
             y_max = max(5.0, float(dfp["CleanPct"].max() or 0) * 1.1)
             x_max = max(0.2, float(dfp["TE"].max() or 0) * 1.1)
-            # Target feasible region
             bg = pd.DataFrame({"x1":[0], "x2":[x_max], "y1":[t_clean], "y2":[y_max]})
             rect = alt.Chart(bg).mark_rect(opacity=0.08, stroke=COLORS["primary"], strokeWidth=1).encode(
                 x=alt.X("x1:Q", scale=alt.Scale(domain=[0, x_max]), title="Tracking Error (ann. %)"),
@@ -1113,11 +1174,11 @@ def render_tradeoffs():
                 x=alt.X("TE:Q", scale=alt.Scale(domain=[0, x_max]), title="Tracking Error (ann. %)"),
                 y=alt.Y("CleanPct:Q", scale=alt.Scale(domain=[0, y_max]), title="% Clean"),
                 color=alt.condition(alt.datum.Scenario == sel_scenario, alt.value(COLORS["primary"]), alt.value("#8A93A6")),
-                tooltip=["Scenario:N", alt.Tooltip("CleanPct:Q", format=".1f"), alt.Tooltip("TE:Q", format=".2f")]
+                tooltip=["Scenario:N", alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"), alt.Tooltip("TE:Q", title="TE", format=".2f")]
             ).interactive()
             st.altair_chart((rect + tgt_clean + tgt_te + pts).properties(height=360), use_container_width=True)
 
-    # --- Composition: Baseline vs Selected (stacked 100%) ---
+    # Composition: Baseline vs Selected
     with right:
         st.markdown(f'<div class="chart-title" style="margin-bottom:6px;">Composition — {label_map.get("Baseline","Baseline")} vs {label_map.get(sel_scenario, sel_scenario)}</div>', unsafe_allow_html=True)
         rows = []
@@ -1136,17 +1197,16 @@ def render_tradeoffs():
                 color=alt.Color("Category:N", title=None, scale=alt.Scale(
                     domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
                 )),
-                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", format=".2f")]
+                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".2f")]
             ).properties(height=320)
             st.altair_chart(ch, use_container_width=True)
         else:
             st.caption("Composition not available for this selection.")
 
-    # --- Movers (adds / drops) ---
+    # ===== Movers (adds / drops) =====
     st.markdown('<div class="chart-title" style="margin-top:12px; margin-bottom:6px;">Top movers — scenario vs baseline</div>', unsafe_allow_html=True)
     movers_ok = False
     if deltas is not None and not deltas.empty:
-        # Fuzzy columns in deltas
         d_etf  = _pick(deltas, "etf_ticker","etf","fund") or etf_col
         d_scen = _pick(deltas, "scenario","name")         or scen_col
         aw_col = _pick(deltas, "active_weight", "delta_weight", "dw")
@@ -1190,7 +1250,7 @@ def render_tradeoffs():
     if not movers_ok:
         st.info("No movers for this selection.")
 
-    # --- Download filtered metrics ---
+    # ===== Download filtered metrics =====
     gap(6)
     if not mview.empty:
         st.download_button(
@@ -1199,6 +1259,7 @@ def render_tradeoffs():
             file_name=f"scenario_metrics_{sel_etf}_{sel_weight}.csv",
             mime="text/csv",
         )
+
 
 
 
