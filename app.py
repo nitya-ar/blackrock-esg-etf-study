@@ -516,10 +516,11 @@ def load_universe_2025_xlsx():
         r = requests.get(api_url, headers=headers, timeout=25)
         r.raise_for_status()
         return pd.read_excel(io.BytesIO(r.content))
-
+def grid(df):
 # =========================
 # HEADER
 # =========================
+
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -996,7 +997,7 @@ def render_change_since_2017():
     if movers_view.empty:
         st.info("No movers found for the selected start year.")
     else:
-        st.dataframe(movers_view, use_container_width=True, hide_index=True)
+        st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
 
 
 
@@ -1402,10 +1403,10 @@ def render_tradeoffs():
             cL, cR = st.columns([0.5, 0.5])
             with cL:
                 st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
-                st.dataframe(_fmt(adds), use_container_width=True, hide_index=True)
+                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
             with cR:
                 st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
-                st.dataframe(_fmt(drops), use_container_width=True, hide_index=True)
+                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
             movers_ok = True
 
     if not movers_ok:
@@ -1552,7 +1553,7 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(cont_disp, use_container_width=True, hide_index=True)
+                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
         with s2:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
             spot = load_spotlight()
@@ -1566,7 +1567,7 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.dataframe(clean_disp, use_container_width=True, hide_index=True)
+                    st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
 
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
@@ -1613,7 +1614,7 @@ if mode == "Dashboard":
         for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
             if c in df_view.columns:
                 df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-        st.dataframe(df_view, use_container_width=True, hide_index=True)
+        st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
 
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
         st.download_button(
