@@ -6,6 +6,7 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
+
 # =================
 # CONFIG
 # =================
@@ -145,230 +146,110 @@ st.markdown(
       .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
       .footer-links a:hover {{ text-decoration: underline; }}
 
-/* ---------- GLOBAL TEXT & LINKS ---------- */
-* {{ color: var(--text); }}
-a {{ color: #73B4FF !important; }}
-a:hover {{ color: #A3CFFF !important; }}
+      /* ---------- GLOBAL TEXT & LINKS ---------- */
+      * {{ color: var(--text); }}
+      a {{ color: #73B4FF !important; }}
+      a:hover {{ color: #A3CFFF !important; }}
 
-/* ---------- APP CONTAINERS ---------- */
-section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
-  border: 0 !important;
-}}
-[data-testid="stToolbar"] {{ background: transparent !important; }}
+      /* ---------- APP CONTAINERS ---------- */
+      section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
+        background-color: var(--bg) !important;
+        color: var(--text) !important;
+        border: 0 !important;
+      }}
+      [data-testid="stToolbar"] {{ background: transparent !important; }}
 
-/* ---------- CARDS / CHART WRAPPERS ---------- */
-.blx-card, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-}}
-.vega-embed, .vega-embed * {{ background: transparent !important; }}
+      /* ---------- CARDS / CHART WRAPPERS ---------- */
+      .blx-card, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+      }}
+      .vega-embed, .vega-embed * {{ background: transparent !important; }}
 
-/* ===== Dataframes & Tables – dark mode ===== */
+      /* ===== Dataframes & Tables – dark mode ===== */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{ background: #0E1015 !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
+        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
+        background: #0E1015 !important; color: var(--text) !important;
+      }}
 
-/* Hit both spellings just in case */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
+      :where([data-testid="stTable"]) table {{
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      :where([data-testid="stTable"]) thead th {{
+        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
+      }}
+      :where([data-testid="stTable"]) tbody td {{
+        background: #0E1015 !important; color: var(--text) !important; border-top: 1px solid #12151C !important;
+      }}
 
-/* Grid container + everything inside */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{
-  background: var(--card) !important;
-}}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{
-  background: #0E1015 !important;
-}}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-  background: #0C0E13 !important;
-  color: var(--text) !important;
-  border-bottom: 1px solid var(--border) !important;
-}}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
-  background: #0E1015 !important;
-  color: var(--text) !important;
-}}
+      /* ---------- INPUTS ---------- */
+      [data-baseweb="select"], [data-baseweb="select"] * {{ background-color: var(--card) !important; color: var(--text) !important; }}
+      [data-baseweb="select"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
+      [data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
+      [data-baseweb="tag"] {{ background: #10131A !important; color: var(--text) !important; border: 1px solid var(--border) !important; }}
+      [data-baseweb="input"] input, [data-baseweb="input"] textarea {{ background: var(--card) !important; color: var(--text) !important; }}
+      [data-baseweb="input"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
 
-/* st.table (static table) */
-:where([data-testid="stTable"]) table {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-:where([data-testid="stTable"]) thead th {{
-  background: #0C0E13 !important;
-  color: var(--text) !important;
-  border-bottom: 1px solid var(--border) !important;
-}}
-:where([data-testid="stTable"]) tbody td {{
-  background: #0E1015 !important;
-  color: var(--text) !important;
-  border-top: 1px solid #12151C !important;
-}}
+      [data-baseweb="menu"] {{
+        background: #0F1116 !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      [data-baseweb="menu"] li {{ color: var(--text) !important; }}
+      [data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
 
+      /* ---------- SLIDERS ---------- */
+      [data-baseweb="slider"] {{ color: var(--text) !important; }}
+      [data-baseweb="slider"] > div {{ background: transparent !important; }}
+      [data-baseweb="slider"] [role="slider"] {{ background: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0,163,255,0.18) !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background: #1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--primary) !important; }}
 
-/* ---------- INPUTS: SELECT / MULTISELECT / TEXT INPUT ---------- */
-[data-baseweb="select"], [data-baseweb="select"] * {{
-  background-color: var(--card) !important;
-  color: var(--text) !important;
-}}
-[data-baseweb="select"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
-[data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
-[data-baseweb="tag"] {{
-  background: #10131A !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}}
-[data-baseweb="input"] input, [data-baseweb="input"] textarea {{
-  background: var(--card) !important;
-  color: var(--text) !important;
-}}
-[data-baseweb="input"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
+      /* ---------- CHECKBOX / RADIO ---------- */
+      [data-baseweb="checkbox"] label, [data-baseweb="radio"] label {{ color: var(--text) !important; }}
+      [data-baseweb="checkbox"] input, [data-baseweb="radio"] input {{ accent-color: var(--primary) !important; }}
 
-/* Dropdown menu (the popover list) */
-[data-baseweb="menu"] {{
-  background: #0F1116 !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-[data-baseweb="menu"] li {{ color: var(--text) !important; }}
-/* fixed missing '[' here ↓ */
-[data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
+      /* ---------- SEGMENTED CONTROL ---------- */
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"] {{ background: transparent !important; color: var(--text) !important; border: none !important; }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
+        background: #12151C !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--border);
+      }}
 
-/* ---------- SLIDERS ---------- */
-[data-baseweb="slider"] {{ color: var(--text) !important; }}
-[data-baseweb="slider"] > div {{ background: transparent !important; }}
-[data-baseweb="slider"] [role="slider"] {{
-  background: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(0,163,255,0.18) !important;
-}}
-[data-baseweb="slider"] div[role="presentation"] {{ background: #1C2027 !important; }} /* track */
-[data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--primary) !important; }} /* filled */
+      /* ---------- TABS ---------- */
+      .stTabs [data-baseweb="tab-list"] {{ background: #0E1015 !important; border-bottom: 1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ color: var(--muted) !important; background: transparent !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color: var(--text) !important; border-color: var(--primary) !important; }}
 
-/* ---------- CHECKBOX / RADIO ---------- */
-[data-baseweb="checkbox"] label, [data-baseweb="radio"] label {{ color: var(--text) !important; }}
-[data-baseweb="checkbox"] input, [data-baseweb="radio"] input {{ accent-color: var(--primary) !important; }}
+      /* ---------- BUTTONS ---------- */
+      .stDownloadButton > button, .stButton > button {{
+        background: #12151C !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background: #151923 !important; border-color: #2A2F36 !important; }}
 
-/* ---------- SEGMENTED CONTROL ---------- */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background: #0E1015 !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"] {{
-  background: transparent !important;
-  color: var(--text) !important;
-  border: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-  background: #12151C !important;
-  color: var(--text) !important;
-  box-shadow: inset 0 0 0 1px var(--border);
-}}
+      /* ---------- TOOLTIP & LEGEND ---------- */
+      .has-tip::after {{ background: #0B0D12 !important; color: var(--text) !important; border: 1px solid var(--border) !important; }}
+      .vega-bindings, .vega-tooltip, .vega-tooltip * {{ background: #0F1116 !important; color: var(--text) !important; border-color: var(--border) !important; }}
 
-/* ---------- TABS ---------- */
-.stTabs [data-baseweb="tab-list"] {{
-  background: #0E1015 !important;
-  border-bottom: 1px solid var(--border) !important;
-}}
-.stTabs [data-baseweb="tab"] {{
-  color: var(--muted) !important;
-  background: transparent !important;
-}}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {{
-  color: var(--text) !important;
-  border-color: var(--primary) !important;
-}}
+      /* ---------- FORMS / SMALL LABELS ---------- */
+      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{ color: var(--muted) !important; }}
 
-/* ---------- BUTTONS (incl. download) ---------- */
-.stDownloadButton > button, .stButton > button {{
-  background: #12151C !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-.stDownloadButton > button:hover, .stButton > button:hover {{
-  background: #151923 !important;
-  border-color: #2A2F36 !important;
-}}
+      /* ---------- SCROLLBARS ---------- */
+      *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+      *::-webkit-scrollbar-thumb {{ background: #2A2F36; border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background: #0B0D12; }}
 
-/* ---------- TOOLTIP & LEGEND WRAPPERS ---------- */
-.has-tip::after {{
-  background: #0B0D12 !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}}
-.vega-bindings, .vega-tooltip, .vega-tooltip * {{
-  background: #0F1116 !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}}
-
-/* ---------- FORMS / SMALL LABELS ---------- */
-label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
-  color: var(--muted) !important;
-}}
-
-/* ---------- SCROLLBARS (GLOBAL) ---------- */
-*::-webkit-scrollbar {{ width: 10px; height: 10px; }}
-*::-webkit-scrollbar-thumb {{ background: #2A2F36; border-radius: 8px; }}
-*::-webkit-scrollbar-track {{ background: #0B0D12; }}
-
-/* ===== EXTRA OVERRIDES ===== */
-
-/* Tables (no white rows/headers) */
-.stDataFrame, .stTable {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-.stTable thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
-.stTable tbody tr td {{ background: #0E1015 !important; color: var(--text) !important; border-top: 1px solid #12151C !important; }}
-.stDataFrame [role="grid"] {{ background: var(--card) !important; }}
-.stDataFrame [role="row"] {{ background: #0E1015 !important; }}
-.stDataFrame [role="columnheader"] {{ background: #0C0E13 !important; color: var(--text) !important; }}
-.stDataFrame [role="gridcell"] {{ background: #0E1015 !important; color: var(--text) !important; }}
-
-/* Selects / Inputs: remove white outline; use red focus */
-[data-baseweb="select"] {{ border: 1px solid var(--border) !important; border-radius: 10px; background: var(--card) !important; }}
-[data-baseweb="select"] * {{ color: var(--text) !important; background: transparent !important; }}
-[data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
-[data-baseweb="select"]:focus-within {{ border-color: var(--contro) !important; box-shadow: 0 0 0 2px rgba(198,60,65,0.28) !important; }}
-[data-baseweb="input"]:focus-within  {{ border-color: var(--contro) !important; box-shadow: 0 0 0 2px rgba(198,60,65,0.28) !important; }}
-[data-baseweb="select"] div[role="combobox"] {{ box-shadow: none !important; }}
-
-/* Dropdown list (popover) */
-[data-baseweb="menu"] {{ background: #0F1116 !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-[data-baseweb="menu"] li {{ color: var(--text) !important; }}
-[data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
-
-/* Segmented controls (Dashboard/Report, AUM/EW, etc.) */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"] {{
-  background: transparent !important; color: var(--muted) !important; border: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-  background: #12151C !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--border);
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="false"] {{
-  background: transparent !important; color: var(--muted) !important;
-}}
-div[data-testid="stSegmentedControl"] button[disabled] {{
-  background: #0E1015 !important; color: #6E7785 !important; opacity: .65 !important;
-}}
-
-/* Slider (Start Year): use red instead of blue */
-[data-baseweb="slider"] [role="slider"] {{
-  background: var(--contro) !important; box-shadow: 0 0 0 3px rgba(198,60,65,0.25) !important;
-}}
-[data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--contro) !important; }} /* filled track */
-[data-baseweb="slider"] div[role="presentation"]       {{ background: #1C2027 !important; }}  /* unfilled track */
-
-/* Vega container — no white behind charts */
-.vega-embed, .stAltairChart {{ background: transparent !important; }}
-
-
+      /* Vega container — no white behind charts */
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -379,6 +260,10 @@ def divider():
 
 def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
+
+# Read-only, theme-aware grid helper (replaces st.dataframe)
+def grid(df: pd.DataFrame):
+    st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
 
 # =========================
 # DATA LOADER
@@ -459,40 +344,31 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-# Analysis 2 loaders (for Change since 2017)
+# Analysis 2 loaders (Change since 2017)
 @st.cache_data(show_spinner=False)
 def load_exposures_by_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
-
 @st.cache_data(show_spinner=False)
 def load_aggregate_trends():         return load_csv(2, "aggregate_exposure_trends.csv")
-
 @st.cache_data(show_spinner=False)
 def load_dispersion_stats():         return load_csv(2, "exposure_dispersion_stats.csv")
-
 @st.cache_data(show_spinner=False)
 def load_screen_trends():            return load_csv(2, "aggregate_screen_trends.csv")
-
 @st.cache_data(show_spinner=False)
 def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
-
 @st.cache_data(show_spinner=False)
-def load_top_movers_with_names():       return load_csv(2, "top_movers_with_names.csv")
+def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.csv")
 
 # Analysis 3 loaders (Tradeoff Scenarios)
 @st.cache_data(show_spinner=False)
-def load_scenario_metrics():        return load_csv(3, "scenario_portfolio_metrics.csv")
-
+def load_scenario_metrics():         return load_csv(3, "scenario_portfolio_metrics.csv")
 @st.cache_data(show_spinner=False)
-def load_scenario_deltas():         return load_csv(3, "scenario_position_deltas.csv")
-
+def load_scenario_deltas():          return load_csv(3, "scenario_position_deltas.csv")
 @st.cache_data(show_spinner=False)
-def load_scenario_progress():       return load_csv(3, "scenario_progress.csv")
-
+def load_scenario_progress():        return load_csv(3, "scenario_progress.csv")
 @st.cache_data(show_spinner=False)
-def load_covariance_2025():         return load_csv(3, "covariance_2025.csv")
-
+def load_covariance_2025():          return load_csv(3, "covariance_2025.csv")
 @st.cache_data(show_spinner=False)
-def load_returns_top_per_etf_2025():return load_csv(3, "returns_top_per_etf_2025.csv")
+def load_returns_top_per_etf_2025(): return load_csv(3, "returns_top_per_etf_2025.csv")
 
 @st.cache_data(show_spinner=False)
 def load_universe_2025_xlsx():
@@ -501,26 +377,27 @@ def load_universe_2025_xlsx():
     try:
         if lp and os.path.exists(lp):
             return pd.read_excel(lp)
-    except: pass
+    except:
+        pass
     # GitHub raw fallback
     raw_url = github_raw_url(3, "universe_2025.xlsx")
     try:
         return pd.read_excel(raw_url)
-    except Exception as e_raw:
+    except Exception:
         # GitHub API fallback (requires Accept header)
         api_url = github_api_url(3, "universe_2025.xlsx")
         headers = {"Accept": "application/vnd.github.v3.raw"}
         if GITHUB_TOKEN:
             headers["Authorization"] = f"token {GITHUB_TOKEN}"
-        import io, requests
+        import io
         r = requests.get(api_url, headers=headers, timeout=25)
         r.raise_for_status()
         return pd.read_excel(io.BytesIO(r.content))
-def grid(df):
+
+
 # =========================
 # HEADER
 # =========================
-
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -583,8 +460,7 @@ def render_change_since_2017():
     try:
         by_fund   = load_exposures_by_fund_year()   # ETF-level exposures per year
         scr_tr    = load_screen_trends()            # Aggregate screen trends (may be empty)
-        movers_df = load_top_movers_with_names()       # Holding deltas for specific year-pairs
-        
+        movers_df = load_top_movers_with_names()    # Holding deltas for specific year-pairs
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
         st.stop()
@@ -701,7 +577,7 @@ def render_change_since_2017():
     # ---------- KPI cards ----------
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
-    # KPI 1: Net improvement (level slope: Clean−Contro @ start vs end; fixed −10..10)
+    # KPI 1: Net improvement (Clean−Contro @ start vs end)
     with k1:
         st.markdown(
             f"""
@@ -714,7 +590,7 @@ def render_change_since_2017():
         )
         tp_net = _two_points_from_series(s_net)
         if tp_net is not None:
-            st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
+            st.altair_chart(slope_chart(tp_net, [-10, 10], "#8A93A6"), use_container_width=True)
 
     # KPI 2: Clean
     with k2:
@@ -734,7 +610,7 @@ def render_change_since_2017():
         if tp is not None:
             st.altair_chart(slope_chart(tp, [0, 30], COLORS["contro"]), use_container_width=True)
 
-    # KPI 4: Coverage — big number, smaller caption with bolded years
+    # KPI 4: Coverage
     with k4:
         st.markdown(
             f"""
@@ -747,7 +623,6 @@ def render_change_since_2017():
         )
 
     gap(8)
-
 
     # ---------- Combined trend with fixed middle dispersion band (35–65%) ----------
     st.markdown(
@@ -788,51 +663,34 @@ def render_change_since_2017():
     if not comb.empty:
         layers = []
 
-        # Shaded middle band with a clean, customized tooltip
+        # Shaded middle band
         band_df = pd.concat([band_clean, band_contro], ignore_index=True)
-        band_tooltip = [
-            alt.Tooltip(f"{year_col}:O", title="Year"),
-            alt.Tooltip("qlo:Q",        title="Middle 35–65% — low",  format=".1f"),
-            alt.Tooltip("qhi:Q",        title="Middle 35–65% — high", format=".1f"),
-            alt.Tooltip("category:N",   title="Category"),
-        ]
         band_layer = (
             alt.Chart(band_df)
             .mark_area(opacity=0.10)
             .encode(
-                x=alt.X(
-                    f"{year_col}:O",
-                    title=None,
-                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
-                ),
+                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
                 y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30])),
                 y2="qhi:Q",
-                color=alt.Color(
-                    "category:N",
-                    legend=None,
-                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
-                ),
-                tooltip=band_tooltip,  # Custom tooltip; no _category_sort_index; friendlier labels
+                color=alt.Color("category:N", legend=None, scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]])),
+                tooltip=[
+                    alt.Tooltip(f"{year_col}:O", title="Year"),
+                    alt.Tooltip("qlo:Q", title="Middle 35–65% — low",  format=".1f"),
+                    alt.Tooltip("qhi:Q", title="Middle 35–65% — high", format=".1f"),
+                    alt.Tooltip("category:N", title="Category"),
+                ],
             )
         )
         layers.append(band_layer)
 
-        # Lines with a minimal, clear tooltip (Year, Exposure, Category only)
+        # Mean lines
         line_layer = (
             alt.Chart(comb)
             .mark_line(point=True, clip=True)
             .encode(
-                x=alt.X(
-                    f"{year_col}:O",
-                    title=None,
-                    axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True),
-                ),
+                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelFlush=False, labelOverlap=True)),
                 y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=[0, 30]), axis=alt.Axis(format=".1f")),
-                color=alt.Color(
-                    "category:N",
-                    title=None,
-                    scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]]),
-                ),
+                color=alt.Color("category:N", title=None, scale=alt.Scale(domain=["Clean", "Controversial"], range=[COLORS["clean"], COLORS["contro"]])),
                 tooltip=[
                     alt.Tooltip(f"{year_col}:O", title="Year"),
                     alt.Tooltip("value:Q",       title="Exposure (%)", format=".1f"),
@@ -842,109 +700,15 @@ def render_change_since_2017():
         )
         layers.append(line_layer)
 
-        st.altair_chart(
-            alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}),
-            use_container_width=True,
-        )
+        st.altair_chart(alt.layer(*layers).properties(height=300, padding={"left": 8, "right": 8}), use_container_width=True)
 
     gap(8)
 
-
-
-    
-    # ===== Screen trends & Composition — aligned headings, side-by-side =====
-    h_left, h_right = st.columns([0.5, 0.5])
-    with h_left:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
-    with h_right:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Year A vs 2025</div>', unsafe_allow_html=True)
-
-    left, right = st.columns([0.5, 0.5])
-
-    with left:
-        if scr_tr is not None and not scr_tr.empty:
-            d = scr_tr.copy()
-            if "weighting_mode" in d.columns:
-                mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
-                d = d[d["weighting_mode"].astype(str) == mode_name]
-
-            d = d.rename(columns={"exposure_pct": "value"})
-            if {"screen_category", "value", year_col}.issubset(d.columns):
-                keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
-                d["Category"] = (
-                    d["screen_category"].astype(str).str.strip().str.title()
-                    .replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
-                )
-                d = d[d["Category"].isin(keep)]
-                d = d[(d[year_col] >= start_year) & (d[year_col] <= end_year)]
-
-                screen_domain = keep
-                screen_range  = ["#5C6ACF","#C97F64","#EDE7DE","#B5A793","#2FA08A","#A99ABD"]
-
-                chart = alt.Chart(d).mark_line(
-                    strokeWidth=2, opacity=0.95,
-                    point=alt.OverlayMarkDef(size=36, opacity=0.95)
-                ).encode(
-                    x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
-                    y=alt.Y("value:Q", title="Exposure (%)",
-                            axis=alt.Axis(format=".1f"),
-                            scale=alt.Scale(domain=[0, 15])),
-                    color=alt.Color("Category:N", title=None,
-                                    scale=alt.Scale(domain=screen_domain, range=screen_range)),
-                    tooltip=[
-                        alt.Tooltip("Category:N", title="Category"),
-                        alt.Tooltip(f"{year_col}:O", title="Year"),
-                        alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
-                    ],
-                ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
-                st.altair_chart(chart, use_container_width=True)
-        else:
-            st.empty()
-
-    with right:
-        comp_rows = []
-
-        def _val_series(col):
-            s = _series_from_funds(col)
-            if s.empty: return None, None
-            vA = s.loc[s[year_col] == start_year, "value"]
-            vZ = s.loc[s[year_col] == end_year,   "value"]
-            return (float(vA.iloc[0]) if len(vA) else None,
-                    float(vZ.iloc[0]) if len(vZ) else None)
-
-        for label, col in [("Clean", clean_col), ("Controversial", ctr_col), ("Other", oth_col)]:
-            vA, vZ = _val_series(col)
-            if vA is not None: comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
-            if vZ is not None: comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
-
-        comp_df = pd.DataFrame(comp_rows)
-        if not comp_df.empty:
-            comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
-            comp_chart = alt.Chart(comp_df).mark_bar(opacity=0.92, stroke="#0A0B0D", strokeWidth=0.6).encode(
-                x=alt.X("Year:N", title=None),
-                y=alt.Y("Value:Q", stack="normalize",
-                        axis=alt.Axis(format="%", grid=True),
-                        title="Portfolio share"),
-                color=alt.Color("Category:N", title=None,
-                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
-                                                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                tooltip=[alt.Tooltip("Year:N", title="Year"),
-                         alt.Tooltip("Category:N", title="Category"),
-                         alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
-            ).properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
-            st.altair_chart(comp_chart, use_container_width=True)
-        else:
-            st.empty()
-
-    gap(10)
-
-        # ---------- Top movers (no filters) ----------
+    # ---------- Top movers (no filters) ----------
     st.markdown(
         '<div class="chart-head">'
         '<div class="chart-title">Top movers — holdings (Year A → 2025)</div>'
-        '<div class="info-badge has-tip" '
-        'data-tip="Precomputed holding-level exposure changes from the selected start year to 2025; not affected by the AUM vs Equal-weighted toggle.">'
-        'i</div>'
+        '<div class="info-badge has-tip" data-tip="Precomputed holding-level exposure changes from the selected start year to 2025; not affected by the AUM vs Equal-weighted toggle.">i</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -966,20 +730,15 @@ def render_change_since_2017():
         d_col      = _pick(topm_df, "delta", "delta_pp", "pp", "change")
 
         m = topm_df.copy()
-
-        # Filter to the selected year pair (Start → 2025) if possible
         if y0_col and y1_col:
             m = m[(m[y0_col] == start_year) & (m[y1_col] == end_year)]
         else:
-            # If the file doesn't carry explicit year columns, assume it's for 2017→2025 only
             m = m.head(0)
 
         if d_col in (m.columns if m is not None else []) and not m.empty:
-            # Sort by absolute change and take top 10
             m["_abs"] = pd.to_numeric(m[d_col], errors="coerce").abs()
             m = m.sort_values("_abs", ascending=False).head(10)
 
-            # Choose best display name: Name_2025 if present, else base name
             if name25_col and name25_col in m.columns:
                 holding_name = m[name25_col]
             elif base_name and base_name in m.columns:
@@ -987,7 +746,6 @@ def render_change_since_2017():
             else:
                 holding_name = pd.Series(["—"] * len(m), index=m.index)
 
-            # Build display table
             movers_view = pd.DataFrame({
                 "Holding (2025)": holding_name,
                 "Category": m[cat_col] if cat_col in m.columns else "—",
@@ -997,9 +755,7 @@ def render_change_since_2017():
     if movers_view.empty:
         st.info("No movers found for the selected start year.")
     else:
-        st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
-
-
+        grid(movers_view)
 
 
 # -------------------------
@@ -1046,34 +802,22 @@ def render_tradeoffs():
         st.code(f"scenario_portfolio_metrics.csv columns:\n{list(df.columns)}", language="text")
 
         ALIASES = {
-            "scenario": [
-                r"^scenario$", r"^scenario_?id$", r"^scenario_?name$", r"^name$", r"^case$", r"^whatif$"
-            ],
-            "etf_ticker": [
-                r"^etf(_|)ticker$", r"^etf$", r"^fund$", r"^ticker$", r"^symbol$", r"^product$"
-            ],
-            "weighting": [
-                r"^weighting$", r"^weight(_|)mode$", r"^mode$", r"^agg(_|)mode$", r"^aum$|^ew$"
-            ],
-            "pct_clean": [
-                r"^pct(_|)clean$", r"^clean(_|)pct$", r"^cleanliness$", r"^purity$",
-                r"^net(_|)clean(_|)pct$", r"^clean(_|)share$", r"^clean\d*(_|)pct$", r"^%?clean$"
-            ],
-            "tracking_error": [
-                r"^tracking(_|)error$", r"^te(_|)ann(_|)pct$", r"^te$", r"^te(_|)pct$",
-                r"^trackingerrorbps$", r"^te_bps$"
-            ],
-            # optional
+            "scenario": [r"^scenario$", r"^scenario_?id$", r"^scenario_?name$", r"^name$", r"^case$", r"^whatif$"],
+            "etf_ticker": [r"^etf(_|)ticker$", r"^etf$", r"^fund$", r"^ticker$", r"^symbol$", r"^product$"],
+            "weighting": [r"^weighting$", r"^weight(_|)mode$", r"^mode$", r"^agg(_|)mode$", r"^aum$|^ew$"],
+            "pct_clean": [r"^pct(_|)clean$", r"^clean(_|)pct$", r"^cleanliness$", r"^purity$", r"^net(_|)clean(_|)pct$", r"^clean(_|)share$", r"^clean\d*(_|)pct$", r"^%?clean$"],
+            "tracking_error": [r"^tracking(_|)error$", r"^te(_|)ann(_|)pct$", r"^te$", r"^te(_|)pct$", r"^trackingerrorbps$", r"^te_bps$"],
             "pct_controversial": [r"^pct(_|)controversial$", r"^contro(_|)pct$", r"^controversial$"],
-            "pct_other":         [r"^pct(_|)other$", r"^other(_|)pct$", r"^other$"],
-            "ann_return":        [r"^ann(_|)return$", r"^return$", r"^ret(_|)ann$", r"^annual(_|)return$"],
-            "ann_vol":           [r"^ann(_|)vol$", r"^volatility$", r"^stdev$", r"^sigma$"],
+            "pct_other": [r"^pct(_|)other$", r"^other(_|)pct$", r"^other$"],
+            "ann_return": [r"^ann(_|)return$", r"^return$", r"^ret(_|)ann$", r"^annual(_|)return$"],
+            "ann_vol": [r"^ann(_|)vol$", r"^volatility$", r"^stdev$", r"^sigma$"],
         }
 
         def find_by_alias(target_key):
+            import re as _re
             pats = ALIASES.get(target_key, [])
             for p in pats:
-                rx = re.compile(p, re.I)
+                rx = _re.compile(p, _re.I)
                 for c in df.columns:
                     if rx.search(c):
                         return c
@@ -1145,10 +889,7 @@ def render_tradeoffs():
                 )
                 st.stop()
 
-        return dict(
-            scen=scen, etf=etf, weight=wgt,
-            clean=cln, te=te, ctr=ctr, oth=oth, ret=retC, vol=volC
-        )
+        return dict(scen=scen, etf=etf, weight=wgt, clean=cln, te=te, ctr=ctr, oth=oth, ret=retC, vol=volC)
 
     # ===== Resolve columns and normalize scenarios/labels =====
     col = resolve_metric_cols_or_map(metr)
@@ -1172,8 +913,9 @@ def render_tradeoffs():
         s = str(s or "")
         if s.lower().startswith("baseline"):
             return "Baseline"
-        s = re.sub(r"^\w+_", "", s)                       # strip leading type_
-        s = re.sub(r"_\d{8}t?\d{6,}$", "", s, flags=re.I) # strip trailing timestamp
+        import re as _re
+        s = _re.sub(r"^\w+_", "", s)
+        s = _re.sub(r"_\d{8}t?\d{6,}$", "", s, flags=_re.I)
         return (s.replace("_", " ").strip().title() or "Scenario")
 
     metr["_scen"]  = metr[scen_col].map(_norm_scen)
@@ -1307,11 +1049,7 @@ def render_tradeoffs():
             pts = alt.Chart(dfp).mark_circle(size=130).encode(
                 x=alt.X("TE:Q", scale=alt.Scale(domain=[0, x_max]), title="Tracking Error (ann. %)"),
                 y=alt.Y("CleanPct:Q", scale=alt.Scale(domain=[0, y_max]), title="% Clean"),
-                color=alt.condition(
-                    alt.datum.Scenario == sel_scenario,
-                    alt.value(COLORS["primary"]),
-                    alt.value("#8A93A6")
-                ),
+                color=alt.condition(alt.datum.Scenario == sel_scenario, alt.value(COLORS["primary"]), alt.value("#8A93A6")),
                 tooltip=[
                     "Scenario:N",
                     alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"),
@@ -1337,27 +1075,12 @@ def render_tradeoffs():
         comp = pd.DataFrame(rows)
 
         if not comp.empty:
-            comp["View"] = pd.Categorical(
-                comp["View"],
-                categories=["Baseline", label_map.get(sel_scenario, sel_scenario)],
-                ordered=True
-            )
+            comp["View"] = pd.Categorical(comp["View"], categories=["Baseline", label_map.get(sel_scenario, sel_scenario)], ordered=True)
             ch = alt.Chart(comp).mark_bar(opacity=0.92).encode(
                 x=alt.X("View:N", title=None),
                 y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
-                color=alt.Color(
-                    "Category:N",
-                    title=None,
-                    scale=alt.Scale(
-                        domain=["Clean", "Controversial", "Other"],
-                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]],
-                    ),
-                ),
-                tooltip=[
-                    alt.Tooltip("View:N"),
-                    alt.Tooltip("Category:N"),
-                    alt.Tooltip("Value:Q", title="Share (%)", format=".2f"),
-                ],
+                color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean", "Controversial", "Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
+                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".2f")],
             ).properties(height=320)
             st.altair_chart(ch, use_container_width=True)
         else:
@@ -1403,10 +1126,10 @@ def render_tradeoffs():
             cL, cR = st.columns([0.5, 0.5])
             with cL:
                 st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
-                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+                grid(_fmt(adds))
             with cR:
                 st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
-                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+                grid(_fmt(drops))
             movers_ok = True
 
     if not movers_ok:
@@ -1423,7 +1146,6 @@ def render_tradeoffs():
         )
 
 
-
 # =========================
 # BODY
 # =========================
@@ -1433,8 +1155,6 @@ if mode == "Dashboard":
     # ---------- 2025 OVERVIEW ----------
     with tab1:
         st.subheader("2025 Overview")
-
-        # (RELOADER BUTTON REMOVED AS REQUESTED)
 
         ctx = load_context_summary()
         scr = load_by_screen()
@@ -1478,18 +1198,16 @@ if mode == "Dashboard":
                 })
                 comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
                 comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
+                comp["Group"] = "All"   # <-- fix: single stacked bar anchor
 
-                color_scale = alt.Scale(
-                    domain=["Clean","Controversial","Other"],
-                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
-                )
+                color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
 
                 chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
                     x=alt.X("sum(share):Q", stack="normalize",
                             axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
-                    y=alt.Y("o:O", title=None, axis=None),
-                    color=alt.Color("classification:N", scale=color_scale,
-                                    legend=alt.Legend(orient="top", title=None)),
+                    y=alt.Y("Group:N", title=None, axis=None),
+                    color=alt.Color("classification:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
                     tooltip=[alt.Tooltip("classification:N"),
                              alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
                 ).properties(height=120)
@@ -1553,7 +1271,7 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in cont_disp.columns:
                     cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+                grid(cont_disp)
         with s2:
             st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
             spot = load_spotlight()
@@ -1567,7 +1285,7 @@ if mode == "Dashboard":
                 })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
                 if "Share of AUM (%)" in clean_disp.columns:
                     clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-                    st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+                grid(clean_disp)
 
         gap(8)
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
@@ -1610,30 +1328,24 @@ if mode == "Dashboard":
         if default_sort:
             df_f = df_f.sort_values(by=default_sort, ascending=False)
 
-        df_view = df_f
+        df_view = df_f.copy()
         for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
             if c in df_view.columns:
                 df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-        st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+        grid(df_view)
 
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            "Download filtered rows (CSV)",
-            data=csv_bytes,
-            file_name="holdings_explorer_filtered.csv",
-            mime="text/csv",
-        )
+        st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
 
     # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         render_change_since_2017()
 
-    # ---------------- Tradeoff Scenarios ----------------
+    # ---------- TRADEOFF SCENARIOS ----------
     with tab3:
         render_tradeoffs()
 
 else:
-
     # ---------------- REPORT ----------------
     st.subheader("Project Overview (Short Report)")
     st.markdown(
@@ -1652,7 +1364,7 @@ Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, a
     )
 
 # =========================
-# FOOTER (replacement)
+# FOOTER
 # =========================
 gap(28)
 divider()
