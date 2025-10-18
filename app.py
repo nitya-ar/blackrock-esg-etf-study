@@ -757,227 +757,276 @@ def render_change_since_2017():
     else:
         grid(movers_view)
 
-
 # -------------------------
-# RENDERER FOR TAB 3 (Tradeoff Scenarios — simple & robust)
+# RENDERER FOR TAB 3
 # -------------------------
 def render_tradeoffs():
+    """
+    Clean and simple Tradeoff Scenarios:
+      1) Pick ETF + (optional) weighting + scenario
+      2) KPIs: %Clean (baseline vs scenario), Cost (TE or Active Share), Return Δ if available
+      3) Frontier scatter: Clean% vs cost (points = scenarios) for the chosen ETF/weight
+      4) Composition bars: Baseline vs Scenario (Clean / Controversial / Other)
+      5) Movers tables: Top adds & drops for the selected scenario
+      6) Download filtered scenario metrics
+    Robust to messy column names via fuzzy mapping.
+    """
     import pandas as pd
     import numpy as np
     import altair as alt
     import streamlit as st
 
-    st.subheader("Tradeoff Scenarios")
-    st.caption("Cleaner portfolios vs cost: pick an ETF, choose a scenario, and see cleanliness, tracking error (or active share), composition changes, and the biggest movers.")
+    # ---------- Helpers ----------
+    def pick_col(df: pd.DataFrame, *cands, required=False):
+        """Return first column whose lower-cased name contains any of the candidate substrings."""
+        cl = [c.lower() for c in df.columns]
+        for cand in cands:
+            cnd = cand.lower()
+            for i, name in enumerate(cl):
+                if cnd in name:
+                    return df.columns[i]
+        if required:
+            raise KeyError(f"Missing required column like: {', '.join(cands)}")
+        return None
+
+    def num(v):
+        try:
+            return float(pd.to_numeric(v, errors="coerce"))
+        except Exception:
+            return None
+
+    def get1(df: pd.DataFrame, col: str):
+        if df is None or df.empty or not col or col not in df.columns:
+            return None
+        s = pd.to_numeric(df[col], errors="coerce")
+        return float(s.iloc[0]) if len(s) else None
 
     # ---------- Load data ----------
     try:
         metr = load_scenario_metrics()
     except Exception as e:
-        st.error(f"Couldn't load scenario_portfolio_metrics.csv: {e}")
+        st.error(f"Could not load 'scenario_portfolio_metrics.csv': {e}")
         return
+
     try:
         deltas = load_scenario_deltas()
     except Exception:
         deltas = pd.DataFrame()
 
-    # ---------- Column mapper ----------
-    def pick_col(df, *cands, required=False):
-        cols_lower = {c.lower(): c for c in df.columns}
-        for cand in cands:
-            for c in df.columns:
-                if cand in c.lower():
-                    return c
-        if required:
-            raise KeyError(f"Missing required column like: {cands}")
-        return None
-
-    # Map METR columns (robust / fuzzy)
+    # ---------- Map required columns (fuzzy/forgiving) ----------
     try:
-        scen_col   = pick_col(metr, "scenario", "scenario_id", "scenario_name", required=True)
-        etf_col    = pick_col(metr, "etf_ticker", "etf", "fund", "ticker", required=True)
-        wt_col     = pick_col(metr, "weighting", "scope", "mode", required=False)
-        # Base/Scenario cleanliness
-        pcb_col    = pick_col(metr, "pct_clean_base", required=True)
-        pcs_col    = pick_col(metr, "pct_clean_scn",  required=True)
-        # Optional comps
-        kcb_col    = pick_col(metr, "pct_contro_base")
-        kcs_col    = pick_col(metr, "pct_contro_scn")
-        othb_col   = pick_col(metr, "pct_other_base")
-        oths_col   = pick_col(metr, "pct_other_scn")
-        # Cost axis: prefer TE, else Active Share
-        te_col     = pick_col(metr, "tracking_error", "te")
-        as_col     = pick_col(metr, "active_share", "as")
-        # Optional perf
-        ret_col    = pick_col(metr, "ann_return", "return")
-        vol_col    = pick_col(metr, "ann_vol", "vol")
-        lab_col    = pick_col(metr, "label", "pretty_name")
+        scen_col  = pick_col(metr, "scenario", "scenario_id", "scenario_name", required=True)
+        etf_col   = pick_col(metr, "etf_ticker", "etf", "fund", "ticker", required=True)
+        wt_col    = pick_col(metr, "weighting", "scope", "mode", required=False)  # optional
+        # cleanliness (baseline vs scenario)
+        pcb_col   = pick_col(metr, "pct_clean_base", "clean_base", "base_clean", required=True)
+        pcs_col   = pick_col(metr, "pct_clean_scn",  "clean_scn",  "scenario_clean", required=True)
+        # composition (optional)
+        kcb_col   = pick_col(metr, "pct_contro_base", "contro_base")
+        kcs_col   = pick_col(metr, "pct_contro_scn",  "contro_scn")
+        othb_col  = pick_col(metr, "pct_other_base",  "other_base")
+        oths_col  = pick_col(metr, "pct_other_scn",   "other_scn")
+        # cost axis: prefer TE else Active Share
+        te_col    = pick_col(metr, "tracking_error", "te")
+        as_col    = pick_col(metr, "active_share",   "as")
+        # optional performance
+        ret_col   = pick_col(metr, "ann_return", "annual_return", "return")
+        vol_col   = pick_col(metr, "ann_vol", "annual_vol", "volatility", "vol")
+        # optional label
+        lab_col   = pick_col(metr, "label", "pretty_name", "scenario_label")
     except KeyError as e:
-        st.error(f"scenario_portfolio_metrics.csv is missing required fields: {e}")
-        with st.expander("See columns we found"):
+        st.error(f"'scenario_portfolio_metrics.csv' is missing required fields: {e}")
+        with st.expander("Columns found in scenario_portfolio_metrics.csv"):
             st.code(list(metr.columns))
         return
 
-    # Canonical view for UI simplicity
+    # Normalize
     m = metr.copy()
     m["_scenario"] = m[scen_col].astype(str)
     m["_etf"]      = m[etf_col].astype(str)
-    m["_wt"]       = (m[wt_col].astype(str) if wt_col in m.columns else "AUM")
-    m["_label"]    = np.where(lab_col in m.columns, m[lab_col].astype(str), m["_scenario"])
+    m["_wt"]       = m[wt_col].astype(str) if (wt_col and wt_col in m.columns) else "AUM"
 
-    # ensure numeric
-    for c in [pcb_col, pcs_col, kcb_col, kcs_col, othb_col, oths_col, te_col, as_col, ret_col, vol_col]:
+    # SAFE label assignment (no np.where to avoid KeyError evaluation)
+    if lab_col and lab_col in m.columns:
+        m["_label"] = m[lab_col].astype(str)
+    else:
+        m["_label"] = m["_scenario"]
+
+    # Ensure numeric for numeric columns
+    num_cols = [pcb_col, pcs_col, kcb_col, kcs_col, othb_col, oths_col, te_col, as_col, ret_col, vol_col]
+    for c in num_cols:
         if c and c in m.columns:
             m[c] = pd.to_numeric(m[c], errors="coerce")
 
-    # ---------- Controls ----------
-    c1, c2, c3 = st.columns([0.32, 0.28, 0.40])
-    with c1:
+    # ---------- UI Controls ----------
+    st.subheader("Tradeoff Scenarios")
+    st.caption("Pick an ETF and a scenario to see cleanliness vs cost (tracking error or active share), composition changes, and the biggest movers.")
+
+    top1, top2, top3 = st.columns([0.33, 0.28, 0.39])
+    with top1:
         etfs = sorted(m["_etf"].dropna().unique().tolist())
         if not etfs:
-            st.error("No ETFs found in scenario_portfolio_metrics.csv.")
+            st.error("No ETFs in scenario metrics.")
             return
         sel_etf = st.selectbox("ETF", etfs, index=0)
 
-    with c2:
-        wts = sorted(m["_wt"].dropna().unique().tolist())
-        sel_wt = st.selectbox("Weighting", wts if wts else ["AUM"], index=0,
-                              help="If weighting is absent in the file, this control has no effect.")
+    with top2:
+        wt_opts = sorted(m["_wt"].dropna().unique().tolist())
+        sel_wt = st.selectbox("Weighting", wt_opts if wt_opts else ["AUM"], index=0,
+                              help="If the file has no weighting column, this control is inert.")
 
-    # Filter to current ETF + weighting (if present)
-    cur = m[(m["_etf"] == sel_etf) & (m["_wt"] == sel_wt)] if wt_col in m.columns else m[m["_etf"] == sel_etf]
+    # Filter to ETF + weighting (if weighted)
+    cur = m[(m["_etf"] == sel_etf) & (m["_wt"] == sel_wt)] if (wt_col and wt_col in m.columns) else m[m["_etf"] == sel_etf]
     if cur.empty:
-        st.warning("No rows for this ETF/weighting in scenario_portfolio_metrics.csv.")
+        st.warning("No rows for this ETF/weighting.")
         return
 
-    # Baseline first, then others
-    scen_order = (
-        [s for s in cur["_scenario"] if s.lower().startswith("baseline")] +
-        [s for s in cur["_scenario"] if not s.lower().startswith("baseline")]
-    )
-    scen_labels = {r["_scenario"]: r["_label"] for _, r in cur.iterrows()}
-    scen_disp = [scen_labels.get(s, s) for s in scen_order]
+    # Scenario dropdown: Baseline first, then others
+    scen_order = ([s for s in cur["_scenario"] if s.lower().startswith("baseline")] +
+                  [s for s in cur["_scenario"] if not s.lower().startswith("baseline")])
+    labels_by_id = {r["_scenario"]: r["_label"] for _, r in cur.iterrows()}
+    display_list = [labels_by_id.get(s, s) for s in scen_order]
 
-    with c3:
-        sel_scen = st.selectbox("Scenario", scen_disp, index=0)
-        # map back to internal scenario id
-        # (in rare case of duplicate labels, choose the first)
-        inv = {v: k for k, v in scen_labels.items()}
-        sel_scen_id = inv.get(sel_scen, scen_order[0])
+    with top3:
+        sel_label = st.selectbox("Scenario", display_list, index=0)
+        # map label back to scenario id
+        inv_map = {}
+        for sid, lab in labels_by_id.items():
+            inv_map.setdefault(lab, sid)
+        sel_scen = inv_map.get(sel_label, scen_order[0] if scen_order else sel_label)
 
-    # Current rows
     base = cur[cur["_scenario"].str.lower().str.startswith("baseline")].copy().head(1)
-    pick = cur[cur["_scenario"] == sel_scen_id].copy().head(1)
+    pick = cur[cur["_scenario"] == sel_scen].copy().head(1)
 
-    # ---------- KPIs ----------
-    def g(df, col):
-        if df is None or df.empty or not col or col not in df.columns:
-            return None
-        v = pd.to_numeric(df[col], errors="coerce")
-        return float(v.iloc[0]) if len(v) else None
+    # ---------- KPI Row ----------
+    cost_col = te_col if te_col else (as_col if as_col else None)
+    cost_name = "Tracking Error (ann. %)" if te_col else ("Active Share (%)" if as_col else "Cost (N/A)")
 
-    b_clean, s_clean = g(base, pcb_col), g(pick, pcs_col)
-    # Cost: prefer TE, fallback to Active Share
-    b_cost = g(base, te_col) if te_col else (g(base, as_col) if as_col else None)
-    s_cost = g(pick, te_col) if te_col else (g(pick, as_col) if as_col else None)
-    cost_label = "Tracking Error (ann. %)" if te_col else ("Active Share (%)" if as_col else "Cost (N/A)")
+    b_clean, s_clean = get1(base, pcb_col), get1(pick, pcs_col)
+    b_cost,  s_cost  = get1(base, cost_col), get1(pick, cost_col)
     d_ret = None
-    if ret_col:
-        b_ret, s_ret = g(base, ret_col), g(pick, ret_col)
-        d_ret = (None if (b_ret is None or s_ret is None) else (s_ret - b_ret))
+    if ret_col and (ret_col in cur.columns):
+        b_ret, s_ret = get1(base, ret_col), get1(pick, ret_col)
+        d_ret = None if (b_ret is None or s_ret is None) else (s_ret - b_ret)
 
-    k1, k2, k3, k4 = st.columns([0.22, 0.22, 0.22, 0.22])
+    k1, k2, k3, k4 = st.columns(4)
+
     with k1:
-        st.markdown('<div class="kpi kpi-neutral"><div class="label">% Clean (Baseline)</div>'
-                    f'<div class="value">{f"{b_clean:.1f}%" if b_clean is not None else "–"}</div></div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            f"""<div class="kpi kpi-neutral">
+                   <div class="label">% Clean (Baseline)</div>
+                   <div class="value">{f"{b_clean:.1f}%" if b_clean is not None else "–"}</div>
+                </div>""",
+            unsafe_allow_html=True,
+        )
     with k2:
         tone = "green" if (s_clean or 0) >= (b_clean or 0) else "red"
-        st.markdown(f'<div class="kpi kpi-{tone}"><div class="label">% Clean (Scenario)</div>'
-                    f'<div class="value">{f"{s_clean:.1f}%" if s_clean is not None else "–"}</div></div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            f"""<div class="kpi kpi-{tone}">
+                   <div class="label">% Clean (Scenario)</div>
+                   <div class="value">{f"{s_clean:.1f}%" if s_clean is not None else "–"}</div>
+                </div>""",
+            unsafe_allow_html=True,
+        )
     with k3:
-        st.markdown('<div class="kpi kpi-neutral"><div class="label">{}</div>'
-                    '<div class="value">{}</div></div>'.format(
-                        cost_label, f"{(s_cost or 0):.2f}%" if s_cost is not None else "–"),
-                    unsafe_allow_html=True)
+        st.markdown(
+            f"""<div class="kpi kpi-neutral">
+                   <div class="label">{cost_name}</div>
+                   <div class="value">{f"{s_cost:.2f}%" if s_cost is not None else "–"}</div>
+                </div>""",
+            unsafe_allow_html=True,
+        )
     with k4:
         if d_ret is None:
-            st.markdown('<div class="kpi kpi-neutral"><div class="label">Return Δ (ann.)</div>'
-                        '<div class="value">–</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f"""<div class="kpi kpi-neutral">
+                       <div class="label">Return Δ (ann.)</div>
+                       <div class="value">–</div>
+                    </div>""",
+                unsafe_allow_html=True,
+            )
         else:
             tone = "green" if d_ret >= 0 else "red"
-            st.markdown(f'<div class="kpi kpi-{tone}"><div class="label">Return Δ (ann.)</div>'
-                        f'<div class="value">{d_ret:+.2f}%</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f"""<div class="kpi kpi-{tone}">
+                       <div class="label">Return Δ (ann.)</div>
+                       <div class="value">{d_ret:+.2f}%</div>
+                    </div>""",
+                unsafe_allow_html=True,
+            )
 
-    # ---------- Charts row ----------
-    left, right = st.columns([0.50, 0.50])
+    # ---------- Charts Row ----------
+    left, right = st.columns([0.5, 0.5])
 
-    # Frontier (x = TE or AS, y = % Clean)
+    # Frontier: Clean% vs cost (points = scenarios)
     with left:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — % Clean vs {}</div>'.format(
-            "Tracking Error" if te_col else ("Active Share" if as_col else "Cost (N/A)")
-        ), unsafe_allow_html=True)
-        cx = te_col or as_col
-        if cx:
-            pts = cur[[scen_col, pcs_col, cx, "_label"]].dropna()
+        st.markdown(
+            f'<div class="chart-title" style="margin-bottom:6px;">Frontier — % Clean vs {"TE" if te_col else ("Active Share" if as_col else "Cost")}</div>',
+            unsafe_allow_html=True,
+        )
+        cx = cost_col
+        if cx and cx in cur.columns:
+            pts = cur[[scen_col, pcs_col, cx, "_label"]].dropna().rename(
+                columns={pcs_col: "CleanPct", cx: "Cost", scen_col: "Scenario"}
+            )
             if not pts.empty:
-                pts = pts.rename(columns={pcs_col: "CleanPct", cx: "Cost", scen_col:"Scenario"})
                 ch = alt.Chart(pts).mark_circle(size=120).encode(
                     x=alt.X("Cost:Q", title=("Tracking Error (ann. %)" if te_col else "Active Share (%)")),
                     y=alt.Y("CleanPct:Q", title="% Clean"),
-                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"),
-                             alt.Tooltip("Cost:Q", title=("TE" if te_col else "AS"), format=".2f")],
-                    color=alt.Color("Scenario:N", legend=None)
+                    tooltip=[
+                        alt.Tooltip("Scenario:N"),
+                        alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"),
+                        alt.Tooltip("Cost:Q", title=("TE" if te_col else "AS"), format=".2f"),
+                    ],
+                    color=alt.Color("Scenario:N", legend=None),
                 ).properties(height=320)
-                sel = pts[pts["Scenario"] == sel_scen_id]
-                if not sel.empty:
-                    ch = ch + alt.Chart(sel).mark_point(size=300, shape="diamond").encode(x="Cost:Q", y="CleanPct:Q")
+
+                sel_pt = pts[pts["Scenario"] == sel_scen]
+                if not sel_pt.empty:
+                    ch = ch + alt.Chart(sel_pt).mark_point(size=300, shape="diamond").encode(
+                        x="Cost:Q", y="CleanPct:Q"
+                    )
                 st.altair_chart(ch, use_container_width=True)
             else:
-                st.info("No scenario points with both cleanliness and cost for this selection.")
+                st.info("No scenario points with both Clean% and cost for this selection.")
         else:
-            st.info("No Tracking Error or Active Share found in the metrics file.")
+            st.info("Cost fields (TE/Active Share) are not present in metrics.")
 
-    # Composition bars — Baseline vs Scenario
+    # Composition bars: Baseline vs Scenario
     with right:
-        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Scenario</div>',
-                    unsafe_allow_html=True)
-        # Use whatever composition fields we have; if missing, just show Clean vs Other
+        st.markdown(
+            '<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Scenario</div>',
+            unsafe_allow_html=True,
+        )
         rows = []
-        def add_row(view, label, val):
-            if val is not None:
-                rows.append({"View": view, "Category": label, "Value": float(val)})
+        rows.append({"View": "Baseline", "Category": "Clean", "Value": get1(base, pcb_col)})
+        if kcb_col: rows.append({"View": "Baseline", "Category": "Controversial", "Value": get1(base, kcb_col)})
+        if othb_col: rows.append({"View": "Baseline", "Category": "Other", "Value": get1(base, othb_col)})
 
-        # Baseline
-        add_row("Baseline", "Clean", g(base, pcb_col))
-        add_row("Baseline", "Controversial", g(base, kcb_col))
-        add_row("Baseline", "Other", g(base, othb_col))
-        # Scenario
-        add_row("Scenario", "Clean", g(pick, pcs_col))
-        add_row("Scenario", "Controversial", g(pick, kcs_col))
-        add_row("Scenario", "Other", g(pick, oths_col))
+        rows.append({"View": "Scenario", "Category": "Clean", "Value": get1(pick, pcs_col)})
+        if kcs_col: rows.append({"View": "Scenario", "Category": "Controversial", "Value": get1(pick, kcs_col)})
+        if oths_col: rows.append({"View": "Scenario", "Category": "Other", "Value": get1(pick, oths_col)})
 
-        comp = pd.DataFrame(rows)
+        comp = pd.DataFrame([r for r in rows if r["Value"] is not None])
         if comp.empty:
-            st.info("Composition fields are not available in metrics.")
+            st.info("Composition fields not available in metrics file.")
         else:
-            # If controversial/other missing, collapse to Clean vs Other
-            have_k = comp["Category"].eq("Controversial").any()
-            have_o = comp["Category"].eq("Other").any()
-            if not have_k and not have_o:
-                comp = comp.copy()
-                comp["Category"] = comp["Category"].replace({"Clean":"Clean"})
-                comp2 = comp.groupby(["View","Category"], as_index=False)["Value"].sum()
-                comp = comp2
             chart = alt.Chart(comp).mark_bar(opacity=0.92).encode(
-                x=alt.X("View:N", title=None, sort=["Baseline","Scenario"]),
+                x=alt.X("View:N", title=None, sort=["Baseline", "Scenario"]),
                 y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
-                color=alt.Color("Category:N", title=None,
-                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
-                                                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"),
-                         alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
+                color=alt.Color(
+                    "Category:N",
+                    title=None,
+                    scale=alt.Scale(
+                        domain=["Clean", "Controversial", "Other"],
+                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]],
+                    ),
+                ),
+                tooltip=[
+                    alt.Tooltip("View:N"),
+                    alt.Tooltip("Category:N"),
+                    alt.Tooltip("Value:Q", title="Share (%)", format=".1f"),
+                ],
             ).properties(height=320)
             st.altair_chart(chart, use_container_width=True)
 
@@ -985,57 +1034,67 @@ def render_tradeoffs():
     st.markdown('<div class="chart-title" style="margin:10px 0 6px;">Top movers — scenario vs baseline</div>',
                 unsafe_allow_html=True)
 
-    def map_deltas_schema(df):
+    def map_deltas(df: pd.DataFrame):
         if df is None or df.empty:
             return None
         try:
-            s_col  = pick_col(df, "scenario", "scenario_id", "scenario_name", required=True)
-            e_col  = pick_col(df, "etf_ticker", "etf", "fund", "ticker", required=True)
-            aw_col = pick_col(df, "active_weight", "delta_weight", "dw", "active_wt", required=True)
+            s_col = pick_col(df, "scenario", "scenario_id", "scenario_name", required=True)
+            e_col = pick_col(df, "etf_ticker", "etf", "fund", "ticker", required=True)
+            aw    = pick_col(df, "active_weight", "delta_weight", "dw", "active_wt", required=True)
         except KeyError:
             return None
-        t_col  = pick_col(df, "ticker", "company_ticker")
-        n_col  = pick_col(df, "holding_name", "name", "security")
-        c_col  = pick_col(df, "classification", "class")
-        sec_col= pick_col(df, "sector")
-        reg_col= pick_col(df, "region")
-        bw_col = pick_col(df, "baseline_weight")
-        sw_col = pick_col(df, "scenario_weight")
-        return dict(s=s_col, e=e_col, aw=aw_col, t=t_col, n=n_col, c=c_col, sec=sec_col, reg=reg_col,
-                    bw=bw_col, sw=sw_col)
+        return dict(
+            scen=s_col,
+            etf=e_col,
+            aw=aw,
+            tick=pick_col(df, "ticker", "company_ticker"),
+            name=pick_col(df, "holding_name", "name", "security"),
+            klass=pick_col(df, "classification", "class"),
+            sector=pick_col(df, "sector"),
+            region=pick_col(df, "region"),
+            bw=pick_col(df, "baseline_weight"),
+            sw=pick_col(df, "scenario_weight"),
+        )
 
-    md = map_deltas_schema(deltas)
+    md = map_deltas(deltas)
     if not md:
         st.caption("No position deltas available (required fields missing).")
     else:
-        d = deltas[(deltas[md["e"]].astype(str) == sel_etf) & (deltas[md["s"]].astype(str) == sel_scen_id)].copy()
+        d = deltas[
+            (deltas[md["etf"]].astype(str) == sel_etf)
+            & (deltas[md["scen"]].astype(str) == sel_scen)
+        ].copy()
+
         if d.empty:
             st.info("No movers for this selection.")
         else:
             d[md["aw"]] = pd.to_numeric(d[md["aw"]], errors="coerce")
-            adds = d.sort_values(md["aw"], ascending=False).head(10)
+            adds  = d.sort_values(md["aw"], ascending=False).head(10)
             drops = d.sort_values(md["aw"], ascending=True).head(10)
 
             def fmt(df):
-                def col(c): return df[c] if (c and c in df.columns) else pd.Series(["—"]*len(df), index=df.index)
+                def col(c):
+                    return df[c] if (c and c in df.columns) else pd.Series(["—"] * len(df), index=df.index)
                 out = pd.DataFrame({
-                    "Ticker": col(md["t"]).astype(str),
-                    "Holding": col(md["n"]).astype(str),
-                    "Class": col(md["c"]).astype(str),
-                    "Sector": col(md["sec"]).astype(str) if md["sec"] else "—",
-                    "Region": col(md["reg"]).astype(str) if md["reg"] else "—",
+                    "Ticker": col(md["tick"]).astype(str),
+                    "Holding": col(md["name"]).astype(str),
+                    "Class": col(md["klass"]).astype(str),
+                    "Sector": col(md["sector"]).astype(str) if md["sector"] else "—",
+                    "Region": col(md["region"]).astype(str) if md["region"] else "—",
                     "Baseline Wt (%)": pd.to_numeric(col(md["bw"]), errors="coerce").map(lambda v: f"{(v or 0):.3f}") if md["bw"] else "—",
                     "Scenario Wt (%)": pd.to_numeric(col(md["sw"]), errors="coerce").map(lambda v: f"{(v or 0):.3f}") if md["sw"] else "—",
-                    "Active Δ (pp)":   pd.to_numeric(col(md["aw"]), errors="coerce").map(lambda v: f"{(v or 0):+.3f}")
+                    "Active Δ (pp)":   pd.to_numeric(col(md["aw"]), errors="coerce").map(lambda v: f"{(v or 0):+.3f}"),
                 })
                 return out
 
-            a1, a2 = st.columns([0.5, 0.5])
+            a1, a2 = st.columns(2)
             with a1:
-                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
+                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>',
+                            unsafe_allow_html=True)
                 st.dataframe(fmt(adds), use_container_width=True, hide_index=True)
             with a2:
-                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
+                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>',
+                            unsafe_allow_html=True)
                 st.dataframe(fmt(drops), use_container_width=True, hide_index=True)
 
     # ---------- Download ----------
@@ -1043,8 +1102,9 @@ def render_tradeoffs():
         "Download scenario metrics (current ETF/weight)",
         data=cur.to_csv(index=False).encode("utf-8"),
         file_name=f"scenario_metrics_{sel_etf}_{sel_wt}.csv",
-        mime="text/csv"
+        mime="text/csv",
     )
+
 
 
 
