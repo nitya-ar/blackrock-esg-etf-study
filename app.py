@@ -36,6 +36,30 @@ COLORS = {
     "other": "#768397",
 }
 
+# ---- Altair dark theme to soften axes/grid/labels/legend ----
+def _alt_dark():
+    return {
+        "config": {
+            "background": "transparent",
+            "view": {"fill": "transparent", "stroke": COLORS["border"]},
+            "axis": {
+                "labelColor": COLORS["text"],
+                "titleColor": COLORS["muted"],
+                "domainColor": "#2A2F36",
+                "tickColor":   "#2A2F36",
+                "grid": True,
+                "gridColor": "#222831",
+                "gridOpacity": 0.45
+            },
+            "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
+            "title": {"color": COLORS["text"]},
+        }
+    }
+
+alt.themes.register("custom_dark", _alt_dark)
+alt.themes.enable("custom_dark")
+
+
 # =========================
 # STYLES
 # =========================
@@ -135,7 +159,7 @@ section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
 [data-testid="stToolbar"] {{ background: transparent !important; }}
 
 /* ---------- CARDS / CHART WRAPPERS ---------- */
-.blx-card, .kpi, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {{
+.blx-card, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {{
   background: var(--card) !important;
   border: 1px solid var(--border) !important;
 }}
@@ -271,6 +295,57 @@ label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
 *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
 *::-webkit-scrollbar-thumb {{ background: #2A2F36; border-radius: 8px; }}
 *::-webkit-scrollbar-track {{ background: #0B0D12; }}
+
+/* ===== EXTRA OVERRIDES ===== */
+
+/* Tables (no white rows/headers) */
+.stDataFrame, .stTable {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+.stTable thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
+.stTable tbody tr td {{ background: #0E1015 !important; color: var(--text) !important; border-top: 1px solid #12151C !important; }}
+.stDataFrame [role="grid"] {{ background: var(--card) !important; }}
+.stDataFrame [role="row"] {{ background: #0E1015 !important; }}
+.stDataFrame [role="columnheader"] {{ background: #0C0E13 !important; color: var(--text) !important; }}
+.stDataFrame [role="gridcell"] {{ background: #0E1015 !important; color: var(--text) !important; }}
+
+/* Selects / Inputs: remove white outline; use red focus */
+[data-baseweb="select"] {{ border: 1px solid var(--border) !important; border-radius: 10px; background: var(--card) !important; }}
+[data-baseweb="select"] * {{ color: var(--text) !important; background: transparent !important; }}
+[data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
+[data-baseweb="select"]:focus-within {{ border-color: var(--contro) !important; box-shadow: 0 0 0 2px rgba(198,60,65,0.28) !important; }}
+[data-baseweb="input"]:focus-within  {{ border-color: var(--contro) !important; box-shadow: 0 0 0 2px rgba(198,60,65,0.28) !important; }}
+[data-baseweb="select"] div[role="combobox"] {{ box-shadow: none !important; }}
+
+/* Dropdown list (popover) */
+[data-baseweb="menu"] {{ background: #0F1116 !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+[data-baseweb="menu"] li {{ color: var(--text) !important; }}
+[data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
+
+/* Segmented controls (Dashboard/Report, AUM/EW, etc.) */
+div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+  background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+}}
+div[data-testid="stSegmentedControl"] button[role="tab"] {{
+  background: transparent !important; color: var(--muted) !important; border: none !important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
+  background: #12151C !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--border);
+}}
+div[data-testid="stSegmentedControl"] button[aria-selected="false"] {{
+  background: transparent !important; color: var(--muted) !important;
+}}
+div[data-testid="stSegmentedControl"] button[disabled] {{
+  background: #0E1015 !important; color: #6E7785 !important; opacity: .65 !important;
+}}
+
+/* Slider (Start Year): use red instead of blue */
+[data-baseweb="slider"] [role="slider"] {{
+  background: var(--contro) !important; box-shadow: 0 0 0 3px rgba(198,60,65,0.25) !important;
+}}
+[data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--contro) !important; }} /* filled track */
+[data-baseweb="slider"] div[role="presentation"]       {{ background: #1C2027 !important; }}  /* unfilled track */
+
+/* Vega container — no white behind charts */
+.vega-embed, .stAltairChart {{ background: transparent !important; }}
 
 
     </style>
