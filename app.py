@@ -174,6 +174,9 @@ st.markdown(
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{ background: #0E1015 !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
+        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
+      }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
         background: #0E1015 !important; color: var(--text) !important;
       }}
@@ -213,13 +216,15 @@ st.markdown(
       [data-baseweb="checkbox"] label, [data-baseweb="radio"] label {{ color: var(--text) !important; }}
       [data-baseweb="checkbox"] input, [data-baseweb="radio"] input {{ accent-color: var(--primary) !important; }}
 
-      /* ---------- SEGMENTED CONTROL ---------- */
+      /* ---------- SEGMENTED CONTROL (base) ---------- */
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
         background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
       }}
-      div[data-testid="stSegmentedControl"] button[role="tab"] {{ background: transparent !important; color: var(--text) !important; border: none !important; }}
+      div[data-testid="stSegmentedControl"] button[role="tab"] {{
+        background: transparent !important; color: var(--muted) !important; border: 1px solid transparent !important;
+      }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-        background: #12151C !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--border);
+        background: #12151C !important; color: var(--text) !important; border: 1px solid #C63C41 !important; box-shadow: inset 0 0 0 1px #C63C41 !important;
       }}
 
       /* ---------- TABS ---------- */
@@ -248,77 +253,80 @@ st.markdown(
       /* Vega container — no white behind charts */
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
 
+      /* =========================================================
+         ADD-ONS FOR YOUR THREE REQUESTS
+         ========================================================= */
 
-      /* =========================
-         YOUR 3 REQUESTED CHANGES
-         ========================= */
-
-      /* 1) Table header row subtle grey (no white) */
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-      div[data-testid="stDataframe"] thead tr th,
+      /* 1) TABLE HEADER ROW — very subtle grey, no white */
+      /* st.dataframe */
+      [data-testid="stDataframe"] thead,
+      [data-testid="stDataframe"] thead tr,
+      [data-testid="stDataframe"] thead th {{
+        background: #11151C !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid #2A2F36 !important;
+      }}
+      /* st.table */
+      :where([data-testid="stTable"]) thead,
+      :where([data-testid="stTable"]) thead tr,
       :where([data-testid="stTable"]) thead th {{
-        background: #11151C !important;  /* subtle grey */
+        background: #11151C !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid #2A2F36 !important;
+      }}
+      /* st.data_editor header (glide-data-grid uses role=columnheader) */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
+        background: #11151C !important;
         color: var(--text) !important;
         border-bottom: 1px solid #2A2F36 !important;
       }}
 
-      /* 2) Filters / selects / text inputs: red outline (incl. Any/All & Choose options) */
+      /* 2) SELECTS / INPUTS — red outline on focus, no white interiors */
       [data-baseweb="select"],
       [data-baseweb="input"] {{
-        border: 1px solid var(--contro) !important;  /* red */
+        border: 1px solid var(--border) !important;
         border-radius: 10px !important;
-        background: var(--card) !important;
+        background: #0F1116 !important;
       }}
-      /* remove inner default borders */
-      [data-baseweb="select"] [role="combobox"],
-      [data-baseweb="input"] > div {{ border: none !important; background: transparent !important; }}
+      /* kill the inner white containers some themes add */
+      [data-baseweb="select"] *, [data-baseweb="input"] * {{
+        background: transparent !important;
+      }}
       /* focus ring */
       [data-baseweb="select"]:focus-within,
       [data-baseweb="input"]:focus-within {{
-        border-color: var(--contro) !important;
+        border-color: #C63C41 !important;
         box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
+      /* placeholder color */
+      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; }}
+
+      /* 3) SEGMENTED CONTROLS — no white for unselected/disabled */
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      /* unselected */
+      div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="false"] {{
+        background: transparent !important; color: var(--muted) !important; border: 1px solid transparent !important;
+      }}
+      /* selected */
+      div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"] {{
+        background: #12151C !important; color: var(--text) !important; border: 1px solid #C63C41 !important; box-shadow: inset 0 0 0 1px #C63C41 !important;
+      }}
+      /* disabled (e.g., Equal-weighted when AUM-weighted selected) */
+      div[data-testid="stSegmentedControl"] button[role="tab"][disabled] {{
+        background: #151923 !important; color: #7E8A98 !important; border-color: #2A2F36 !important; opacity: 1 !important;
       }}
 
-      /* 3) Segmented pills & top tabs: dark bg, active = red (no white chips) */
-      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background: #0E1015 !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-      }}
-      div[data-testid="stSegmentedControl"] button[role="tab"] {{
-        background: transparent !important;
-        color: var(--muted) !important;
-        border: 1px solid transparent !important;
-      }}
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-        background: #12151C !important;
-        color: var(--text) !important;
-        border: 1px solid var(--contro) !important;           /* red edge */
-        box-shadow: inset 0 0 0 1px var(--contro) !important; /* subtle red ring */
-      }}
-      div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
-        outline: none !important;
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-      }}
-      .stTabs [data-baseweb="tab-list"] {{
-        background: #0E1015 !important;
-        border-bottom: 1px solid var(--border) !important;
-      }}
-      .stTabs [data-baseweb="tab"] {{
-        color: var(--muted) !important;
-        background: transparent !important;
-        border-color: transparent !important;
-        box-shadow: none !important;
-      }}
-      .stTabs [data-baseweb="tab"][aria-selected="true"] {{
-        color: var(--text) !important;
-        border-color: transparent !important;
-        box-shadow: inset 0 -2px 0 var(--contro) !important;  /* red underline */
-      }}
+      /* Top-level tabs “Dashboard / Report” — remove any white fill */
+      .stTabs [data-baseweb="tab-list"] {{ background: #0E1015 !important; border-bottom: 1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ background: transparent !important; color: var(--muted) !important; border-color: transparent !important; box-shadow: none !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color: var(--text) !important; border-color: transparent !important; box-shadow: inset 0 -2px 0 #C63C41 !important; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
