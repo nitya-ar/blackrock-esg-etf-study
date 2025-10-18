@@ -174,9 +174,6 @@ st.markdown(
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{ background: #0E1015 !important; }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
-      }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
         background: #0E1015 !important; color: var(--text) !important;
       }}
@@ -251,91 +248,74 @@ st.markdown(
       /* Vega container — no white behind charts */
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
 
-      /* ====== 1) Tables — header row tint (ETF, Ticker, etc.) ====== */
-div[data-testid="stDataframe"] thead tr th,
-:where([data-testid="stTable"]) thead th {{
-  background: #11151C !important;
-  color: var(--text) !important;
-  border-bottom: 1px solid #2A2F36 !important;
-}}
 
-/* ====== 2) Inputs (Select / MultiSelect / Text Input) — no white outline ====== */
-/* Base border */
-[data-baseweb="select"],
-[data-baseweb="input"] {{
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  background: var(--card) !important;
-}}
-/* Remove inner white borders some themes inject */
-[data-baseweb="select"] [role="combobox"],
-[data-baseweb="input"] > div {{
-  border: none !important;
-  background: transparent !important;
-}}
-/* Focus ring in RED */
-[data-baseweb="select"]:focus-within,
-[data-baseweb="input"]:focus-within {{
-  border-color: #C63C41 !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-}}
-/* Placeholder + label color stays muted */
-[data-baseweb="input"] input::placeholder {{
-  color: var(--muted) !important;
-}}
+      /* =========================
+         YOUR 3 REQUESTED CHANGES
+         ========================= */
 
-/* ====== 3) Segmented controls (“ETF Choose options”, “AUM-weighted / Equal-weighted”) ====== */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background: #0E1015 !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-/* Unselected tabs */
-div[data-testid="stSegmentedControl"] button[role="tab"] {{
-  background: transparent !important;
-  color: var(--muted) !important;
-  border: 1px solid transparent !important;
-}}
-/* Selected tab = RED border + subtle inner ring */
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-  background: #12151C !important;
-  color: var(--text) !important;
-  border: 1px solid #C63C41 !important;
-  box-shadow: inset 0 0 0 1px #C63C41 !important;
-}}
-/* Keyboard focus */
-div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-}}
+      /* 1) Table header row subtle grey (no white) */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      div[data-testid="stDataframe"] thead tr th,
+      :where([data-testid="stTable"]) thead th {{
+        background: #11151C !important;  /* subtle grey */
+        color: var(--text) !important;
+        border-bottom: 1px solid #2A2F36 !important;
+      }}
 
-/* ====== 4) Top tabs (“Dashboard / Report”) — remove white, use RED active ====== */
-.stTabs [data-baseweb="tab-list"] {{
-  background: #0E1015 !important;
-  border-bottom: 1px solid var(--border) !important;
-}}
-.stTabs [data-baseweb="tab"] {{
-  color: var(--muted) !important;
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-}}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {{
-  color: var(--text) !important;
-  border-color: transparent !important;
-  box-shadow: inset 0 -2px 0 #C63C41 !important;
-}}
+      /* 2) Filters / selects / text inputs: red outline (incl. Any/All & Choose options) */
+      [data-baseweb="select"],
+      [data-baseweb="input"] {{
+        border: 1px solid var(--contro) !important;  /* red */
+        border-radius: 10px !important;
+        background: var(--card) !important;
+      }}
+      /* remove inner default borders */
+      [data-baseweb="select"] [role="combobox"],
+      [data-baseweb="input"] > div {{ border: none !important; background: transparent !important; }}
+      /* focus ring */
+      [data-baseweb="select"]:focus-within,
+      [data-baseweb="input"]:focus-within {{
+        border-color: var(--contro) !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
 
-/* ====== 5) Data editor (st.data_editor) header row too, for good measure ====== */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-  background: #11151C !important;
-  color: var(--text) !important;
-  border-bottom: 1px solid #2A2F36 !important;
-}}
-
+      /* 3) Segmented pills & top tabs: dark bg, active = red (no white chips) */
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background: #0E1015 !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"] {{
+        background: transparent !important;
+        color: var(--muted) !important;
+        border: 1px solid transparent !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
+        background: #12151C !important;
+        color: var(--text) !important;
+        border: 1px solid var(--contro) !important;           /* red edge */
+        box-shadow: inset 0 0 0 1px var(--contro) !important; /* subtle red ring */
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
+      .stTabs [data-baseweb="tab-list"] {{
+        background: #0E1015 !important;
+        border-bottom: 1px solid var(--border) !important;
+      }}
+      .stTabs [data-baseweb="tab"] {{
+        color: var(--muted) !important;
+        background: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+      }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        color: var(--text) !important;
+        border-color: transparent !important;
+        box-shadow: inset 0 -2px 0 var(--contro) !important;  /* red underline */
+      }}
     </style>
-
-
     """,
     unsafe_allow_html=True,
 )
