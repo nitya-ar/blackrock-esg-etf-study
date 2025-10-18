@@ -762,386 +762,329 @@ def render_change_since_2017():
 # RENDERER FOR TAB 3
 # -------------------------
 def render_tradeoffs():
-    import re
+    import pandas as pd
 
     st.subheader("Tradeoff Scenarios")
     st.caption("Pick an ETF, choose a scenario, and inspect cleanliness vs tracking error, composition changes, and the biggest movers.")
 
-    # ===== Load data (Analysis 3) =====
+    # ---------- Load data ----------
     try:
-        metr   = load_scenario_metrics()          # scenario_portfolio_metrics.csv
-        deltas = load_scenario_deltas()           # scenario_position_deltas.csv
+        metr = load_scenario_metrics()
     except Exception as e:
-        st.error(f"Could not load scenario metrics/deltas: {e}")
-        st.stop()
+        st.error(f"Could not load scenario_portfolio_metrics.csv: {e}")
+        return
 
-    # Optional enrichers (best-effort)
     try:
-        prog = load_scenario_progress()
+        deltas = load_scenario_deltas()
     except Exception:
-        prog = pd.DataFrame()
-    try:
-        _ = load_universe_2025_xlsx()  # not strictly needed here
-    except Exception:
-        pass
+        deltas = pd.DataFrame()
 
-    # ===== Utilities =====
-    def _pick(df, *keys):
-        if df is None or df.empty:
-            return None
-        keys = [k.lower() for k in keys]
+    # ---------- Helpers ----------
+    def _cols(df): 
+        return [str(c) for c in df.columns]
+
+    def _find(df, *tokens):
+        """Return first column whose lowercase name contains ALL tokens."""
+        toks = [t.lower() for t in tokens if t]
         for c in df.columns:
-            lc = c.lower()
-            if any(k in lc for k in keys):
+            nm = str(c).lower()
+            if all(t in nm for t in toks):
                 return c
         return None
 
-    # ===== Robust schema resolver (with UI mapper fallback) =====
-    def resolve_metric_cols_or_map(df: pd.DataFrame):
-        st.markdown("##### Data health")
-        st.code(f"scenario_portfolio_metrics.csv columns:\n{list(df.columns)}", language="text")
+    def _best_of(df, candidates):
+        """Pick first existing column among names or token-tuples."""
+        for cand in candidates:
+            if isinstance(cand, (list, tuple)):
+                got = _find(df, *cand)
+                if got:
+                    return got
+            else:
+                # exact or case-insensitive exact
+                if cand in df.columns:
+                    return cand
+                low = [c for c in df.columns if str(c).lower() == str(cand).lower()]
+                if low:
+                    return low[0]
+        return None
 
-        ALIASES = {
-            "scenario": [r"^scenario$", r"^scenario_?id$", r"^scenario_?name$", r"^name$", r"^case$", r"^whatif$"],
-            "etf_ticker": [r"^etf(_|)ticker$", r"^etf$", r"^fund$", r"^ticker$", r"^symbol$", r"^product$"],
-            "weighting": [r"^weighting$", r"^weight(_|)mode$", r"^mode$", r"^agg(_|)mode$", r"^aum$|^ew$"],
-            "pct_clean": [r"^pct(_|)clean$", r"^clean(_|)pct$", r"^cleanliness$", r"^purity$", r"^net(_|)clean(_|)pct$", r"^clean(_|)share$", r"^clean\d*(_|)pct$", r"^%?clean$"],
-            "tracking_error": [r"^tracking(_|)error$", r"^te(_|)ann(_|)pct$", r"^te$", r"^te(_|)pct$", r"^trackingerrorbps$", r"^te_bps$"],
-            "pct_controversial": [r"^pct(_|)controversial$", r"^contro(_|)pct$", r"^controversial$"],
-            "pct_other": [r"^pct(_|)other$", r"^other(_|)pct$", r"^other$"],
-            "ann_return": [r"^ann(_|)return$", r"^return$", r"^ret(_|)ann$", r"^annual(_|)return$"],
-            "ann_vol": [r"^ann(_|)vol$", r"^volatility$", r"^stdev$", r"^sigma$"],
-        }
+    # ---------- Auto-guesses ----------
+    scen_col_guess   = _best_of(metr, [["scenario_id"], ["scenario"], "Scenario"])
+    etf_col_guess    = _best_of(metr, [["etf_ticker"], ["etf"], "ETF"])
+    wgt_col_guess    = _best_of(metr, [["weighting","mode"], ["weighting"], "weighting"])
+    label_col_guess  = _best_of(metr, [["label","name"], "label", "name"])
 
-        def find_by_alias(target_key):
-            import re as _re
-            pats = ALIASES.get(target_key, [])
-            for p in pats:
-                rx = _re.compile(p, _re.I)
-                for c in df.columns:
-                    if rx.search(c):
-                        return c
-            return None
+    # composition (pair or single)
+    clean_base_guess = _best_of(metr, [["pct","clean","base"], "pct_clean_base", ["clean","base"]])
+    clean_scn_guess  = _best_of(metr, [["pct","clean","scn"],  "pct_clean_scn",  ["clean","scn"]])
+    clean_single     = _best_of(metr, [["pct","clean"], "pct_clean", "clean_pct", "clean"])
 
-        scen = find_by_alias("scenario")
-        etf  = find_by_alias("etf_ticker")
-        wgt  = find_by_alias("weighting")
-        cln  = find_by_alias("pct_clean")
-        te   = find_by_alias("tracking_error")
-        ctr  = find_by_alias("pct_controversial")
-        oth  = find_by_alias("pct_other")
-        retC = find_by_alias("ann_return")
-        volC = find_by_alias("ann_vol")
+    ctr_base_guess   = _best_of(metr, [["pct","contro","base"], "pct_contro_base"])
+    ctr_scn_guess    = _best_of(metr, [["pct","contro","scn"],  "pct_contro_scn"])
+    oth_base_guess   = _best_of(metr, [["pct","other","base"],  "pct_other_base"])
+    oth_scn_guess    = _best_of(metr, [["pct","other","scn"],   "pct_other_scn"])
 
-        def ensure_pct(colname):
-            if not colname or colname not in df.columns:
-                return
-            s = pd.to_numeric(df[colname], errors="coerce")
-            if s.dropna().between(0, 1).mean() > 0.7:
-                df[colname] = s * 100.0
+    te_col_guess     = _best_of(metr, [["tracking","error"], "tracking_error", "TE"])
+    ret_col_guess    = _best_of(metr, [["ann","return"], "ann_return", "return"])
+    vol_col_guess    = _best_of(metr, [["ann","vol"],    "ann_vol",    "vol"])
 
-        for c in [cln, te, ctr, oth, retC, volC]:
-            ensure_pct(c)
+    # ---------- Persisted schema map (user can override once) ----------
+    schema_key = "trade_schema_map"
+    if schema_key not in st.session_state:
+        st.session_state[schema_key] = dict(
+            scenario=scen_col_guess,
+            etf_ticker=etf_col_guess,
+            weighting=wgt_col_guess,
+            label=label_col_guess,
+            pct_clean_base=clean_base_guess or clean_single,
+            pct_clean_scn=clean_scn_guess  or clean_single,
+            pct_contro_base=ctr_base_guess,
+            pct_contro_scn=ctr_scn_guess,
+            pct_other_base=oth_base_guess,
+            pct_other_scn=oth_scn_guess,
+            tracking_error=te_col_guess,
+            ann_return=ret_col_guess,
+            ann_vol=vol_col_guess,
+        )
 
-        required = {"scenario": scen, "etf_ticker": etf, "weighting": wgt, "pct_clean": cln, "tracking_error": te}
-        if any(v is None for v in required.values()):
-            st.warning("Some required fields are unmapped. Use the mapper below to tell the app which columns to use.")
+    M = st.session_state[schema_key]
 
-            if "tradeoffs_schema_map" not in st.session_state:
-                st.session_state.tradeoffs_schema_map = {
-                    "scenario": scen, "etf_ticker": etf, "weighting": wgt,
-                    "pct_clean": cln, "tracking_error": te,
-                    "pct_controversial": ctr, "pct_other": oth,
-                    "ann_return": retC, "ann_vol": volC,
-                }
+    # ---------- Data health + schema mapper ----------
+    st.markdown("**Data health**")
+    st.code(f"scenario_portfolio_metrics.csv  columns:\n{_cols(metr)}", language="text")
 
-            with st.expander("Schema Mapper", expanded=True):
-                cols = list(df.columns)
-                m = st.session_state.tradeoffs_schema_map
-                st.write("Pick a column for each field (only the first five are required):")
-                m["scenario"]         = st.selectbox("scenario", cols, index=(cols.index(m["scenario"]) if m["scenario"] in cols else 0))
-                m["etf_ticker"]       = st.selectbox("etf_ticker", cols, index=(cols.index(m["etf_ticker"]) if m["etf_ticker"] in cols else 0))
-                m["weighting"]        = st.selectbox("weighting", cols, index=(cols.index(m["weighting"]) if m["weighting"] in cols else 0))
-                m["pct_clean"]        = st.selectbox("pct_clean", cols, index=(cols.index(m["pct_clean"]) if m["pct_clean"] in cols else 0))
-                m["tracking_error"]   = st.selectbox("tracking_error", cols, index=(cols.index(m["tracking_error"]) if m["tracking_error"] in cols else 0))
-                m["pct_controversial"]= st.selectbox("pct_controversial (optional)", ["(none)"]+cols, index=0)
-                m["pct_other"]        = st.selectbox("pct_other (optional)", ["(none)"]+cols, index=0)
-                m["ann_return"]       = st.selectbox("ann_return (optional)", ["(none)"]+cols, index=0)
-                m["ann_vol"]          = st.selectbox("ann_vol (optional)", ["(none)"]+cols, index=0)
+    required = ["scenario","etf_ticker","weighting","pct_clean_base","pct_clean_scn","tracking_error"]
+    missing  = [k for k in required if not M.get(k)]
 
-                if st.button("Use this mapping", type="primary"):
-                    st.success("Mapping saved. Rerendering…")
+    with st.expander("Schema Mapper", expanded=bool(missing)):
+        all_opts = ["(none)"] + _cols(metr)
 
-            m = st.session_state.tradeoffs_schema_map
-            scen = m["scenario"]; etf = m["etf_ticker"]; wgt = m["weighting"]; cln = m["pct_clean"]; te = m["tracking_error"]
-            ctr  = None if m.get("pct_controversial") == "(none)" else m.get("pct_controversial")
-            oth  = None if m.get("pct_other") == "(none)" else m.get("pct_other")
-            retC = None if m.get("ann_return") == "(none)" else m.get("ann_return")
-            volC = None if m.get("ann_vol") == "(none)" else m.get("ann_vol")
+        def choose(label, key):
+            cur = M.get(key) if (M.get(key) in metr.columns) else "(none)"
+            sel = st.selectbox(label, all_opts, index=all_opts.index(cur) if cur in all_opts else 0, key=f"map_{key}")
+            M[key] = None if sel == "(none)" else sel
 
-            for c in [cln, te, ctr, oth, retC, volC]:
-                ensure_pct(c)
+        # required
+        choose("scenario", "scenario")
+        choose("etf_ticker", "etf_ticker")
+        choose("weighting", "weighting")
+        choose("pct_clean_base", "pct_clean_base")
+        choose("pct_clean_scn",  "pct_clean_scn")
+        choose("tracking_error", "tracking_error")
+        # optional
+        choose("pct_controversial_base (optional)", "pct_contro_base")
+        choose("pct_controversial_scn (optional)",  "pct_contro_scn")
+        choose("pct_other_base (optional)",         "pct_other_base")
+        choose("pct_other_scn (optional)",          "pct_other_scn")
+        choose("ann_return (optional)",             "ann_return")
+        choose("ann_vol (optional)",                "ann_vol")
+        choose("label (optional)",                  "label")
 
-            if any(x is None for x in [scen, etf, wgt, cln, te]):
-                st.error(
-                    "Still missing required fields after mapping. Please ensure you’ve selected columns for:\n"
-                    "`scenario`, `etf_ticker`, `weighting`, `pct_clean`, `tracking_error`."
-                )
-                st.stop()
+        if st.button("Use this mapping"):
+            st.success("Mapping saved.")
+            st.session_state[schema_key] = M
 
-        return dict(scen=scen, etf=etf, weight=wgt, clean=cln, te=te, ctr=ctr, oth=oth, ret=retC, vol=volC)
-
-    # ===== Resolve columns and normalize scenarios/labels =====
-    col = resolve_metric_cols_or_map(metr)
-    scen_col   = col["scen"]
-    etf_col    = col["etf"]
-    weight_col = col["weight"]
-    clean_col  = col["clean"]
-    te_col     = col["te"]
-    ctr_col    = col["ctr"]
-    oth_col    = col["oth"]
-    ret_col    = col["ret"]
-    vol_col    = col["vol"]
-
-    metr = metr.copy()
-
-    def _norm_scen(s: str) -> str:
-        s = str(s or "")
-        return "Baseline" if s.lower().startswith("baseline") else s
-
-    def _pretty_name(s: str) -> str:
-        s = str(s or "")
-        if s.lower().startswith("baseline"):
-            return "Baseline"
-        import re as _re
-        s = _re.sub(r"^\w+_", "", s)
-        s = _re.sub(r"_\d{8}t?\d{6,}$", "", s, flags=_re.I)
-        return (s.replace("_", " ").strip().title() or "Scenario")
-
-    metr["_scen"]  = metr[scen_col].map(_norm_scen)
-    metr["_label"] = metr[scen_col].map(_pretty_name)
-
-    # ===== Controls =====
-    topL, topM, topR = st.columns([0.34, 0.34, 0.32])
-
-    with topL:
-        etfs = sorted(metr[etf_col].dropna().astype(str).unique().tolist())
-        sel_etf = st.selectbox("ETF", etfs, index=0 if etfs else None)
-
-    with topM:
-        wopts = sorted(metr[weight_col].dropna().astype(str).unique().tolist())
-        default_idx = wopts.index("AUM") if "AUM" in wopts else 0
-        sel_weight = st.selectbox("Weighting", wopts, index=default_idx, help="AUM = bigger funds count more; EW = each ETF counts the same.")
-
-    mview = metr[(metr[etf_col].astype(str).eq(sel_etf)) & (metr[weight_col].astype(str).eq(sel_weight))].copy()
-    if mview.empty:
-        st.info("No scenario rows for this ETF + weighting selection.")
+    # after mapping, ensure we have requireds
+    still_missing = [k for k in required if not M.get(k)]
+    if still_missing:
+        st.warning(f"Missing required fields: {', '.join(still_missing)}")
         st.stop()
 
-    cards = (
-        mview[["_scen", "_label", clean_col, te_col, ctr_col, oth_col]]
-        .dropna(subset=[clean_col, te_col], how="any")
-        .drop_duplicates("_scen")
-        .sort_values([te_col, clean_col], ascending=[True, False])
-    )
-    scen_order = (["Baseline"] if "Baseline" in cards["_scen"].values else []) + \
-                 [s for s in cards["_scen"].values if s != "Baseline"]
-    label_map = dict(zip(cards["_scen"], cards["_label"]))
+    # ---------- Normalize to internal schema ----------
+    def _num(series): return pd.to_numeric(series, errors="coerce")
 
-    with topR:
-        sel_scenario = st.segmented_control(
-            "Scenario",
-            options=scen_order,
-            format_func=lambda s: label_map.get(s, s),
-            default=("Baseline" if "Baseline" in scen_order else (scen_order[0] if scen_order else None)),
-            help="Pick which portfolio to visualize. Baseline is the original ETF."
-        )
+    base_cols = {
+        "_scen":   metr[M["scenario"]].astype(str),
+        "_etf":    metr[M["etf_ticker"]].astype(str),
+        "_w":      metr[M["weighting"]].astype(str),
+        "_label":  (metr[M["label"]].astype(str) if M.get("label") else metr[M["scenario"]].astype(str)),
+        "clean_base": _num(metr[M["pct_clean_base"]]),
+        "clean_scn":  _num(metr[M["pct_clean_scn"]]),
+        "te":         _num(metr[M["tracking_error"]]),
+    }
+    df = pd.DataFrame(base_cols)
 
-    # Optional targets (use scenario_progress if available; else default to current)
-    tgtL, tgtR = st.columns([0.5, 0.5])
-    with tgtL:
-        cw_col = _pick(prog, "clean_target", "clean_overweight", "clean tilt", "target_clean")
-        cur_clean = float(pd.to_numeric(mview.loc[mview["_scen"] == sel_scenario, clean_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
-        if cw_col in (prog.columns if not prog.empty else []):
-            vals = sorted(pd.to_numeric(prog[cw_col], errors="coerce").dropna().unique().tolist())
-            t_clean = st.select_slider("Clean target (%)", options=vals, value=vals[0] if vals else cur_clean)
-        else:
-            t_clean = st.slider("Clean target (%)", min_value=0.0, max_value=max(30.0, cur_clean), value=cur_clean, step=0.1)
+    # optionals
+    if M.get("pct_contro_base"): df["contro_base"] = _num(metr[M["pct_contro_base"]])
+    else:                        df["contro_base"] = float("nan")
+    if M.get("pct_contro_scn"):  df["contro_scn"]  = _num(metr[M["pct_contro_scn"]])
+    else:                        df["contro_scn"]  = float("nan")
+    if M.get("pct_other_base"):  df["other_base"]  = _num(metr[M["pct_other_base"]])
+    else:                        df["other_base"]  = 100 - df["clean_base"] - df["contro_base"]
+    if M.get("pct_other_scn"):   df["other_scn"]   = _num(metr[M["pct_other_scn"]])
+    else:                        df["other_scn"]   = 100 - df["clean_scn"] - df["contro_scn"]
+    if M.get("ann_return"):      df["ret"]         = _num(metr[M["ann_return"]])
+    else:                        df["ret"]         = float("nan")
+    if M.get("ann_vol"):         df["vol"]         = _num(metr[M["ann_vol"]])
+    else:                        df["vol"]         = float("nan")
 
-    with tgtR:
-        tebud_col = _pick(prog, "te_budget", "te cap", "te_cap", "tracking_error_budget")
-        cur_te = float(pd.to_numeric(mview.loc[mview["_scen"] == sel_scenario, te_col], errors="coerce").head(1).fillna(0).iloc[0] if sel_scenario in mview["_scen"].values else 0.0)
-        if tebud_col in (prog.columns if not prog.empty else []):
-            vals = sorted(pd.to_numeric(prog[tebud_col], errors="coerce").dropna().unique().tolist())
-            t_te = st.select_slider("TE cap (ann. %)", options=vals, value=vals[0] if vals else max(cur_te, 0.5))
-        else:
-            t_te = st.slider("TE cap (ann. %)", min_value=0.0, max_value=max(2.0, cur_te*1.5 + 0.2), value=max(cur_te, 0.5), step=0.05)
+    for c in ["clean_base","clean_scn","contro_base","contro_scn","other_base","other_scn"]:
+        if c in df.columns:
+            df[c] = df[c].clip(lower=0, upper=100)
 
-    # ===== Row selection (nearest to targets if multiple points per scenario) =====
-    def _nearest_by_targets(df: pd.DataFrame):
-        df = df.copy()
-        df["_d"] = (
-            (pd.to_numeric(df[clean_col], errors="coerce") - float(t_clean))**2 +
-            (pd.to_numeric(df[te_col],    errors="coerce") - float(t_te))**2
-        )
-        return df.sort_values("_d").head(1)
+    # ---------- Controls ----------
+    cA, cB, cC = st.columns([0.34,0.33,0.33])
+    with cA:
+        etf_opts = sorted(df["_etf"].dropna().unique().tolist())
+        sel_etf = st.selectbox("ETF", etf_opts, index=0 if etf_opts else None)
+    with cB:
+        w_opts = sorted(df.loc[df["_etf"] == sel_etf, "_w"].dropna().unique().tolist())
+        sel_w  = st.selectbox("Weighting", w_opts, index=0 if w_opts else None)
+    with cC:
+        scen_opts = df.loc[(df["_etf"] == sel_etf) & (df["_w"] == sel_w), "_scen"].dropna().unique().tolist()
+        base_first = [s for s in scen_opts if "base" in str(s).lower() or "baseline" in str(s).lower()]
+        scen_order = base_first + [s for s in scen_opts if s not in base_first]
+        sel_scen = st.selectbox("Scenario", scen_order, index=0 if scen_order else None)
 
-    base = mview[mview["_scen"] == "Baseline"]
-    cur  = mview[mview["_scen"] == sel_scenario]
-    base = _nearest_by_targets(base) if len(base) > 1 else base
-    cur  = _nearest_by_targets(cur)  if len(cur)  > 1 else cur
+    view = df[(df["_etf"] == sel_etf) & (df["_w"] == sel_w)].copy()
+    if view.empty:
+        st.info("No rows match your selection.")
+        return
 
-    # ===== Extract numbers =====
-    def _get(df, col):
-        try:
-            return float(pd.to_numeric(df[col], errors="coerce").iloc[0])
-        except Exception:
-            return None
+    # select baseline and pick rows
+    is_base = view["_scen"].str.lower().str.contains("base", na=False)
+    base_row = (view[is_base].head(1) if is_base.any() else view.sort_values("te", na_position="last").head(1))
+    pick_row = view[view["_scen"] == sel_scen].head(1)
+    if pick_row.empty:
+        pick_row = base_row
 
-    b_clean = _get(base, clean_col); s_clean = _get(cur, clean_col)
-    b_ctr   = _get(base, ctr_col);   s_ctr   = _get(cur, ctr_col)
-    b_oth   = _get(base, oth_col);   s_oth   = _get(cur, oth_col)
-    b_te    = _get(base, te_col);    s_te    = _get(cur, te_col)
-    b_ret   = _get(base, ret_col) if ret_col else None
-    s_ret   = _get(cur,  ret_col) if ret_col else None
-    b_vol   = _get(base, vol_col) if vol_col else None
-    s_vol   = _get(cur,  vol_col) if vol_col else None
+    def _val(sr):
+        try: return float(pd.to_numeric(sr, errors="coerce").iloc[0])
+        except: return None
 
-    # ===== KPIs =====
-    k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
+    b_clean = _val(base_row["clean_base"]); s_clean = _val(pick_row["clean_scn"])
+    b_ctr   = _val(base_row["contro_base"]); s_ctr = _val(pick_row["contro_scn"])
+    b_oth   = _val(base_row["other_base"]);  s_oth = _val(pick_row["other_scn"])
+    b_te    = _val(base_row["te"]);          s_te  = _val(pick_row["te"])
+    b_ret   = _val(base_row["ret"]);         s_ret = _val(pick_row["ret"])
+    b_vol   = _val(base_row["vol"]);         s_vol = _val(pick_row["vol"])
+
+    # ---------- KPIs ----------
+    k1, k2, k3, k4 = st.columns([0.25,0.25,0.25,0.25])
     with k1:
-        kpi_card("% Clean", f"{(s_clean if s_clean is not None else 0):.1f}%")
+        kpi_card("% Clean (Baseline)", f"{b_clean:.1f}%" if b_clean is not None else "–", "neutral")
     with k2:
-        kpi_card("Tracking Error", f"{(s_te if s_te is not None else 0):.2f}%")
+        tone = "green" if (s_clean or 0) >= (b_clean or 0) else "red"
+        kpi_card("% Clean (Scenario)", f"{(s_clean if s_clean is not None else 0):.1f}%", tone)
     with k3:
-        d_ret = None if (s_ret is None or b_ret is None) else (s_ret - b_ret)
-        kpi_card("Return Δ (ann.)", "-" if d_ret is None else f"{d_ret:+.2f}%")
+        kpi_card("Tracking Error (ann.)", f"{(s_te if s_te is not None else 0):.2f}%", "red" if (s_te or 0) > 0.5 else "neutral")
     with k4:
-        d_vol = None if (s_vol is None or b_vol is None) else (s_vol - b_vol)
-        kpi_card("Volatility Δ (ann.)", "-" if d_vol is None else f"{d_vol:+.2f}%")
+        if b_ret is not None and s_ret is not None:
+            d_ret = s_ret - b_ret
+            kpi_card("Return Δ (ann.)", f"{d_ret:+.2f}%", "green" if d_ret >= 0 else "red")
+        else:
+            kpi_card("Return Δ (ann.)", "–", "neutral")
 
-    # ===== Frontier & Composition =====
-    left, right = st.columns([0.52, 0.48])
+    gap(6)
 
-    # Frontier: Clean% vs TE with target box
+    # ---------- Frontier: % Clean vs TE ----------
+    left, right = st.columns([0.50, 0.50])
     with left:
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Frontier — Clean% vs TE (points = scenarios)</div>', unsafe_allow_html=True)
-        dfp = cards.rename(columns={clean_col: "CleanPct", te_col: "TE", "_scen": "Scenario"}).copy()
-        if dfp.empty:
-            st.info("No scenarios with both Clean% and TE for this ETF/weight.")
+        pts = view[["_scen","_label","clean_scn","te"]].dropna().copy()
+        pts.rename(columns={"_scen":"Scenario","_label":"Label","clean_scn":"CleanPct","te":"TE"}, inplace=True)
+        if not pts.empty:
+            chart = alt.Chart(pts).mark_circle(size=120).encode(
+                x=alt.X("TE:Q", title="Tracking Error (ann. %)"),
+                y=alt.Y("CleanPct:Q", title="% Clean"),
+                tooltip=["Scenario:N", alt.Tooltip("CleanPct:Q", format=".1f"), alt.Tooltip("TE:Q", format=".2f")],
+                color=alt.Color("Scenario:N", legend=None)
+            ).properties(height=320)
+            # highlight selection
+            sel_df = pts[pts["Scenario"] == sel_scen]
+            if not sel_df.empty:
+                chart = chart + alt.Chart(sel_df).mark_point(size=300, shape="diamond").encode(x="TE:Q", y="CleanPct:Q")
+            # baseline marker
+            bsel = pts[pts["Scenario"].str.lower().str.contains("base")]
+            if not bsel.empty:
+                chart = chart + alt.Chart(bsel).mark_point(size=320, shape="square").encode(x="TE:Q", y="CleanPct:Q")
+            st.altair_chart(chart, use_container_width=True)
         else:
-            y_max = max(5.0, float(dfp["CleanPct"].max() or 0) * 1.1)
-            x_max = max(0.2, float(dfp["TE"].max() or 0) * 1.1)
+            st.info("No scenario points for this ETF/weighting selection.")
 
-            bg = pd.DataFrame({"x1": [0], "x2": [x_max], "y1": [t_clean], "y2": [y_max]})
-            rect = alt.Chart(bg).mark_rect(opacity=0.08, stroke=COLORS["primary"], strokeWidth=1).encode(
-                x=alt.X("x1:Q", scale=alt.Scale(domain=[0, x_max]), title="Tracking Error (ann. %)"),
-                x2="x2:Q",
-                y=alt.Y("y1:Q", scale=alt.Scale(domain=[0, y_max]), title="% Clean"),
-                y2="y2:Q",
-            )
-            tgt_clean = alt.Chart(pd.DataFrame({"y": [t_clean]})).mark_rule(strokeDash=[4, 4]).encode(
-                y=alt.Y("y:Q", scale=alt.Scale(domain=[0, y_max]))
-            )
-            tgt_te = alt.Chart(pd.DataFrame({"x": [t_te]})).mark_rule(strokeDash=[4, 4]).encode(
-                x=alt.X("x:Q", scale=alt.Scale(domain=[0, x_max]))
-            )
-            pts = alt.Chart(dfp).mark_circle(size=130).encode(
-                x=alt.X("TE:Q", scale=alt.Scale(domain=[0, x_max]), title="Tracking Error (ann. %)"),
-                y=alt.Y("CleanPct:Q", scale=alt.Scale(domain=[0, y_max]), title="% Clean"),
-                color=alt.condition(alt.datum.Scenario == sel_scenario, alt.value(COLORS["primary"]), alt.value("#8A93A6")),
-                tooltip=[
-                    "Scenario:N",
-                    alt.Tooltip("CleanPct:Q", title="% Clean", format=".1f"),
-                    alt.Tooltip("TE:Q", title="TE", format=".2f"),
-                ],
-            ).interactive()
-
-            st.altair_chart((rect + tgt_clean + tgt_te + pts).properties(height=360), use_container_width=True)
-
-    # Composition: Baseline vs Selected
+    # ---------- Composition bars ----------
     with right:
-        st.markdown(
-            f'<div class="chart-title" style="margin-bottom:6px;">Composition — {label_map.get("Baseline","Baseline")} vs {label_map.get(sel_scenario, sel_scenario)}</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Selected</div>', unsafe_allow_html=True)
         rows = []
-        if b_clean is not None: rows.append({"View": "Baseline", "Category": "Clean", "Value": b_clean})
-        if b_ctr   is not None: rows.append({"View": "Baseline", "Category": "Controversial", "Value": b_ctr})
-        if b_oth   is not None: rows.append({"View": "Baseline", "Category": "Other", "Value": b_oth})
-        if s_clean is not None: rows.append({"View": label_map.get(sel_scenario, sel_scenario), "Category": "Clean", "Value": s_clean})
-        if s_ctr   is not None: rows.append({"View": label_map.get(sel_scenario, sel_scenario), "Category": "Controversial", "Value": s_ctr})
-        if s_oth   is not None: rows.append({"View": label_map.get(sel_scenario, sel_scenario), "Category": "Other", "Value": s_oth})
+        if b_clean is not None: rows.append({"View":"Baseline","Category":"Clean","Value":b_clean})
+        if b_ctr   is not None: rows.append({"View":"Baseline","Category":"Controversial","Value":b_ctr})
+        if b_oth   is not None: rows.append({"View":"Baseline","Category":"Other","Value":b_oth})
+        if s_clean is not None: rows.append({"View":"Scenario","Category":"Clean","Value":s_clean})
+        if s_ctr   is not None: rows.append({"View":"Scenario","Category":"Controversial","Value":s_ctr})
+        if s_oth   is not None: rows.append({"View":"Scenario","Category":"Other","Value":s_oth})
         comp = pd.DataFrame(rows)
-
         if not comp.empty:
-            comp["View"] = pd.Categorical(comp["View"], categories=["Baseline", label_map.get(sel_scenario, sel_scenario)], ordered=True)
-            ch = alt.Chart(comp).mark_bar(opacity=0.92).encode(
+            comp["View"] = pd.Categorical(comp["View"], categories=["Baseline","Scenario"], ordered=True)
+            chart = alt.Chart(comp).mark_bar(opacity=0.92).encode(
                 x=alt.X("View:N", title=None),
                 y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
-                color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean", "Controversial", "Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
-                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".2f")],
+                color=alt.Color("Category:N", title=None, scale=alt.Scale(
+                    domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+                )),
+                tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
             ).properties(height=320)
-            st.altair_chart(ch, use_container_width=True)
+            st.altair_chart(chart, use_container_width=True)
         else:
-            st.caption("Composition not available for this selection.")
+            st.caption("Composition unavailable for this selection.")
 
-    # ===== Movers (adds / drops) =====
-    st.markdown('<div class="chart-title" style="margin-top:12px; margin-bottom:6px;">Top movers — scenario vs baseline</div>', unsafe_allow_html=True)
-    movers_ok = False
-    if deltas is not None and not deltas.empty:
-        d_etf  = _pick(deltas, "etf_ticker", "etf", "fund") or etf_col
-        d_scen = _pick(deltas, "scenario", "name")         or scen_col
-        aw_col = _pick(deltas, "active_weight", "delta_weight", "dw")
-        name_c = _pick(deltas, "name", "holding_name", "security")
-        tick_c = _pick(deltas, "ticker", "company_ticker")
-        cls_c  = _pick(deltas, "classification", "class")
-        sec_c  = _pick(deltas, "sector")
-        reg_c  = _pick(deltas, "region")
-        b_wt   = _pick(deltas, "baseline_weight")
-        s_wt   = _pick(deltas, "scenario_weight")
+    gap(8)
 
-        d = deltas[
-            (deltas[d_etf].astype(str).eq(sel_etf)) &
-            (deltas[d_scen].astype(str).eq(sel_scenario))
-        ].copy() if (d_etf in deltas.columns and d_scen in deltas.columns) else pd.DataFrame()
+    # ---------- Movers (optional; needs recognizable columns) ----------
+    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top movers — scenario vs baseline</div>', unsafe_allow_html=True)
+    if not deltas.empty:
+        d_etf   = _best_of(deltas, [["etf_ticker"], ["etf"], "ETF"])
+        d_scen  = _best_of(deltas, [["scenario_id"], ["scenario"], "Scenario"])
+        d_name  = _best_of(deltas, [["holding","name","security"], "holding_name","name"])
+        d_tick  = _best_of(deltas, [["ticker"], "ticker"])
+        d_class = _best_of(deltas, [["class","classification"], "classification"])
+        d_sect  = _best_of(deltas, [["sector"], "sector"])
+        d_reg   = _best_of(deltas, [["region"], "region"])
+        d_bw    = _best_of(deltas, [["baseline","weight"], ["base","weight"], "baseline_weight"])
+        d_sw    = _best_of(deltas, [["scenario","weight"], "scenario_weight"])
+        d_aw    = _best_of(deltas, [["active","weight"], ["delta","weight"], "active_weight","delta_weight"])
 
-        if not d.empty and aw_col in d.columns:
-            d[aw_col] = pd.to_numeric(d[aw_col], errors="coerce")
-            adds  = d.sort_values(aw_col, ascending=False).head(10)
-            drops = d.sort_values(aw_col, ascending=True).head(10)
+        if all([d_etf, d_scen, d_aw]):
+            curd = deltas[(deltas[d_etf].astype(str) == sel_etf) & (deltas[d_scen].astype(str) == sel_scen)].copy()
+            if not curd.empty:
+                curd[d_aw] = pd.to_numeric(curd[d_aw], errors="coerce")
+                adds  = curd.sort_values(d_aw, ascending=False).head(10)
+                drops = curd.sort_values(d_aw, ascending=True).head(10)
 
-            def _fmt(df):
-                return pd.DataFrame({
-                    "Ticker": df.get(tick_c, pd.Series(["—"] * len(df))).astype(str),
-                    "Holding": df.get(name_c, pd.Series(["—"] * len(df))).astype(str),
-                    "Class": df.get(cls_c, pd.Series(["—"] * len(df))).astype(str),
-                    "Sector": df.get(sec_c, pd.Series(["—"] * len(df))).astype(str) if sec_c in df.columns else "—",
-                    "Region": df.get(reg_c, pd.Series(["—"] * len(df))).astype(str) if reg_c in df.columns else "—",
-                    "Baseline Wt (%)": pd.to_numeric(df.get(b_wt, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
-                    "Scenario Wt (%)": pd.to_numeric(df.get(s_wt, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
-                    "Active Δ (pp)":   pd.to_numeric(df.get(aw_col, 0), errors="coerce").map(lambda v: f"{v:+.3f}"),
-                })
+                def _fmt(df_in):
+                    return pd.DataFrame({
+                        "Ticker":          df_in.get(d_tick, pd.Series(["—"]*len(df_in))),
+                        "Holding":         df_in.get(d_name, pd.Series(["—"]*len(df_in))),
+                        "Class":           df_in.get(d_class, pd.Series(["—"]*len(df_in))),
+                        "Sector":          df_in.get(d_sect,  pd.Series(["—"]*len(df_in))),
+                        "Region":          df_in.get(d_reg,   pd.Series(["—"]*len(df_in))),
+                        "Baseline Wt (%)": pd.to_numeric(df_in.get(d_bw, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
+                        "Scenario Wt (%)": pd.to_numeric(df_in.get(d_sw, 0), errors="coerce").map(lambda v: f"{v:.3f}"),
+                        "Active Δ (pp)":   pd.to_numeric(df_in.get(d_aw, 0), errors="coerce").map(lambda v: f"{v:+.3f}"),
+                    })
 
-            cL, cR = st.columns([0.5, 0.5])
-            with cL:
-                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
-                grid(_fmt(adds))
-            with cR:
-                st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
-                grid(_fmt(drops))
-            movers_ok = True
+                a1, a2 = st.columns([0.5,0.5])
+                with a1:
+                    st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Adds / Overweights</div>', unsafe_allow_html=True)
+                    st.dataframe(_fmt(adds), use_container_width=True, hide_index=True)
+                with a2:
+                    st.markdown('<div class="blx-muted" style="margin-bottom:4px;">Removals / Underweights</div>', unsafe_allow_html=True)
+                    st.dataframe(_fmt(drops), use_container_width=True, hide_index=True)
+            else:
+                st.info("No movers for this ETF/scenario.")
+        else:
+            st.caption("Position-deltas file is present but column names are unclear; skipping movers.")
+    else:
+        st.caption("No position-deltas file found; skipping movers.")
 
-    if not movers_ok:
-        st.info("No movers for this selection.")
+    gap(8)
 
-    # ===== Download filtered metrics =====
-    gap(6)
-    if not mview.empty:
+    # ---------- Download current slice ----------
+    cur_slice = view.copy()
+    if not cur_slice.empty:
         st.download_button(
             "Download scenario metrics (filtered)",
-            data=mview.to_csv(index=False).encode("utf-8"),
-            file_name=f"scenario_metrics_{sel_etf}_{sel_weight}.csv",
+            data=cur_slice.to_csv(index=False).encode("utf-8"),
+            file_name=f"scenario_metrics_{sel_etf}_{sel_w}.csv",
             mime="text/csv",
         )
 
