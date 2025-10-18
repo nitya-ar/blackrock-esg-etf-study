@@ -29,7 +29,7 @@ COLORS = {
     "card": "#0F1116",
     "border": "#1C2027",
     "text": "#E7EBF0",
-    "muted": "#97A2B0",
+    "muted": "#E7EBF0",
     "primary": "#00A3FF",
     "clean": "#0E8F66",
     "contro": "#C63C41",
