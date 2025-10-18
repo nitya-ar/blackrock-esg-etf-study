@@ -122,154 +122,152 @@ st.markdown(
       .footer-links a:hover {{ text-decoration: underline; }}
 
       /* ---------- GLOBAL TEXT & LINKS ---------- */
-* { color: var(--text); }
-a { color: #73B4FF !important; }
-a:hover { color: #A3CFFF !important; }
-
-/* ---------- APP CONTAINERS ---------- */
-section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
-  border: 0 !important;
-}
-[data-testid="stToolbar"] { background: transparent !important; }
-
-/* ---------- CARDS / CHART WRAPPERS ---------- */
-.blx-card, .kpi, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-}
-.vega-embed, .vega-embed * { background: transparent !important; }
-
-/* ---------- DATAFRAMES / TABLES ---------- */
-div[data-testid="stDataframe"] {
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-div[data-testid="stDataframe"] thead tr th {
-  background: #0C0E13 !important;
-  color: var(--text) !important;
-  border-bottom: 1px solid var(--border) !important;
-}
-div[data-testid="stDataframe"] tbody tr {
-  background: #0E1015 !important;
-  color: var(--text) !important;
-}
-div[data-testid="stDataframe"] ::-webkit-scrollbar-thumb {
-  background: #2A2F36 !important;
-  border-radius: 6px;
-}
-div[data-testid="stDataframe"] ::-webkit-scrollbar-track {
-  background: #0B0D12 !important;
-}
-
-/* ---------- INPUTS: SELECT / MULTISELECT / TEXT INPUT ---------- */
-[data-baseweb="select"], [data-baseweb="select"] * {
-  background-color: var(--card) !important;
-  color: var(--text) !important;
-}
-[data-baseweb="select"] { border: 1px solid var(--border) !important; border-radius: 10px; }
-[data-baseweb="select"] svg { fill: var(--muted) !important; }
-[data-baseweb="tag"] {
-  background: #10131A !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}
-[data-baseweb="input"] input, [data-baseweb="input"] textarea {
-  background: var(--card) !important;
-  color: var(--text) !important;
-}
-[data-baseweb="input"] { border: 1px solid var(--border) !important; border-radius: 10px; }
-
-/* Dropdown menu (the popover list) */
-[data-baseweb="menu"] {
-  background: #0F1116 !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-[data-baseweb="menu"] li { color: var(--text) !important; }
-[data-baseweb="menu"] li:hover { background: #12151C !important; }
-
-/* ---------- SLIDERS ---------- */
-[data-baseweb="slider"] { color: var(--text) !important; }
-[data-baseweb="slider"] > div { background: transparent !important; }
-[data-baseweb="slider"] [role="slider"] {
-  background: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(0,163,255,0.18) !important;
-}
-[data-baseweb="slider"] div[role="presentation"] { background: #1C2027 !important; } /* track */
-[data-baseweb="slider"] div[role="presentation"] > div { background: var(--primary) !important; } /* filled */
-
-/* ---------- CHECKBOX / RADIO ---------- */
-[data-baseweb="checkbox"] label, [data-baseweb="radio"] label { color: var(--text) !important; }
-[data-baseweb="checkbox"] input, [data-baseweb="radio"] input { accent-color: var(--primary) !important; }
-
-/* ---------- SEGMENTED CONTROL ---------- */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {
-  background: #0E1015 !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-div[data-testid="stSegmentedControl"] button[role="tab"] {
-  background: transparent !important;
-  color: var(--text) !important;
-  border: none !important;
-}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {
-  background: #12151C !important;
-  color: var(--text) !important;
-  box-shadow: inset 0 0 0 1px var(--border);
-}
-
-/* ---------- TABS ---------- */
-.stTabs [data-baseweb="tab-list"] {
-  background: #0E1015 !important;
-  border-bottom: 1px solid var(--border) !important;
-}
-.stTabs [data-baseweb="tab"] {
-  color: var(--muted) !important;
-  background: transparent !important;
-}
-.stTabs [data-baseweb="tab"][aria-selected="true"] {
-  color: var(--text) !important;
-  border-color: var(--primary) !important;
-}
-
-/* ---------- BUTTONS (incl. download) ---------- */
-.stDownloadButton > button, .stButton > button {
-  background: #12151C !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}
-.stDownloadButton > button:hover, .stButton > button:hover {
-  background: #151923 !important;
-  border-color: #2A2F36 !important;
-}
-
-/* ---------- TOOLTIP & LEGEND WRAPPERS ---------- */
-.has-tip::after {
-  background: #0B0D12 !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-}
-.vega-bindings, .vega-tooltip, .vega-tooltip * {
-  background: #0F1116 !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}
-
-/* ---------- FORMS / SMALL LABELS ---------- */
-label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {
-  color: var(--muted) !important;  /* Streamlit often uses these for captions/labels */
-}
-
-/* ---------- SCROLLBARS (GLOBAL) ---------- */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-thumb { background: #2A2F36; border-radius: 8px; }
-*::-webkit-scrollbar-track { background: #0B0D12; }
+      * { color: var(--text); }
+      a { color: #73B4FF !important; }
+      a:hover { color: #A3CFFF !important; }
+      
+      /* ---------- APP CONTAINERS ---------- */
+      section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+          background-color: var(--bg) !important;
+          color: var(--text) !important;
+          border: 0 !important;
+      }
+      [data-testid="stToolbar"] { background: transparent !important; }
+      
+      /* ---------- CARDS / CHART WRAPPERS ---------- */
+      .blx-card, .kpi, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {
+          background: var(--card) !important;
+          border: 1px solid var(--border) !important;
+      }
+      .vega-embed, .vega-embed * { background: transparent !important; }
+      
+      /* ---------- DATAFRAMES / TABLES ---------- */
+      div[data-testid="stDataframe"] {
+          background: var(--card) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 12px !important;
+      }
+      div[data-testid="stDataframe"] thead tr th {
+          background: #0C0E13 !important;
+          color: var(--text) !important;
+          border-bottom: 1px solid var(--border) !important;
+      }
+      div[data-testid="stDataframe"] tbody tr {
+          background: #0E1015 !important;
+          color: var(--text) !important;
+      }
+      div[data-testid="stDataframe"] ::-webkit-scrollbar-thumb {
+          background: #2A2F36 !important;
+          border-radius: 6px;
+      }
+      div[data-testid="stDataframe"] ::-webkit-scrollbar-track {
+          background: #0B0D12 !important;
+      }
+      /* ---------- INPUTS: SELECT / MULTISELECT / TEXT INPUT ---------- */
+      [data-baseweb="select"], [data-baseweb="select"] * {
+          background-color: var(--card) !important;
+          color: var(--text) !important;
+      }
+      [data-baseweb="select"] { border: 1px solid var(--border) !important; border-radius: 10px; }
+      [data-baseweb="select"] svg { fill: var(--muted) !important; }
+      [data-baseweb="tag"] {
+          background: #10131A !important;
+          color: var(--text) !important;
+          border: 1px solid var(--border) !important;
+      }
+      [data-baseweb="input"] input, [data-baseweb="input"] textarea {
+          background: var(--card) !important;
+          color: var(--text) !important;
+      }
+      [data-baseweb="input"] { border: 1px solid var(--border) !important; border-radius: 10px; }
+      
+      /* Dropdown menu (the popover list) */
+      [data-baseweb="menu"] {
+          background: #0F1116 !important;
+          color: var(--text) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 12px !important;
+      }
+      [data-baseweb="menu"] li { color: var(--text) !important; }
+      data-baseweb="menu"] li:hover { background: #12151C !important; }
+      
+      /* ---------- SLIDERS ---------- */
+      [data-baseweb="slider"] { color: var(--text) !important; }
+      [data-baseweb="slider"] > div { background: transparent !important; }
+      [data-baseweb="slider"] [role="slider"] {
+          background: var(--primary) !important;
+          box-shadow: 0 0 0 3px rgba(0,163,255,0.18) !important;
+      }
+      [data-baseweb="slider"] div[role="presentation"] { background: #1C2027 !important; } /* track */
+      [data-baseweb="slider"] div[role="presentation"] > div { background: var(--primary) !important; } /* filled */
+      
+      /* ---------- CHECKBOX / RADIO ---------- */
+      [data-baseweb="checkbox"] label, [data-baseweb="radio"] label { color: var(--text) !important; }
+      [data-baseweb="checkbox"] input, [data-baseweb="radio"] input { accent-color: var(--primary) !important; }
+      
+      /* ---------- SEGMENTED CONTROL ---------- */
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {
+          background: #0E1015 !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 12px !important;
+      }
+      div[data-testid="stSegmentedControl"] button[role="tab"] {
+          background: transparent !important;
+          color: var(--text) !important;
+          border: none !important;
+      }
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {
+          background: #12151C !important;
+          color: var(--text) !important;
+          box-shadow: inset 0 0 0 1px var(--border);
+      }
+      
+      /* ---------- TABS ---------- */
+      .stTabs [data-baseweb="tab-list"] {
+          background: #0E1015 !important;
+          border-bottom: 1px solid var(--border) !important;
+      }
+      .stTabs [data-baseweb="tab"] {
+          color: var(--muted) !important;
+          background: transparent !important;
+      }
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {
+          color: var(--text) !important;
+          border-color: var(--primary) !important;
+      }
+      
+      /* ---------- BUTTONS (incl. download) ---------- */
+      .stDownloadButton > button, .stButton > button {
+          background: #12151C !important;
+          color: var(--text) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 12px !important;
+      }
+      .stDownloadButton > button:hover, .stButton > button:hover {
+          background: #151923 !important;
+          border-color: #2A2F36 !important;
+      }
+      
+      /* ---------- TOOLTIP & LEGEND WRAPPERS ---------- */
+      .has-tip::after {
+          background: #0B0D12 !important;
+          color: var(--text) !important;
+          border: 1px solid var(--border) !important;
+      }
+      .vega-bindings, .vega-tooltip, .vega-tooltip * {
+          background: #0F1116 !important;
+          color: var(--text) !important;
+          border-color: var(--border) !important;
+      }
+      
+      /* ---------- FORMS / SMALL LABELS ---------- */
+      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {
+          color: var(--muted) !important;  /* Streamlit often uses these for captions/labels */
+      }
+      /* ---------- SCROLLBARS (GLOBAL) ---------- */
+      *::-webkit-scrollbar { width: 10px; height: 10px; }
+      *::-webkit-scrollbar-thumb { background: #2A2F36; border-radius: 8px; }
+      *::-webkit-scrollbar-track { background: #0B0D12; }
 
     </style>
     """,
