@@ -845,9 +845,6 @@ def render_change_since_2017():
         grid(movers_view)
 
 
-# -------------------------
-# RENDERER FOR TAB 3 (Tradeoff Scenarios)
-# -------------------------
 def render_tradeoffs():
     import numpy as np
     import pandas as pd
@@ -857,272 +854,382 @@ def render_tradeoffs():
     st.subheader("Tradeoff Scenarios")
     st.caption("Pick an ETF and compare three scenarios side-by-side: portfolio composition, performance, and tracking error. Baseline is highlighted.")
 
-    # ---------- Load data ----------
+    # ---------------------------
+    # Load data
+    # ---------------------------
     try:
-        metr = load_scenario_metrics()          # scenario_portfolio_metrics.csv
+        metr = load_scenario_metrics()
     except Exception as e:
-        st.error(f"Couldn't load scenario metrics: {e}")
+        st.error(f"Could not load scenario metrics: {e}")
         return
 
-    # Optional sources; we just use them if available
+    # Optional datasets (only used if present)
     try:
-        rets = load_returns_top_per_etf_2025()  # optional (may have ann_return / ann_vol by scenario/etf)
+        _rets = load_returns_top_per_etf_2025()
     except Exception:
-        rets = pd.DataFrame()
+        _rets = pd.DataFrame()
     try:
-        prog = load_scenario_progress()         # optional (for labels)
+        _univ = load_universe_2025_xlsx()
     except Exception:
-        prog = pd.DataFrame()
+        _univ = pd.DataFrame()
 
-    # ---------- Helpers ----------
-    def _pick(df, *candidates, default=None):
-        """Return the first column name that fuzzily matches any candidate tokens."""
-        if df is None or df.empty:
-            return None
-        cols = list(df.columns)
-        low = {c.lower(): c for c in cols}
-        for want in candidates:
-            w = want.lower()
-            # exact
-            if w in low: 
-                return low[w]
-            # fuzzy: contains all pieces split by spaces/underscores
-            tokens = [t for t in w.replace("_"," ").split() if t]
-            for c in cols:
-                lc = c.lower()
-                if all(t in lc for t in tokens):
-                    return c
-        return default
+    # ---------------------------
+    # Helpers
+    # ---------------------------
+    def _pick(df: pd.DataFrame, *keys):
+        """Fuzzy column picker by substring match (case-insensitive)."""
+        keys = [k.lower() for k in keys]
+        for c in df.columns:
+            cl = str(c).lower()
+            if any(k in cl for k in keys):
+                return c
+        return None
 
-    def _to_float(s, default=np.nan):
+    def _fmt_pct(x, digits=1, default="–"):
         try:
-            return float(pd.to_numeric(s, errors="coerce"))
-        except Exception:
+            return f"{float(x):.{digits}f}%"
+        except:
             return default
 
-    # ---------- Map required columns (be lenient) ----------
-    scen_col = _pick(metr, "scenario", "scenario_id", "name", default="scenario_id")
-    etf_col  = _pick(metr, "etf_ticker", "etf", "fund", default="etf")
-    # Your data uses "scope" as a kind of weighting selector in some files
-    weight_col = _pick(metr, "weighting", "weight_mode", "scope", "mode", default="scope")
+    # Colors (fallback if not defined globally)
+    _COL = {
+        "baseline": "#64B5FF",
+        "s1": "#00C389",
+        "s2": "#E16C6C",
+        "clean":  COLORS.get("clean",  "#0E8F66") if "COLORS" in globals() else "#0E8F66",
+        "contro": COLORS.get("contro", "#C63C41") if "COLORS" in globals() else "#C63C41",
+        "other":  COLORS.get("other",  "#768397") if "COLORS" in globals() else "#768397",
+        "text":   COLORS.get("text",   "#E7EBF0") if "COLORS" in globals() else "#E7EBF0",
+    }
 
-    # Composition columns — baseline vs scenario versions
-    clean_b = _pick(metr, "pct_clean_base", "clean_base", "base_clean")
-    ctr_b   = _pick(metr, "pct_contro_base", "contro_base", "base_contro", "pct_controv_base")
-    oth_b   = _pick(metr, "pct_other_base", "other_base", "base_other")
+    # ---------------------------
+    # Fuzzy schema mapping
+    # ---------------------------
+    scen_col    = _pick(metr, "scenario", "scenario_id", "name")
+    etf_col     = _pick(metr, "etf")
+    weight_col  = _pick(metr, "weighting", "scope", "mode")
+    te_col      = _pick(metr, "tracking_error", "te")
+    ret_col     = _pick(metr, "ann_return", "return")
+    vol_col     = _pick(metr, "ann_vol", "vol")
 
-    clean_s = _pick(metr, "pct_clean_scn", "pct_clean_scenario", "clean_scn", "clean_scenario")
-    ctr_s   = _pick(metr, "pct_contro_scn", "pct_controv_scn", "pct_controv_scenario", "contro_scn", "contro_scenario")
-    oth_s   = _pick(metr, "pct_other_scn", "other_scn", "other_scenario")
+    # Composition: baseline & scenario
+    clean_b_col = _pick(metr, "pct_clean_base", "clean_base")
+    ctr_b_col   = _pick(metr, "pct_contro_base", "contro_base")
+    oth_b_col   = _pick(metr, "pct_other_base", "other_base")
 
-    # Cost/perf columns (may be missing)
-    te_col  = _pick(metr, "tracking_error", "te", "ann_te")
-    ret_col = _pick(metr, "ann_return", "annual_return", "return")
-    vol_col = _pick(metr, "ann_vol", "annual_vol", "volatility")
-    lab_col = _pick(metr, "label", "scenario_label", default=None)
+    clean_s_col = _pick(metr, "pct_clean_scn", "clean_scn")
+    ctr_s_col   = _pick(metr, "pct_contro_scn", "contro_scn")
+    oth_s_col   = _pick(metr, "pct_other_scn", "other_scn")
 
-    # Quick sanity
-    essential = [scen_col, etf_col, weight_col, clean_b, clean_s]
-    if any(c is None for c in essential):
-        st.warning(
-            "This page needs at least these columns in **scenario_portfolio_metrics.csv**: "
-            "`scenario_id|scenario`, `etf|etf_ticker`, `scope|weighting`, "
-            "`pct_clean_base`, `pct_clean_scn`. "
-            "I printed what I found below so you can confirm."
+    required = [scen_col, etf_col, weight_col, te_col, clean_b_col, clean_s_col]
+    if any(c is None for c in required):
+        st.error(
+            "Your `scenario_portfolio_metrics.csv` is missing required fields.\n\n"
+            f"Needed (fuzzy): scenario, etf, weighting/scope, tracking_error, "
+            f"pct_clean_base, pct_clean_scn. Found columns: {list(metr.columns)}"
         )
-        st.code(f"Columns found: {list(metr.columns)}")
         return
 
-    # ---------- Controls ----------
-    etfs = sorted(metr[etf_col].dropna().astype(str).unique())
+    # Normalize a few keys for safer filtering
+    metr["_etf"]  = metr[etf_col].astype(str).str.strip()
+    metr["_w"]    = metr[weight_col].astype(str).str.strip().str.lower()
+    metr["_scen"] = metr[scen_col].astype(str).str.strip()
+
+    # ---------------------------
+    # Controls (ETF-aware weighting)
+    # ---------------------------
+    etfs = sorted(metr["_etf"].unique().tolist())
     sel_etf = st.selectbox("ETF", etfs, index=0)
 
-    # Show whatever weighting column provides (e.g., 'etf', 'aggregate', 'AUM', 'EW', etc.)
-    weights = sorted(metr[weight_col].dropna().astype(str).unique())
-    sel_w = st.selectbox("Weighting", weights, index=0, help="How scenarios were aggregated (source column: scope/weighting).")
+    w_opts = sorted(metr.loc[metr["_etf"] == sel_etf, "_w"].dropna().unique().tolist())
+    if not w_opts:
+        st.warning("No weighting values found for this ETF.")
+        return
 
-    # Scenarios available for the chosen ETF + weighting
-    cur = metr[(metr[etf_col].astype(str) == str(sel_etf)) & (metr[weight_col].astype(str) == str(sel_w))].copy()
-    if cur.empty:
+    def pretty_w(w):
+        m = {"aum": "AUM", "ew": "Equal-weighted", "etf": "etf", "aggregate":"aggregate"}
+        return m.get(w, w)
+
+    w_label_list = [pretty_w(w) for w in w_opts]
+    sel_w_label = st.selectbox("Weighting", w_label_list, index=0,
+                               help="Only weightings that exist for the selected ETF are shown.")
+    sel_w = {pretty_w(w): w for w in w_opts}[sel_w_label]
+
+    frame = metr[(metr["_etf"] == sel_etf) & (metr["_w"] == sel_w)].copy()
+    if frame.empty:
         st.warning("No rows for this ETF/weighting.")
         return
 
-    # Build a clean label per scenario
-    cur["_scenario"] = cur[scen_col].astype(str)
-    if lab_col in cur.columns and lab_col:
-        cur["_label"] = cur[lab_col].astype(str).fillna(cur["_scenario"])
-    else:
-        # Friendly fallback: parse "Baseline_YYYY..." to "Baseline" etc.
-        cur["_label"] = cur["_scenario"].str.replace(r"(_\d{8}T\d{6})$", "", regex=True)
+    # Identify Baseline vs non-baseline scenarios
+    def _is_baseline(s):
+        s = str(s).lower()
+        return s.startswith("baseline") or s == "baseline"
 
-    # Identify Baseline + pick two non-baseline peers
-    is_base = cur["_label"].str.lower().str.startswith("baseline")
-    base_df = cur[is_base].copy()
-    peer_df = cur[~is_base].copy()
+    frame["_is_base"] = frame["_scen"].apply(_is_baseline)
 
-    # Heuristic to pick two peers: prefer the most different (% clean delta or highest TE if TE exists)
-    def _delta_clean(row):
-        b = _to_float(row.get(clean_b))
-        s = _to_float(row.get(clean_s))
-        if np.isnan(b) or np.isnan(s): return 0.0
-        return s - b
+    base_rows = frame[frame["_is_base"]].copy()
+    non_base  = frame[~frame["_is_base"]].copy()
 
-    peer_df["_clean_delta"] = peer_df.apply(_delta_clean, axis=1)
-    if te_col in peer_df.columns and peer_df[te_col].notna().any():
-        peer_df["_te"] = pd.to_numeric(peer_df[te_col], errors="coerce")
-        # Combine: rank by |clean change| and TE
-        peer_df["_rank"] = peer_df["_clean_delta"].abs().rank(ascending=False, method="min") + \
-                           peer_df["_te"].rank(ascending=False, method="min")
-    else:
-        peer_df["_rank"] = peer_df["_clean_delta"].abs().rank(ascending=False, method="min")
+    if base_rows.empty:
+        st.warning("No Baseline row detected. I'll infer the row with zero TE as baseline.")
+        fb = frame.loc[frame[te_col].fillna(0).astype(float).abs().sort_values().index].head(1)
+        base_rows = fb
 
-    # Choose 2 peers (or fewer if not available)
-    peers = peer_df.sort_values("_rank").head(2).copy()
+    # Default pick: lowest-TE two scenarios (if available)
+    nb_sorted = non_base.copy()
+    nb_sorted["_te"] = pd.to_numeric(nb_sorted[te_col], errors="coerce")
+    nb_sorted = nb_sorted.sort_values("_te")
 
-    # Final comparison set
-    compare = pd.concat([base_df.head(1), peers], ignore_index=True)
-    if compare.empty:
-        st.warning("No valid scenarios to compare.")
+    all_scen = nb_sorted["_scen"].tolist()
+    default_picks = all_scen[:2] if len(all_scen) >= 2 else all_scen
+
+    sel_two = st.multiselect(
+        "Scenarios",
+        options=all_scen,
+        default=default_picks,
+        help="Pick up to two scenarios to compare with Baseline."
+    )
+    sel_two = sel_two[:2]  # cap to 2
+
+    # Build a tidy “view” with 3 labels
+    labels = ["Baseline"] + (sel_two if sel_two else [])
+    if not labels or (len(labels) == 1 and base_rows.empty):
+        st.warning("Nothing to compare. Please select scenarios.")
         return
 
-    # Color palette — Baseline emphasized
-    SCEN_COLORS = {}
-    ordered_labels = []
-    for i, row in compare.iterrows():
-        lbl = row["_label"]
-        ordered_labels.append(lbl)
-        if str(lbl).lower().startswith("baseline"):
-            SCEN_COLORS[lbl] = "#1f78b4"  # strong blue
-        else:
-            SCEN_COLORS[lbl] = "#8a93a6" if len(SCEN_COLORS) == 0 else "#00a3ff" if i == 1 else "#8a93a6"
+    # Map label -> underlying row
+    # Baseline: use the first baseline row
+    base_row = base_rows.head(1)
 
-    # ---------- STORY 1: Composition (Clean / Controversial / Other) ----------
-    st.markdown("#### 1) What’s in the portfolio? (composition)")
+    # Utility: extract composition & metrics into a dict
+    def _extract(row, label):
+        d = {
+            "_label": label,
+            "clean":  pd.to_numeric(row.get(clean_s_col, np.nan), errors="coerce"),
+            "contro": pd.to_numeric(row.get(ctr_s_col,   np.nan), errors="coerce"),
+            "other":  pd.to_numeric(row.get(oth_s_col,   np.nan), errors="coerce"),
+            "te":     pd.to_numeric(row.get(te_col,      np.nan), errors="coerce"),
+            "ret":    pd.to_numeric(row.get(ret_col,     np.nan), errors="coerce") if ret_col in row else np.nan,
+            "vol":    pd.to_numeric(row.get(vol_col,     np.nan), errors="coerce") if vol_col in row else np.nan,
+        }
+        return d
 
-    # Melt for a grouped normalized bar (Baseline vs Scenario)
+    # For Baseline, compositions must come from *_base columns
+    def _extract_baseline(row):
+        d = {
+            "_label": "Baseline",
+            "clean":  pd.to_numeric(row.get(clean_b_col, np.nan), errors="coerce"),
+            "contro": pd.to_numeric(row.get(ctr_b_col,   np.nan), errors="coerce") if ctr_b_col else np.nan,
+            "other":  pd.to_numeric(row.get(oth_b_col,   np.nan), errors="coerce") if oth_b_col else np.nan,
+            "te":     0.0,
+            "ret":    pd.to_numeric(row.get(ret_col, np.nan), errors="coerce") if ret_col in row else np.nan,
+            "vol":    pd.to_numeric(row.get(vol_col, np.nan), errors="coerce") if vol_col in row else np.nan,
+        }
+        return d
+
+    cards = []
+    if not base_row.empty:
+        cards.append(_extract_baseline(base_row.iloc[0]))
+    for lab in sel_two:
+        r = nb_sorted[nb_sorted["_scen"] == lab]
+        if not r.empty:
+            cards.append(_extract(r.iloc[0], lab))
+
+    # If some optional columns are wholly missing, keep NaN — visuals will hide gracefully
+    mview = pd.DataFrame(cards)
+    if mview.empty:
+        st.warning("Could not assemble scenario cards for this selection.")
+        return
+
+    # ---------------------------
+    # KPI row
+    # ---------------------------
+    k1, k2, k3, k4 = st.columns([0.24, 0.24, 0.24, 0.28])
+
+    def _get_val(lbl, col):
+        try:
+            v = mview.loc[mview["_label"] == lbl, col].iloc[0]
+            return float(v) if pd.notna(v) else None
+        except:
+            return None
+
+    b_clean = _get_val("Baseline", "clean")
+    with k1:
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral">
+              <div class="label">% Clean — Baseline</div>
+              <div class="value">{_fmt_pct(b_clean, 1)}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Scenario-1
+    s1 = sel_two[0] if len(sel_two) >= 1 else None
+    s2 = sel_two[1] if len(sel_two) >= 2 else None
+
+    s1_clean = _get_val(s1, "clean") if s1 else None
+    with k2:
+        val = _fmt_pct(s1_clean, 1) if s1 else "–"
+        st.markdown(
+            f"""
+            <div class="kpi kpi-green" style="border-color:{_COL['s1']};">
+              <div class="label">% Clean — {s1 or 'Scenario A'}</div>
+              <div class="value">{val}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    s2_clean = _get_val(s2, "clean") if s2 else None
+    with k3:
+        val = _fmt_pct(s2_clean, 1) if s2 else "–"
+        st.markdown(
+            f"""
+            <div class="kpi kpi-green" style="border-color:{_COL['s2']};">
+              <div class="label">% Clean — {s2 or 'Scenario B'}</div>
+              <div class="value">{val}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Cost (TE) of the selected scenario with the higher clean (if tie, first)
+    def _first_not_none(*xs):
+        for x in xs:
+            if x is not None:
+                return x
+        return None
+    chosen_te = _first_not_none(_get_val(s1, "te"), _get_val(s2, "te"))
+    with k4:
+        st.markdown(
+            """
+            <div class="chart-head">
+              <div class="chart-title">Cost — Tracking Error (ann. %)</div>
+              <div class="info-badge has-tip" data-tip="Tracking error = standard deviation of active returns vs the benchmark. Higher TE means more deviation from the baseline/benchmark.">i</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral">
+              <div class="label">Selected scenario</div>
+              <div class="value">{_fmt_pct(chosen_te, 2) if chosen_te is not None else "–"}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+    # ---------------------------
+    # Visual 1: Composition — Baseline vs Scenario A vs Scenario B
+    # ---------------------------
+    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Composition — Baseline vs Scenarios</div>', unsafe_allow_html=True)
+
     comp_rows = []
-    for _, r in compare.iterrows():
-        lbl = r["_label"]
-        comp_rows.append({"Scenario": lbl, "Category": "Clean",         "Value": _to_float(r.get(clean_s, np.nan))})
-        # if we have baseline columns, show baseline level next to scenario using same labels
-        # BUT simpler: composition per scenario is the *_scn columns; baseline scenario row already encodes its own *_scn
-        if ctr_s: comp_rows[-1]  # no-op just to note presence
+    color_map = {"Baseline": _COL["baseline"], s1: _COL["s1"], s2: _COL["s2"]}
 
-        # controversial/other
-        if ctr_s in compare.columns:
-            comp_rows.append({"Scenario": lbl, "Category": "Controversial", "Value": _to_float(r.get(ctr_s, np.nan))})
-        if oth_s in compare.columns:
-            comp_rows.append({"Scenario": lbl, "Category": "Other",         "Value": _to_float(r.get(oth_s, np.nan))})
-
+    for lab in ["Baseline"] + [x for x in [s1, s2] if x]:
+        row = mview[mview["_label"] == lab]
+        if not row.empty:
+            comp_rows += [
+                {"View": lab, "Category": "Clean",         "Value": float(row["clean"].iloc[0]) if pd.notna(row["clean"].iloc[0]) else np.nan},
+                {"View": lab, "Category": "Controversial", "Value": float(row["contro"].iloc[0]) if "contro" in row.columns and pd.notna(row["contro"].iloc[0]) else 0.0},
+                {"View": lab, "Category": "Other",         "Value": float(row["other"].iloc[0]) if "other"  in row.columns and pd.notna(row["other"].iloc[0])  else 0.0},
+            ]
     comp_df = pd.DataFrame(comp_rows)
-    comp_df = comp_df.dropna(subset=["Value"])
-    if comp_df.empty:
-        st.info("Composition columns not available in this file.")
-    else:
-        # Clean legend order
-        comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=ordered_labels, ordered=True)
-        color_map = alt.Scale(domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
 
-        chart_comp = (
-            alt.Chart(comp_df)
-            .mark_bar(opacity=0.95, stroke="#0A0B0D", strokeWidth=0.6)
-            .encode(
-                x=alt.X("Scenario:N", title=None, sort=ordered_labels),
-                y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
-                color=alt.Color("Category:N", title=None, scale=color_map),
-                tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", format=".1f", title="Share (%)")],
-            )
-            .properties(height=300)
-        )
-
-        # Outline baseline
-        base_sel = comp_df[comp_df["Scenario"].astype(str).str.lower().str.startswith("baseline")].copy()
-        if not base_sel.empty:
-            base_outline = (
-                alt.Chart(base_sel)
-                .mark_bar(fillOpacity=0, stroke="#1f78b4", strokeWidth=2)
-                .encode(x=alt.X("Scenario:N", sort=ordered_labels), y=alt.Y("Value:Q", stack="normalize"))
-            )
-            chart_comp = chart_comp + base_outline
-
+    if not comp_df.empty:
+        comp_df["View"] = pd.Categorical(comp_df["View"], categories=[c for c in ["Baseline", s1, s2] if c], ordered=True)
+        chart_comp = alt.Chart(comp_df).mark_bar(opacity=0.95).encode(
+            x=alt.X("View:N", title=None),
+            y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
+            color=alt.Color("Category:N", title=None,
+                            scale=alt.Scale(domain=["Clean","Controversial","Other"],
+                                            range=[_COL["clean"], _COL["contro"], _COL["other"]])),
+            tooltip=[alt.Tooltip("View:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", format=".1f", title="Share (%)")],
+        ).properties(height=300)
         st.altair_chart(chart_comp, use_container_width=True)
-
-    # ---------- STORY 2: Financial comparison (Return & Vol) ----------
-    st.markdown("#### 2) What happens to performance? (if provided)")
-
-    # Build a small tidy frame: Return and Vol per scenario, if present in the metrics
-    perf_rows = []
-    for _, r in compare.iterrows():
-        lbl = r["_label"]
-        if ret_col in compare.columns and pd.notna(r.get(ret_col)):
-            perf_rows.append({"Scenario": lbl, "Metric": "Return (ann. %)", "Value": _to_float(r.get(ret_col))})
-        if vol_col in compare.columns and pd.notna(r.get(vol_col)):
-            perf_rows.append({"Scenario": lbl, "Metric": "Volatility (ann. %)", "Value": _to_float(r.get(vol_col))})
-
-    perf_df = pd.DataFrame(perf_rows)
-    perf_df = perf_df.dropna(subset=["Value"])
-    if perf_df.empty:
-        st.caption("Return/volatility columns not present; skipping this chart.")
     else:
-        perf_df["Scenario"] = pd.Categorical(perf_df["Scenario"], categories=ordered_labels, ordered=True)
-        # Facet by metric for clarity
-        chart_perf = (
-            alt.Chart(perf_df)
-            .mark_bar()
-            .encode(
-                x=alt.X("Scenario:N", title=None, sort=ordered_labels),
-                y=alt.Y("Value:Q", title="%", axis=alt.Axis(format=".2f")),
-                color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=ordered_labels, range=[SCEN_COLORS[s] for s in ordered_labels])),
-                column=alt.Column("Metric:N", title=None, header=alt.Header(labelAngle=0, labelAlign="center")),
-                tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
-            )
-            .properties(height=260)
-        )
-        st.altair_chart(chart_perf, use_container_width=True)
+        st.info("Composition unavailable for the current selection.")
 
-    # ---------- STORY 3: Cost of cleanliness (Tracking Error) ----------
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+    # ---------------------------
+    # Visual 2: Financial comparison (Return & Vol)
+    # ---------------------------
+    has_fin = ("ret" in mview.columns and mview["ret"].notna().any()) or ("vol" in mview.columns and mview["vol"].notna().any())
+    st.markdown('<div class="chart-title" style="margin-bottom:6px;">Performance — annualized return and volatility</div>', unsafe_allow_html=True)
+
+    if has_fin:
+        fin_rows = []
+        for lab in ["Baseline"] + [x for x in [s1, s2] if x]:
+            row = mview[mview["_label"] == lab]
+            if not row.empty:
+                r, v = row["ret"].iloc[0], row["vol"].iloc[0]
+                if pd.notna(r):
+                    fin_rows.append({"Metric":"Return (ann. %)", "Scenario":lab, "Value": float(r)})
+                if pd.notna(v):
+                    fin_rows.append({"Metric":"Volatility (ann. %)", "Scenario":lab, "Value": float(v)})
+        fdf = pd.DataFrame(fin_rows)
+
+        if not fdf.empty:
+            fdf["Scenario"] = pd.Categorical(fdf["Scenario"], categories=[c for c in ["Baseline", s1, s2] if c], ordered=True)
+            chart_fin = alt.Chart(fdf).mark_bar(opacity=0.9).encode(
+                x=alt.X("Scenario:N", title=None,
+                        scale=alt.Scale(paddingInner=0.25)),
+                y=alt.Y("Value:Q", title="%", axis=alt.Axis(format=".1f")),
+                column=alt.Column("Metric:N", title=None, header=alt.Header(labelColor=_COL["text"])),
+                color=alt.Color("Scenario:N", legend=None,
+                                scale=alt.Scale(domain=[c for c in ["Baseline", s1, s2] if c],
+                                                range=[color_map.get(c, "#888") for c in [c for c in ["Baseline", s1, s2] if c]])),
+                tooltip=[alt.Tooltip("Metric:N"), alt.Tooltip("Scenario:N"), alt.Tooltip("Value:Q", format=".2f")]
+            ).properties(height=260)
+            st.altair_chart(chart_fin, use_container_width=True)
+        else:
+            st.info("Return/vol not provided for these scenarios.")
+    else:
+        st.info("Return/vol not provided.")
+
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+    # ---------------------------
+    # Visual 3: Tracking Error bars
+    # ---------------------------
     st.markdown(
-        '<div style="display:flex;align-items:center;gap:8px;">'
-        '<h4 style="margin:0;">3) What\'s the cost? (tracking error)</h4>'
-        '<div class="info-badge has-tip" data-tip="Tracking Error: annualized standard deviation of active returns vs the baseline index. '
-        'It approximates how much the scenario may deviate from the benchmark. Lower is closer to benchmark.">i</div>'
-        '</div>',
+        """
+        <div class="chart-head">
+          <div class="chart-title">Cost — Tracking Error (ann. %)</div>
+          <div class="info-badge has-tip" data-tip="Tracking error = standard deviation of active returns vs the benchmark. Higher TE means more deviation from the baseline/benchmark.">i</div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
-    if te_col not in compare.columns or compare[te_col].isna().all():
-        st.caption("Tracking error not provided in this file.")
-    else:
-        te_data = compare[[ "_label", te_col ]].copy()
-        te_data.columns = ["Scenario", "TE"]
-        te_data["Scenario"] = pd.Categorical(te_data["Scenario"], categories=ordered_labels, ordered=True)
-
-        chart_te = (
-            alt.Chart(te_data)
-            .mark_bar(opacity=0.95)
-            .encode(
-                x=alt.X("Scenario:N", title=None, sort=ordered_labels),
-                y=alt.Y("TE:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
-                color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=ordered_labels, range=[SCEN_COLORS[s] for s in ordered_labels])),
-                tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("TE:Q", title="TE (ann. %)", format=".2f")],
-            )
-            .properties(height=220)
-        )
-
-        # Baseline outline
-        base_te = te_data[te_data["Scenario"].astype(str).str.lower().str.startswith("baseline")]
-        if not base_te.empty:
-            outline = (
-                alt.Chart(base_te)
-                .mark_bar(fillOpacity=0, stroke="#1f78b4", strokeWidth=2)
-                .encode(x="Scenario:N", y="TE:Q")
-            )
-            chart_te = chart_te + outline
-
+    te_rows = []
+    for lab in ["Baseline"] + [x for x in [s1, s2] if x]:
+        row = mview[mview["_label"] == lab]
+        if not row.empty:
+            te_rows.append({"Scenario": lab, "TE": float(row["te"].iloc[0]) if pd.notna(row["te"].iloc[0]) else 0.0})
+    tdf = pd.DataFrame(te_rows)
+    if not tdf.empty:
+        tdf["Scenario"] = pd.Categorical(tdf["Scenario"], categories=[c for c in ["Baseline", s1, s2] if c], ordered=True)
+        chart_te = alt.Chart(tdf).mark_bar(size=50, opacity=0.95).encode(
+            x=alt.X("Scenario:N", title=None),
+            y=alt.Y("TE:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
+            color=alt.Color("Scenario:N", legend=None,
+                            scale=alt.Scale(domain=[c for c in ["Baseline", s1, s2] if c],
+                                            range=[color_map.get(c, "#888") for c in [c for c in ["Baseline", s1, s2] if c]])),
+            tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("TE:Q", format=".2f")]
+        ).properties(height=260)
         st.altair_chart(chart_te, use_container_width=True)
+    else:
+        st.info("Tracking error unavailable for current selection.")
 
-    # ---------- Footer hint ----------
-    st.caption("Tip: choose a different ETF or weighting to see how the tradeoffs move. Baseline is outlined in blue.")
+    # -------------- THE END --------------
 
 
 
