@@ -403,6 +403,88 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
   outline: none !important;
   box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; /* keyboard focus */
 }}
+
+/* ===============================
+   A) TABLE HEADERS — subtle grey
+   =============================== */
+div[data-testid="stDataframe"] thead tr th,
+:where([data-testid="stTable"]) thead th,
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
+  background: #11151C !important;      /* very subtle grey */
+  color: var(--text) !important;
+  border-bottom: 1px solid #2A2F36 !important;
+}}
+
+/* ===============================================
+   B) FILTERS & "CHOOSE OPTIONS" — red outline
+   Target the INNER BaseWeb wrapper (first child)
+   =============================================== */
+
+/* SELECT / MULTISELECT (ETF / Classification / Any …) */
+[data-baseweb="select"] > div {{
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}}
+[data-baseweb="select"] > div:hover {{
+  border-color: #2A2F36 !important;
+}}
+[data-baseweb="select"] > div:focus-within {{
+  border-color: #C63C41 !important;                       /* red border */
+  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;  /* red focus ring */
+}}
+/* Clear inner sub-wrappers that sometimes inject white */
+[data-baseweb="select"] > div * {{
+  background: transparent !important;
+}}
+
+/* TEXT INPUT (Search “Type to filter…”) */
+[data-baseweb="input"] > div {{
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}}
+[data-baseweb="input"] > div:focus-within {{
+  border-color: #C63C41 !important;
+  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+}}
+[data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; }}
+
+/* ==========================================================
+   C) SEGMENTED CONTROLS — no white pills anywhere
+      (Dashboard/Report + AUM-weighted/Equal-weighted)
+   ========================================================== */
+div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+  background: #0E1015 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}}
+div[data-testid="stSegmentedControl"] button[role="tab"] {{
+  background: #0E1015 !important;               /* remove white */
+  color: var(--muted) !important;
+  border: 1px solid var(--border) !important;   /* subtle outline */
+  box-shadow: none !important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
+  background: #12151C !important;
+  color: var(--text) !important;
+  border-color: #C63C41 !important;             /* red active */
+  box-shadow: inset 0 0 0 1px #C63C41 !important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-disabled="true"] {{
+  background: #151923 !important;               /* keep dark, not white */
+  color: #6B7280 !important;                    /* muted text */
+  border-color: var(--border) !important;
+  opacity: 1 !important;                        /* avoid BaseWeb fade + white */
+  box-shadow: none !important;
+}}
+div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; /* keyboard focus */
+}}
+
 </style>
 
     </style>
