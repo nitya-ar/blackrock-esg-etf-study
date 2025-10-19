@@ -61,6 +61,8 @@ alt.themes.register("custom_dark", _alt_dark)
 alt.themes.enable("custom_dark")
 
 
+
+
 # =========================
 # STYLES
 # =========================
@@ -199,13 +201,17 @@ st.markdown(
       [data-baseweb="menu"] li {{ color: var(--text) !important; }}
       [data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
 
-      /* ---------- SLIDERS ---------- */
+/* ---------- SLIDERS ---------- */
       [data-baseweb="slider"] {{ color: var(--text) !important; }}
       [data-baseweb="slider"] > div {{ background: transparent !important; }}
-      /* RED thumb + rail (replaces blue dot) */
-      [data-baseweb="slider"] [role="slider"] {{ background: var(--contro) !important; box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; }}
+      /* Red handle instead of blue */
+      [data-baseweb="slider"] [role="slider"] {{
+        background: var(--contro) !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.22) !important;
+      }}
       [data-baseweb="slider"] div[role="presentation"] {{ background: #1C2027 !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--contro) !important; }}
+
 
       /* ---------- CHECKBOX / RADIO ---------- */
       [data-baseweb="checkbox"] label, [data-baseweb="radio"] label {{ color: var(--text) !important; }}
@@ -215,17 +221,13 @@ st.markdown(
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
         background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
       }}
-      /* keep dark pills */
       div[data-testid="stSegmentedControl"] button[role="tab"] {{
-        background: #0E1015 !important; color: var(--muted) !important; border: 1px solid var(--border) !important; box-shadow: none !important;
+        background: transparent !important; color: var(--muted) !important; border: 1px solid transparent !important; box-shadow: none !important;
       }}
-      /* selected = red edge */
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
         background: #12151C !important; color: var(--text) !important; border: 1px solid #C63C41 !important; box-shadow: inset 0 0 0 1px #C63C41 !important;
       }}
-      /* disabled still dark */
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
-      div[data-testid="stSegmentedControl"] button[disabled] {{
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] {{
         background: #151923 !important; color: #6B7280 !important; border-color: var(--border) !important; opacity: 1 !important; box-shadow: none !important;
       }}
 
@@ -256,35 +258,68 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
 
       /* =========================================================
-         TARGETED CHANGES
+         TARGETED FIXES (important bits)
          ========================================================= */
 
-      /* (1) Table header row — subtle dark grey (not white) */
-      [data-testid="stDataframe"] thead,
-      [data-testid="stDataframe"] thead tr,
-      [data-testid="stDataframe"] thead th,
+      /* 1) TABLE HEADER ROW — NEVER white */
+      div[data-testid="stDataframe"] thead,
+      div[data-testid="stDataframe"] thead tr,
+      div[data-testid="stDataframe"] thead th,
       :where([data-testid="stTable"]) thead,
       :where([data-testid="stTable"]) thead tr,
       :where([data-testid="stTable"]) thead th,
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      :where([data-testid="stDataFrame"]) div[role="columnheader"] * {{
         background: #11151C !important;
         color: var(--text) !important;
         border-bottom: 1px solid #2A2F36 !important;
         background-image: none !important;
       }}
 
-      /* (2) Dropdown popover itself — no white */
-      [data-baseweb="menu"],
-      [role="listbox"] {{
-        background: #0F1116 !important;
-        color: var(--text) !important;
+      /* 2) DROPDOWNS / INPUTS — remove white outlines entirely */
+      [data-baseweb="select"] > div,
+      [data-baseweb="input"]  > div {{
+        background: var(--card) !important;
         border: 1px solid var(--border) !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,.45) !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        outline: none !important;
       }}
-      [role="option"], [data-baseweb="menu"] li {{
-        background: #0F1116 !important; color: var(--text) !important;
+      [data-baseweb="select"] > div:hover,
+      [data-baseweb="input"]  > div:hover {{ border-color: #2A2F36 !important; }}
+      [data-baseweb="select"] > div:focus,
+      [data-baseweb="select"] > div:focus-visible,
+      [data-baseweb="select"] > div:focus-within,
+      [data-baseweb="input"]  > div:focus-within {{
+        border-color: #C63C41 !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+        outline: none !important;
       }}
-      [role="option"]:hover, [data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
+      [data-baseweb="select"] > div * {{ background: transparent !important; }}
+
+      /* 3) PILL / SEGMENTED CONTROLS — keep dark, red accent for active */
+      div[data-testid="stSegmentedControl"] button[role="tab"] {{
+        background: #0E1015 !important;            /* dark, not white */
+        color: var(--muted) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
+        background: #12151C !important;
+        color: var(--text) !important;
+        border-color: #C63C41 !important;
+        box-shadow: inset 0 0 0 1px #C63C41 !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] {{
+        background: #151923 !important;            /* disabled, still dark */
+        color: #6B7280 !important;
+        border-color: var(--border) !important;
+        opacity: 1 !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -313,6 +348,16 @@ def style_dark_df(df: pd.DataFrame):
 # Read-only, theme-aware grid helper (replaces st.dataframe)
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+
+
+
+
+def divider():
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+def gap(px=6):
+    st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
+
 
 
 # =========================
