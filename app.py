@@ -485,8 +485,6 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
   box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; /* keyboard focus */
 }}
 
-</style>
-
     </style>
     """,
     unsafe_allow_html=True,
