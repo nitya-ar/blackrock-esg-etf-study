@@ -63,10 +63,8 @@ alt.themes.enable("custom_dark")
 
 
 
-
-
 # =========================
-# STYLES
+# STYLES (final, cross-browser dark)
 # =========================
 st.markdown(
     f"""
@@ -80,420 +78,126 @@ st.markdown(
         --text: {COLORS['text']};
         --muted: {COLORS['muted']};
         --primary: {COLORS['primary']};
-        --clean: {COLORS['clean']};
-        --contro: {COLORS['contro']};
-        --other: {COLORS['other']};
+        --clean: {COLORS.get('clean', '#0E8F66')};
+        --contro: {COLORS.get('contro', '#C63C41')};
+        --other: {COLORS.get('other', '#4062FF')};
+        --accent: #C63C41; /* red for active & slider */
       }}
 
+      /* ---------- Base ---------- */
       html, body, [data-testid="stAppViewContainer"] {{
         background-color: var(--bg) !important;
         color: var(--text) !important;
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }}
-
       h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
       .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
       .blx-muted {{ color: var(--muted); }}
 
+      /* ---------- Cards ---------- */
       .blx-card {{
-        background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 14px 16px;
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px; padding: 14px 16px;
       }}
-
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
         border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 18px 20px;
+        border-radius: 16px; padding: 18px 20px;
         box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
-
       .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
       .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
       .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
 
-      .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {{ border-color: var(--primary) !important; }}
+      /* ---------- Charts / tooltips ---------- */
+      .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-      div[data-testid="stDataframe"] thead tr th {{ background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important; }}
-      div[data-testid="stDataframe"] tbody tr {{ background: #0E1015 !important; }}
-      div[data-testid="stDataframe"] * {{ font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important; font-size: 13px !important; }}
-
-      .chart-head {{ display:flex; align-items:center; justify-content:space-between; margin: 4px 2px 8px 2px; }}
-      .chart-title {{ font-weight: 600; color: var(--text); letter-spacing:.1px; }}
-      .info-badge {{
-        display:inline-flex; align-items:center; justify-content:center;
-        height: 24px; min-width: 24px; border-radius: 14px;
-        border: 1px solid #2A2F36; color: #B6C0CC; font-weight: 700;
-        font-size: 12px; user-select:none; cursor: default;
-        background: #0B0D12; padding: 0 8px;
-      }}
-      .has-tip {{ position: relative; }}
-      .has-tip::after {{
-        content: attr(data-tip);
-        position: absolute; right: 0; top: calc(100% + 8px);
-        background: #0B0D12; color: var(--text);
-        border: 1px solid var(--border);
-        padding: 6px 10px; border-radius: 8px;
-        white-space: nowrap; opacity: 0; transform: translateY(6px);
-        pointer-events: none; transition: opacity .15s ease, transform .15s ease;
-        box-shadow: 0 10px 24px rgba(0,0,0,.45); z-index: 9999;
-      }}
-      .has-tip:hover::after {{ opacity: 1; transform: translateY(0); }}
-
-      .footer-wrap {{ display:flex; align-items:center; justify-content:space-between; width:100%; }}
-      .footer-left {{ color: var(--muted); font-size: 13px; }}
-      .footer-links {{ display:flex; gap:24px; align-items:center; justify-content:flex-end; width:100%; }}
-      .footer-links a {{ color: #4DA3FF !important; text-decoration: none; font-size: 15px; font-weight: 700; }}
-      .footer-links a:hover {{ text-decoration: underline; }}
-
-      /* ---------- GLOBAL TEXT & LINKS ---------- */
-      * {{ color: var(--text); }}
-      a {{ color: #73B4FF !important; }}
-      a:hover {{ color: #A3CFFF !important; }}
-
-      /* ---------- APP CONTAINERS ---------- */
-      section.main, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {{
-        background-color: var(--bg) !important;
-        color: var(--text) !important;
-        border: 0 !important;
-      }}
-      [data-testid="stToolbar"] {{ background: transparent !important; }}
-
-      /* ---------- CARDS / CHART WRAPPERS ---------- */
-      .blx-card, .stPlotlyChart, .stAltairChart, .stVegaLiteChart, .stEChart {{
-        background: var(--card) !important;
-        border: 1px solid var(--border) !important;
-      }}
-      .vega-embed, .vega-embed * {{ background: transparent !important; }}
-
-      /* ===== Dataframes & Tables – dark mode ===== */
+      /* ---------- DataFrames & Tables (no white headers/rows) ---------- */
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
-        background: var(--card) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-      }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] {{ background: #0E1015 !important; }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
-      }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="gridcell"] {{
-        background: #0E1015 !important; color: var(--text) !important;
-      }}
-
-      :where([data-testid="stTable"]) table {{
         background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
       }}
-      :where([data-testid="stTable"]) thead th {{
-        background: #0C0E13 !important; color: var(--text) !important; border-bottom: 1px solid var(--border) !important;
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      div[data-testid="stDataframe"] thead tr th {{
+        background: #11151C !important; color: var(--text) !important; border-bottom: 1px solid #2A2F36 !important;
       }}
-      :where([data-testid="stTable"]) tbody td {{
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
         background: #0E1015 !important; color: var(--text) !important; border-top: 1px solid #12151C !important;
       }}
+      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#0E1015 !important; }}
 
-      /* ---------- INPUTS ---------- */
-      [data-baseweb="select"], [data-baseweb="select"] * {{ background-color: var(--card) !important; color: var(--text) !important; }}
-      [data-baseweb="select"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
-      [data-baseweb="select"] svg {{ fill: var(--muted) !important; }}
-      [data-baseweb="tag"] {{ background: #10131A !important; color: var(--text) !important; border: 1px solid var(--border) !important; }}
-      [data-baseweb="input"] input, [data-baseweb="input"] textarea {{ background: var(--card) !important; color: var(--text) !important; }}
-      [data-baseweb="input"] {{ border: 1px solid var(--border) !important; border-radius: 10px; }}
+      :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
 
-      [data-baseweb="menu"] {{
-        background: #0F1116 !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      /* ---------- Inputs (Select/Text) — no white anywhere ---------- */
+      [data-baseweb="select"], [data-baseweb="input"] {{
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background: #0F1116 !important;
       }}
-      [data-baseweb="menu"] li {{ color: var(--text) !important; }}
-      [data-baseweb="menu"] li:hover {{ background: #12151C !important; }}
+      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+        background: var(--card) !important; border-radius: 10px !important; box-shadow: none !important; border: none !important;
+      }}
+      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background: transparent !important; }}
+      [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
+        outline: none !important; border: 1px solid var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
+      [data-baseweb="menu"] {{
+        background:#0F1116 !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      [data-baseweb="menu"] li {{ color:var(--text) !important; }}
+      [data-baseweb="menu"] li:hover {{ background:#12151C !important; }}
 
-      /* ---------- SLIDERS ---------- */
-      [data-baseweb="slider"] {{ color: var(--text) !important; }}
+      /* ---------- Slider (thumb not blue) ---------- */
       [data-baseweb="slider"] > div {{ background: transparent !important; }}
-      [data-baseweb="slider"] [role="slider"] {{ background: var(--primary) !important; box-shadow: 0 0 0 3px rgba(0,163,255,0.18) !important; }}
-      [data-baseweb="slider"] div[role="presentation"] {{ background: #1C2027 !important; }}
-      [data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--primary) !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--accent) !important; }}
+      [data-baseweb="slider"] [role="slider"] {{
+        background: var(--accent) !important;
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.18) !important; border: 0 !important;
+      }}
 
-      /* ---------- CHECKBOX / RADIO ---------- */
-      [data-baseweb="checkbox"] label, [data-baseweb="radio"] label {{ color: var(--text) !important; }}
-      [data-baseweb="checkbox"] input, [data-baseweb="radio"] input {{ accent-color: var(--primary) !important; }}
-
-      /* ---------- SEGMENTED CONTROL (base) ---------- */
+      /* ---------- Segmented controls (Dashboard/Report & AUM/EW) ---------- */
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       div[data-testid="stSegmentedControl"] button[role="tab"] {{
-        background: transparent !important; color: var(--muted) !important; border: 1px solid transparent !important;
+        background:#0E1015 !important; color:var(--muted) !important; border:1px solid var(--border) !important; box-shadow:none !important;
       }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-        background: #12151C !important; color: var(--text) !important; border: 1px solid #C63C41 !important; box-shadow: inset 0 0 0 1px #C63C41 !important;
+        background:#12151C !important; color:var(--text) !important; border-color:var(--accent) !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
+      div[data-testid="stSegmentedControl"] button[disabled] {{
+        background:#151923 !important; color:#7E8A98 !important; border-color:#2A2F36 !important; opacity:1 !important; box-shadow:none !important;
       }}
 
-      /* ---------- TABS ---------- */
-      .stTabs [data-baseweb="tab-list"] {{ background: #0E1015 !important; border-bottom: 1px solid var(--border) !important; }}
-      .stTabs [data-baseweb="tab"] {{ color: var(--muted) !important; background: transparent !important; }}
-      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color: var(--text) !important; border-color: var(--primary) !important; }}
+      /* ---------- Tabs ---------- */
+      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
 
-      /* ---------- BUTTONS ---------- */
+      /* ---------- Buttons ---------- */
       .stDownloadButton > button, .stButton > button {{
-        background: #12151C !important; color: var(--text) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      .stDownloadButton > button:hover, .stButton > button:hover {{ background: #151923 !important; border-color: #2A2F36 !important; }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      /* ---------- TOOLTIP & LEGEND ---------- */
-      .has-tip::after {{ background: #0B0D12 !important; color: var(--text) !important; border: 1px solid var(--border) !important; }}
-      .vega-bindings, .vega-tooltip, .vega-tooltip * {{ background: #0F1116 !important; color: var(--text) !important; border-color: var(--border) !important; }}
-
-      /* ---------- FORMS / SMALL LABELS ---------- */
+      /* ---------- Labels & scrollbars ---------- */
       label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{ color: var(--muted) !important; }}
-
-      /* ---------- SCROLLBARS ---------- */
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background: #2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background: #0B0D12; }}
-
-      /* Vega container — no white behind charts */
-      .vega-embed, .stAltairChart {{ background: transparent !important; }}
-
-      /* =========================================================
-         ADD-ONS FOR YOUR THREE REQUESTS
-         ========================================================= */
-
-      /* 1) TABLE HEADER ROW — very subtle grey, no white */
-      /* st.dataframe */
-      [data-testid="stDataframe"] thead,
-      [data-testid="stDataframe"] thead tr,
-      [data-testid="stDataframe"] thead th {{
-        background: #11151C !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid #2A2F36 !important;
-      }}
-      /* st.table */
-      :where([data-testid="stTable"]) thead,
-      :where([data-testid="stTable"]) thead tr,
-      :where([data-testid="stTable"]) thead th {{
-        background: #11151C !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid #2A2F36 !important;
-      }}
-      /* st.data_editor header (glide-data-grid uses role=columnheader) */
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-        background: #11151C !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid #2A2F36 !important;
-      }}
-
-      /* 2) SELECTS / INPUTS — red outline on focus, no white interiors */
-      [data-baseweb="select"],
-      [data-baseweb="input"] {{
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-        background: #0F1116 !important;
-      }}
-      /* kill the inner white containers some themes add */
-      [data-baseweb="select"] *, [data-baseweb="input"] * {{
-        background: transparent !important;
-      }}
-      /* focus ring */
-      [data-baseweb="select"]:focus-within,
-      [data-baseweb="input"]:focus-within {{
-        border-color: #C63C41 !important;
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-      }}
-      /* placeholder color */
-      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; }}
-
-      /* 3) SEGMENTED CONTROLS — no white for unselected/disabled */
-      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background: #0E1015 !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
-      }}
-      /* unselected */
-      div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="false"] {{
-        background: transparent !important; color: var(--muted) !important; border: 1px solid transparent !important;
-      }}
-      /* selected */
-      div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"] {{
-        background: #12151C !important; color: var(--text) !important; border: 1px solid #C63C41 !important; box-shadow: inset 0 0 0 1px #C63C41 !important;
-      }}
-      /* disabled (e.g., Equal-weighted when AUM-weighted selected) */
-      div[data-testid="stSegmentedControl"] button[role="tab"][disabled] {{
-        background: #151923 !important; color: #7E8A98 !important; border-color: #2A2F36 !important; opacity: 1 !important;
-      }}
-
-      /* Top-level tabs “Dashboard / Report” — remove any white fill */
-      .stTabs [data-baseweb="tab-list"] {{ background: #0E1015 !important; border-bottom: 1px solid var(--border) !important; }}
-      .stTabs [data-baseweb="tab"] {{ background: transparent !important; color: var(--muted) !important; border-color: transparent !important; box-shadow: none !important; }}
-      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color: var(--text) !important; border-color: transparent !important; box-shadow: inset 0 -2px 0 #C63C41 !important; }}
-      <style>
-/* ===============================
-   A) TABLE HEADERS — subtle grey
-   =============================== */
-div[data-testid="stDataframe"] thead tr th,
-:where([data-testid="stTable"]) thead th,
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-  background: #11151C !important;      /* very subtle grey */
-  color: var(--text) !important;
-  border-bottom: 1px solid #2A2F36 !important;
-}}
-
-/* ===============================================
-   B) FILTERS & "CHOOSE OPTIONS" — red outline
-   Target the INNER BaseWeb wrapper (first child)
-   =============================================== */
-
-/* SELECT / MULTISELECT (ETF / Classification / Any …) */
-[data-baseweb="select"] > div {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}}
-[data-baseweb="select"] > div:hover {{
-  border-color: #2A2F36 !important;
-}}
-[data-baseweb="select"] > div:focus-within {{
-  border-color: #C63C41 !important;                       /* red border */
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;  /* red focus ring */
-}}
-/* Clear inner sub-wrappers that sometimes inject white */
-[data-baseweb="select"] > div * {{
-  background: transparent !important;
-}}
-
-/* TEXT INPUT (Search “Type to filter…”) */
-[data-baseweb="input"] > div {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}}
-[data-baseweb="input"] > div:focus-within {{
-  border-color: #C63C41 !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-}}
-[data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; }}
-
-/* ==========================================================
-   C) SEGMENTED CONTROLS — no white pills anywhere
-      (Dashboard/Report + AUM-weighted/Equal-weighted)
-   ========================================================== */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background: #0E1015 !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"] {{
-  background: #0E1015 !important;               /* remove white */
-  color: var(--muted) !important;
-  border: 1px solid var(--border) !important;   /* subtle outline */
-  box-shadow: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-  background: #12151C !important;
-  color: var(--text) !important;
-  border-color: #C63C41 !important;             /* red active */
-  box-shadow: inset 0 0 0 1px #C63C41 !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-disabled="true"] {{
-  background: #151923 !important;               /* keep dark, not white */
-  color: #6B7280 !important;                    /* muted text */
-  border-color: var(--border) !important;
-  opacity: 1 !important;                        /* avoid BaseWeb fade + white */
-  box-shadow: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; /* keyboard focus */
-}}
-
-/* ===============================
-   A) TABLE HEADERS — subtle grey
-   =============================== */
-div[data-testid="stDataframe"] thead tr th,
-:where([data-testid="stTable"]) thead th,
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"] {{
-  background: #11151C !important;      /* very subtle grey */
-  color: var(--text) !important;
-  border-bottom: 1px solid #2A2F36 !important;
-}}
-
-/* ===============================================
-   B) FILTERS & "CHOOSE OPTIONS" — red outline
-   Target the INNER BaseWeb wrapper (first child)
-   =============================================== */
-
-/* SELECT / MULTISELECT (ETF / Classification / Any …) */
-[data-baseweb="select"] > div {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}}
-[data-baseweb="select"] > div:hover {{
-  border-color: #2A2F36 !important;
-}}
-[data-baseweb="select"] > div:focus-within {{
-  border-color: #C63C41 !important;                       /* red border */
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;  /* red focus ring */
-}}
-/* Clear inner sub-wrappers that sometimes inject white */
-[data-baseweb="select"] > div * {{
-  background: transparent !important;
-}}
-
-/* TEXT INPUT (Search “Type to filter…”) */
-[data-baseweb="input"] > div {{
-  background: var(--card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}}
-[data-baseweb="input"] > div:focus-within {{
-  border-color: #C63C41 !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
-}}
-[data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; }}
-
-/* ==========================================================
-   C) SEGMENTED CONTROLS — no white pills anywhere
-      (Dashboard/Report + AUM-weighted/Equal-weighted)
-   ========================================================== */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background: #0E1015 !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 12px !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"] {{
-  background: #0E1015 !important;               /* remove white */
-  color: var(--muted) !important;
-  border: 1px solid var(--border) !important;   /* subtle outline */
-  box-shadow: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-  background: #12151C !important;
-  color: var(--text) !important;
-  border-color: #C63C41 !important;             /* red active */
-  box-shadow: inset 0 0 0 1px #C63C41 !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-disabled="true"] {{
-  background: #151923 !important;               /* keep dark, not white */
-  color: #6B7280 !important;                    /* muted text */
-  border-color: var(--border) !important;
-  opacity: 1 !important;                        /* avoid BaseWeb fade + white */
-  box-shadow: none !important;
-}}
-div[data-testid="stSegmentedControl"] button[role="tab"]:focus-visible {{
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important; /* keyboard focus */
-}}
-
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -501,7 +205,7 @@ def divider():
 def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
-# ---------- NEW: Dark styler for tables inside the iframe ----------
+# Dark styler for tables inside iframe
 def style_dark_df(df: pd.DataFrame):
     bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
     return (
@@ -515,9 +219,13 @@ def style_dark_df(df: pd.DataFrame):
           .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
     )
 
-# Read-only, theme-aware grid helper (replaces st.dataframe)
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+
+
+
+
+
 # =========================
 # DATA LOADER
 # =========================
@@ -1301,7 +1009,6 @@ def render_tradeoffs():
         st.altair_chart(bar, use_container_width=True)
     else:
         st.info("Tracking error not present in the metrics. Add a 'tracking_error' column to enable this chart.")
-
 
 
 # =========================
