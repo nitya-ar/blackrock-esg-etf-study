@@ -761,178 +761,271 @@ def render_change_since_2017():
 
 
 # ==============================================
-# RENDERER FOR TAB 3 — Tradeoff Scenarios
+# RENDERER FOR TAB 3 — Tradeoff Scenarios (robust)
 # ==============================================
 def render_tradeoffs():
-    import pandas as pd, numpy as np, altair as alt, streamlit as st
+    import re
+    import numpy as np
+    import pandas as pd
+    import altair as alt
+    import streamlit as st
+
+    # ---------- small helpers
+    def _first_match(cols, patterns):
+        """Return the first column in `cols` that matches any regex in `patterns`."""
+        for pat in patterns:
+            rx = re.compile(pat, re.I)
+            for c in cols:
+                if rx.fullmatch(c) or rx.search(c):
+                    return c
+        return None
+
+    def _num(x):
+        try:
+            return pd.to_numeric(x, errors="coerce")
+        except Exception:
+            return pd.Series([np.nan] * len(x))
 
     st.subheader("Tradeoff Scenarios")
-    st.caption("Compare Baseline, Pragmatic Tilt, and Strict Exclusion scenarios for each ETF: composition, cleanliness, and tracking cost.")
+    st.caption(
+        "Compare Baseline, Pragmatic Tilt, and Strict Exclusion scenarios for each ETF: "
+        "composition, cleanliness, performance, and tracking cost. Baseline is highlighted."
+    )
 
-    # ---------------------
-    # LOAD DATA
-    # ---------------------
+    # ---------- load
     metr = load_scenario_metrics()
     if metr is None or metr.empty:
-        st.error("Scenario metrics file not found or empty.")
+        st.error("scenario_portfolio_metrics.csv not found or empty.")
         return
 
-    # ---------------------
-    # IDENTIFY COLUMNS (actual schema)
-    # ---------------------
-    scen_col = "scenario_id"
-    etf_col  = "etf"
-    scope_col = "scope"
-    clean_base = "pct_clean_base"
-    contro_base = "pct_contro_base"
-    other_base = "pct_other_base"
-    clean_scn = "pct_clean_scn"
-    contro_scn = "pct_contro_scn"
-    other_scn = "pct_other_scn"
-    te_col = "tracking_error"
+    m = metr.copy()
+    # normalize headers
+    m.columns = [str(c).strip().lower() for c in m.columns]
 
-    # ---------------------
-    # FILTERS
-    # ---------------------
-    etfs = sorted(metr[etf_col].dropna().unique())
-    sel_etf = st.selectbox("ETF", etfs, index=0)
+    # ---------- fuzzy schema detection
+    col_scenario = _first_match(
+        m.columns,
+        [r"scenario[_\s]*id", r"scenario", r"scen", r"name"]
+    )
+    col_etf = _first_match(
+        m.columns,
+        [r"etf[_\s]*ticker", r"etf", r"fund"]
+    )
+    col_scope = _first_match(
+        m.columns,
+        [r"scope", r"weight(ing)?", r"mode"]
+    )
 
-    scopes = sorted(metr[scope_col].dropna().unique())
-    sel_scope = st.selectbox("Weighting", scopes, index=0)
+    col_clean_base  = _first_match(m.columns, [r"pct[_\s]*clean[_\s]*base", r"clean[_\s]*base"])
+    col_contro_base = _first_match(m.columns, [r"pct[_\s]*(contro|controversial)[_\s]*base", r"(contro|controversial)[_\s]*base"])
+    col_other_base  = _first_match(m.columns, [r"pct[_\s]*other[_\s]*base", r"other[_\s]*base"])
 
-    df = metr[(metr[etf_col] == sel_etf) & (metr[scope_col] == sel_scope)].copy()
-    if df.empty:
+    col_clean_scn   = _first_match(m.columns, [r"pct[_\s]*clean[_\s]*scn|pct[_\s]*clean[_\s]*(scenario)?", r"clean[_\s]*scn"])
+    col_contro_scn  = _first_match(m.columns, [r"pct[_\s]*(contro|controversial)[_\s]*scn", r"(contro|controversial)[_\s]*scn"])
+    col_other_scn   = _first_match(m.columns, [r"pct[_\s]*other[_\s]*scn", r"other[_\s]*scn"])
+
+    col_te = _first_match(m.columns, [r"tracking[_\s]*error", r"^te$"])
+    col_ret = _first_match(m.columns, [r"(ann|annual)[_\s]*return", r"ret(_?ann)?$", r"return"])
+    col_vol = _first_match(m.columns, [r"(ann|annual)[_\s]*vol", r"vol(_?ann)?$", r"volatility"])
+
+    required = {
+        "scenario": col_scenario,
+        "etf": col_etf,
+        "weighting/scope": col_scope,
+        "%clean_base": col_clean_base,
+        "%clean_scn": col_clean_scn,
+        "tracking_error": col_te,
+    }
+    missing = [k for k, v in required.items() if v is None]
+    if missing:
+        with st.expander("Data health (click to expand)"):
+            st.write("Columns:", list(m.columns))
+            st.error(f"Missing required fields: {missing}")
+        return
+
+    # ---------- normalize/string trim for joins
+    for c in [col_scenario, col_etf, col_scope]:
+        m[c] = m[c].astype(str).str.strip()
+
+    # canonical helpers for filters (case/whitespace insensitive)
+    m["_etf_key"]   = m[col_etf].str.lower().str.strip()
+    m["_scope_key"] = m[col_scope].str.lower().str.strip()
+    m["_scen_key"]  = m[col_scenario].str.strip()
+
+    # numeric conversions
+    for c in [col_clean_base, col_contro_base, col_other_base,
+              col_clean_scn, col_contro_scn, col_other_scn,
+              col_te, col_ret, col_vol]:
+        if c:
+            m[c] = _num(m[c])
+
+    # ---------- controls populated from the data itself
+    etf_options = sorted(m[col_etf].dropna().unique().tolist())
+    if not etf_options:
+        st.error("No ETF values in file.")
+        return
+    sel_etf = st.selectbox("ETF", etf_options, index=0)
+
+    # Weighting/scope options for this ETF (if any), else global list
+    sc_for_etf = m.loc[m["_etf_key"] == sel_etf.lower(), col_scope].dropna().unique().tolist()
+    scope_options = sorted(sc_for_etf or m[col_scope].dropna().unique().tolist())
+    if not scope_options:
+        st.error("No weighting/scope values in file.")
+        return
+    sel_scope = st.selectbox("Weighting", scope_options, index=0)
+
+    # ---------- filter
+    sub = m[(m["_etf_key"] == sel_etf.lower()) & (m["_scope_key"] == sel_scope.lower())].copy()
+
+    if sub.empty:
         st.warning("No rows for this ETF/weighting.")
+        with st.expander("Why? (expand)"):
+            st.write("Available ETFs:", sorted(m[col_etf].unique().tolist()))
+            st.write(f"Available weightings/scopes for {sel_etf}:",
+                     sorted(m.loc[m['_etf_key'] == sel_etf.lower(), col_scope].dropna().unique().tolist()))
+            st.write("First few rows", m.head(10))
         return
 
-    # ---------------------
-    # DETECT SCENARIOS
-    # ---------------------
-    scen_list = df[scen_col].unique().tolist()
-    scen_list = sorted(scen_list, key=lambda x: (0 if "Baseline" in x else 1, x))
-    base_row = df[df[scen_col].str.contains("Baseline", case=False)]
-    scn_rows = df[~df[scen_col].str.contains("Baseline", case=False)]
+    # ---------- scenario ordering (Baseline first)
+    def order_key(x: str):
+        x_s = str(x)
+        return (0 if re.search(r"baseline", x_s, re.I) else 1, x_s.lower())
+    sub["_order"] = sub[col_scenario].apply(order_key)
+    sub = sub.sort_values("_order")
 
-    if base_row.empty:
-        st.warning("Baseline scenario missing.")
-        return
+    # ---------- build composition long data
+    comp_rows = []
+    for _, r in sub.iterrows():
+        scen = r[col_scenario]
+        if re.search(r"baseline", str(scen), re.I):
+            comp_rows += [
+                {"Scenario": "Baseline", "Category": "Clean",          "Share": r[col_clean_base]},
+                {"Scenario": "Baseline", "Category": "Controversial",  "Share": r[col_contro_base]},
+                {"Scenario": "Baseline", "Category": "Other",          "Share": r[col_other_base]},
+            ]
+        else:
+            comp_rows += [
+                {"Scenario": scen, "Category": "Clean",          "Share": r[col_clean_scn]},
+                {"Scenario": scen, "Category": "Controversial",  "Share": r[col_contro_scn]},
+                {"Scenario": scen, "Category": "Other",          "Share": r[col_other_scn]},
+            ]
+    comp_df = pd.DataFrame(comp_rows)
 
-    # ---------------------
-    # PREPARE DATA FOR PLOTTING
-    # ---------------------
-    charts = []
+    # ---------- cleanliness + cost summary
+    sum_rows = []
+    base_clean = np.nan
+    for _, r in sub.iterrows():
+        scen = r[col_scenario]
+        if re.search(r"baseline", str(scen), re.I):
+            base_clean = r[col_clean_base]
+            sum_rows.append({"Scenario": "Baseline",
+                             "% Clean": r[col_clean_base],
+                             "Tracking Error": r[col_te],
+                             "Return Δ (ann.)": np.nan if col_ret is None else r[col_ret],
+                             "Vol Δ (ann.)": np.nan if col_vol is None else r[col_vol]})
+        else:
+            sum_rows.append({"Scenario": scen,
+                             "% Clean": r[col_clean_scn],
+                             "Tracking Error": r[col_te],
+                             "Return Δ (ann.)": np.nan if col_ret is None else r[col_ret],
+                             "Vol Δ (ann.)": np.nan if col_vol is None else r[col_vol]})
+    summary_df = pd.DataFrame(sum_rows)
 
-    # Composition long-form data
-    comp = []
-    b = base_row.iloc[0]
-    comp += [
-        {"Scenario": "Baseline", "Category": "Clean", "Share": b[clean_base]},
-        {"Scenario": "Baseline", "Category": "Controversial", "Share": b[contro_base]},
-        {"Scenario": "Baseline", "Category": "Other", "Share": b[other_base]},
-    ]
-    for _, r in scn_rows.iterrows():
-        comp += [
-            {"Scenario": r[scen_col], "Category": "Clean", "Share": r[clean_scn]},
-            {"Scenario": r[scen_col], "Category": "Controversial", "Share": r[contro_scn]},
-            {"Scenario": r[scen_col], "Category": "Other", "Share": r[other_scn]},
-        ]
-    comp = pd.DataFrame(comp)
-
-    # Tracking error & Cleanliness summary
-    summary = []
-    for _, r in df.iterrows():
-        clean = r[clean_scn]
-        te = r[te_col]
-        summary.append({"Scenario": r[scen_col], "% Clean": clean, "Tracking Error": te})
-    summary = pd.DataFrame(summary)
-
-    # ---------------------
-    # KPI CARDS
-    # ---------------------
+    # ---------- KPIs
     k1, k2, k3 = st.columns(3)
-    base_clean = round(float(b[clean_base]), 1)
-    k1.metric("% Clean — Baseline", f"{base_clean:.1f}%")
-    if len(scn_rows) >= 1:
-        r1 = scn_rows.iloc[0]
-        k2.metric(f"% Clean — {r1[scen_col]}", f"{round(r1[clean_scn],1)}%", f"{round(r1[clean_scn]-base_clean,1)} pp")
-    if len(scn_rows) >= 2:
-        r2 = scn_rows.iloc[1]
-        k3.metric(f"% Clean — {r2[scen_col]}", f"{round(r2[clean_scn],1)}%", f"{round(r2[clean_scn]-base_clean,1)} pp")
+    if pd.notna(base_clean):
+        k1.metric("% Clean — Baseline", f"{float(base_clean):.1f}%")
+    if len(summary_df) >= 2:
+        s1 = summary_df.iloc[1]
+        k2.metric(f"% Clean — {s1['Scenario']}",
+                  f"{float(s1['% Clean']):.1f}%",
+                  f"{float(s1['% Clean'] - base_clean):+.1f} pp")
+    if len(summary_df) >= 3:
+        s2 = summary_df.iloc[2]
+        k3.metric(f"% Clean — {s2['Scenario']}",
+                  f"{float(s2['% Clean']):.1f}%",
+                  f"{float(s2['% Clean'] - base_clean):+.1f} pp")
 
     st.divider()
 
-    # ---------------------
-    # CHART 1: Composition (Stacked Bars)
-    # ---------------------
+    # ---------- Chart 1: Composition (stacked bars, baseline highlighted)
     st.markdown("#### Composition — Baseline vs Scenarios")
-    color_scale = alt.Scale(
-        domain=["Clean", "Controversial", "Other"],
-        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]],
-    )
+    colors = {
+        "Clean":        "#22c55e",   # green-500
+        "Controversial":"#ef4444",   # red-500
+        "Other":        "#a3a3a3",   # neutral-400
+    }
     comp_chart = (
-        alt.Chart(comp)
-        .mark_bar(opacity=0.9)
+        alt.Chart(comp_df)
+        .mark_bar()
         .encode(
-            x=alt.X("Scenario:N", title=None),
-            y=alt.Y("Share:Q", stack="normalize", axis=alt.Axis(format="%")),
-            color=alt.Color("Category:N", title=None, scale=color_scale),
-            tooltip=[
-                alt.Tooltip("Scenario:N"),
-                alt.Tooltip("Category:N"),
-                alt.Tooltip("Share:Q", format=".1f"),
-            ],
+            x=alt.X("Scenario:N", title=None,
+                    sort=["Baseline"] + [s for s in comp_df["Scenario"].unique() if s != "Baseline"]),
+            y=alt.Y("Share:Q", stack="normalize", axis=alt.Axis(format="%"), title="Portfolio share"),
+            color=alt.Color("Category:N", scale=alt.Scale(domain=list(colors), range=[colors[k] for k in colors])),
+            tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"), alt.Tooltip("Share:Q", format=".1f")]
         )
-        .properties(height=300)
+        .properties(height=280)
     )
     st.altair_chart(comp_chart, use_container_width=True)
 
     st.divider()
 
-    # ---------------------
-    # CHART 2: Cleanliness vs Cost (Scatter)
-    # ---------------------
-    st.markdown("#### Frontier — Cleanliness vs Cost")
-    scatter = (
-        alt.Chart(summary)
-        .mark_circle(size=200)
-        .encode(
-            x=alt.X("Tracking Error:Q", title="Tracking Error (ann. %)"),
-            y=alt.Y("% Clean:Q", title="% Clean"),
-            color=alt.condition(
-                alt.datum.Scenario == "Baseline",
-                alt.value(COLORS["primary"]),
-                alt.value(COLORS["clean"]),
-            ),
-            tooltip=["Scenario", "% Clean", "Tracking Error"],
-        )
-        .properties(height=300)
-    )
-    st.altair_chart(scatter, use_container_width=True)
-
-    st.caption("Higher % Clean means stronger ESG alignment; higher Tracking Error means greater deviation from the benchmark.")
+    # ---------- Chart 2: Performance (if available)
+    st.markdown("#### Performance — annualized return and volatility (Δ vs baseline)")
+    has_perf = (col_ret is not None) or (col_vol is not None)
+    if not has_perf:
+        st.info("Return/vol not provided in scenario metrics.")
+    else:
+        perf_long = []
+        for _, r in summary_df.iterrows():
+            if pd.notna(r["Return Δ (ann.)"]):
+                perf_long.append({"Scenario": r["Scenario"], "Metric": "Return Δ (ann.)", "Value": r["Return Δ (ann.)"]})
+            if pd.notna(r["Vol Δ (ann.)"]):
+                perf_long.append({"Scenario": r["Scenario"], "Metric": "Vol Δ (ann.)", "Value": r["Vol Δ (ann.)"]})
+        if perf_long:
+            perf_df = pd.DataFrame(perf_long)
+            perf_chart = (
+                alt.Chart(perf_df)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Scenario:N", title=None,
+                            sort=["Baseline"] + [s for s in summary_df["Scenario"].unique() if s != "Baseline"]),
+                    y=alt.Y("Value:Q", title="Δ vs baseline (ann.)"),
+                    color=alt.Color("Metric:N", title=None),
+                    tooltip=["Scenario", "Metric", alt.Tooltip("Value:Q", format=".2f")]
+                )
+                .properties(height=240)
+            )
+            st.altair_chart(perf_chart, use_container_width=True)
+        else:
+            st.info("Performance deltas not available for the selected ETF/weighting.")
 
     st.divider()
 
-    # ---------------------
-    # CHART 3: Tracking Error Bars
-    # ---------------------
+    # ---------- Chart 3: Tracking Error bars (with explainer)
     st.markdown("#### Cost — Tracking Error (ann. %)")
     te_chart = (
-        alt.Chart(summary)
-        .mark_bar(opacity=0.9)
+        alt.Chart(summary_df)
+        .mark_bar()
         .encode(
-            x=alt.X("Scenario:N", title=None),
+            x=alt.X("Scenario:N", title=None,
+                    sort=["Baseline"] + [s for s in summary_df["Scenario"].unique() if s != "Baseline"]),
             y=alt.Y("Tracking Error:Q", title="Tracking Error (ann. %)"),
-            color=alt.condition(
-                alt.datum.Scenario == "Baseline",
-                alt.value(COLORS["primary"]),
-                alt.value("#4A5568"),
-            ),
-            tooltip=["Scenario", "Tracking Error"],
+            color=alt.condition(alt.datum.Scenario == "Baseline",
+                                alt.value("#60a5fa"),  # baseline highlight (blue-400)
+                                alt.value("#94a3b8")), # slate-400
+            tooltip=["Scenario", alt.Tooltip("Tracking Error:Q", format=".2f")]
         )
-        .properties(height=250)
+        .properties(height=240)
     )
     st.altair_chart(te_chart, use_container_width=True)
+    with st.expander("What is tracking error?"):
+        st.write(
+            "Tracking error is the annualized standard deviation of the return differences "
+            "between a portfolio and its benchmark. Higher TE = larger deviation (cost of "
+            "departing from the benchmark). Baseline TE is 0% by construction."
+        )
 
 
 # =========================
