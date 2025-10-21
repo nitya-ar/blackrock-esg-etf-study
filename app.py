@@ -62,7 +62,7 @@ alt.themes.enable("custom_dark")
 
 
 # =========================
-# STYLES (final, cross-browser dark, fixed tooltips/contrast/controls)
+# STYLES (final — cross-browser dark, fixed tooltips/contrast/controls)
 # =========================
 st.markdown(
     f"""
@@ -74,11 +74,11 @@ st.markdown(
         --card: {COLORS['card']};
         --border: {COLORS['border']};
         --text: {COLORS['text']};
-        --muted: {COLORS.get('muted','#A9B4C2')};     /* slightly brighter for readability */
+        --muted: {COLORS.get('muted','#A9B4C2')};     /* brighter for readability */
         --primary: {COLORS['primary']};
-        --clean: {COLORS.get('clean', '#0E8F66')};
+        --clean: {COLORS.get('clean','#0E8F66')};
         --contro:{COLORS.get('contro','#C63C41')};
-        --other: {COLORS.get('other', '#4062FF')};
+        --other: {COLORS.get('other','#4062FF')};
         --accent:#C63C41;                              /* red for active & slider */
       }}
 
@@ -114,7 +114,18 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-      /* ---------- Info badges (restore tooltip notes) ---------- */
+      /* ---------- Info badges (red circle, right-aligned, with tooltip) ---------- */
+      .info-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:50%;
+        background: var(--accent) !important; color:#FFF !important;
+        font-weight:700; font-size:12px; border: 1px solid rgba(255,255,255,.06);
+        margin-left: 8px; vertical-align: text-bottom;
+      }}
+      .chart-head {{ display:flex; align-items:center; }}
+      .chart-head .chart-title {{ flex: 1 1 auto; }}
+      .chart-head .info-badge {{ margin-left:auto; }} /* push to right end */
+
       .has-tip{{ position:relative; }}
       .has-tip::after{{
         content: attr(data-tip);
@@ -146,7 +157,7 @@ st.markdown(
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
       :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
 
-      /* ---------- Inputs (Select/Text) — no white anywhere ---------- */
+      /* ---------- Inputs (Select/Text) — dark + consistent placeholders ---------- */
       [data-baseweb="select"], [data-baseweb="input"] {{
         border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
       }}
@@ -158,6 +169,8 @@ st.markdown(
         outline:none !important; border:1px solid var(--accent) !important;
         box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
       }}
+      /* placeholders: match “Any” muted tone */
+      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
       [data-baseweb="menu"] {{
         background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
@@ -178,7 +191,7 @@ st.markdown(
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
         background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      /* force dark on button and nested wrappers (fix Safari/Private) */
+      /* force dark on button and nested wrappers (Safari/Private) */
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
       div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
@@ -208,8 +221,10 @@ st.markdown(
       }}
       .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      /* ---------- Labels & scrollbars ---------- */
-      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{ color: var(--muted) !important; }}
+      /* ---------- Labels (ETF / Weighting / Start Year) & scrollbars ---------- */
+      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
+        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
+      }}
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
@@ -240,7 +255,6 @@ def style_dark_df(df: pd.DataFrame):
 
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
-
 
 
 # =========================
