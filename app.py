@@ -119,8 +119,8 @@ st.markdown(
   display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; min-width:22px; border-radius:50%;
   background: transparent !important;               /* no fill */
-  color: var(--primary) !important;                  /* red “i” */
-  border: 2px solid var(--primary) !important;       /* red outline */
+  color: var(--muted) !important;                  /* red “i” */
+  border: 2px solid var(--muted) !important;       /* red outline */
   font-weight:700; font-size:12px;
   margin-left:8px; vertical-align:text-bottom;
 }}
