@@ -61,10 +61,8 @@ alt.themes.register("custom_dark", _alt_dark)
 alt.themes.enable("custom_dark")
 
 
-
-
 # =========================
-# STYLES (final, cross-browser dark)
+# STYLES (final, cross-browser dark, fixed tooltips/contrast/controls)
 # =========================
 st.markdown(
     f"""
@@ -76,12 +74,12 @@ st.markdown(
         --card: {COLORS['card']};
         --border: {COLORS['border']};
         --text: {COLORS['text']};
-        --muted: {COLORS['muted']};
+        --muted: {COLORS.get('muted','#A9B4C2')};     /* slightly brighter for readability */
         --primary: {COLORS['primary']};
         --clean: {COLORS.get('clean', '#0E8F66')};
-        --contro: {COLORS.get('contro', '#C63C41')};
+        --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other', '#4062FF')};
-        --accent: #C63C41; /* red for active & slider */
+        --accent:#C63C41;                              /* red for active & slider */
       }}
 
       /* ---------- Base ---------- */
@@ -102,8 +100,7 @@ st.markdown(
       }}
       .kpi {{
         background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
-        border: 1px solid var(--border);
-        border-radius: 16px; padding: 18px 20px;
+        border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
         box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
@@ -117,6 +114,19 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
+      /* ---------- Info badges (restore tooltip notes) ---------- */
+      .has-tip{{ position:relative; }}
+      .has-tip::after{{
+        content: attr(data-tip);
+        position:absolute; right:0; top:calc(100% + 8px);
+        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        padding:6px 10px; border-radius:8px; white-space:nowrap;
+        opacity:0; transform:translateY(6px); pointer-events:none;
+        transition:opacity .15s ease, transform .15s ease;
+        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+      }}
+      .has-tip:hover::after, .has-tip:focus::after{{ opacity:1; transform:translateY(0); }}
+
       /* ---------- DataFrames & Tables (no white headers/rows) ---------- */
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
         background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
@@ -124,13 +134,13 @@ st.markdown(
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
       div[data-testid="stDataframe"] thead tr th {{
-        background: #11151C !important; color: var(--text) !important; border-bottom: 1px solid #2A2F36 !important;
+        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
       div[data-testid="stDataframe"] tbody tr td {{
-        background: #0E1015 !important; color: var(--text) !important; border-top: 1px solid #12151C !important;
+        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
       }}
-      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#0E1015 !important; }}
+      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
@@ -138,44 +148,53 @@ st.markdown(
 
       /* ---------- Inputs (Select/Text) — no white anywhere ---------- */
       [data-baseweb="select"], [data-baseweb="input"] {{
-        border: 1px solid var(--border) !important; border-radius: 10px !important; background: #0F1116 !important;
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
       }}
       [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
-        background: var(--card) !important; border-radius: 10px !important; box-shadow: none !important; border: none !important;
+        background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
       }}
-      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background: transparent !important; }}
+      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
       [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
-        outline: none !important; border: 1px solid var(--accent) !important;
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.28) !important;
+        outline:none !important; border:1px solid var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
       }}
       [data-baseweb="menu"] {{
-        background:#0F1116 !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       [data-baseweb="menu"] li {{ color:var(--text) !important; }}
-      [data-baseweb="menu"] li:hover {{ background:#12151C !important; }}
+      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
 
       /* ---------- Slider (thumb not blue) ---------- */
-      [data-baseweb="slider"] > div {{ background: transparent !important; }}
+      [data-baseweb="slider"] > div {{ background:transparent !important; }}
       [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
-      [data-baseweb="slider"] div[role="presentation"] > div {{ background: var(--accent) !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
       [data-baseweb="slider"] [role="slider"] {{
-        background: var(--accent) !important;
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.18) !important; border: 0 !important;
+        background:var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
       }}
+      [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
       /* ---------- Segmented controls (Dashboard/Report & AUM/EW) ---------- */
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
         background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      div[data-testid="stSegmentedControl"] button[role="tab"] {{
-        background:#0E1015 !important; color:var(--muted) !important; border:1px solid var(--border) !important; box-shadow:none !important;
+      /* force dark on button and nested wrappers (fix Safari/Private) */
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
       }}
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] {{
-        background:#12151C !important; color:var(--text) !important; border-color:var(--accent) !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
       }}
+      div[data-testid="stSegmentedControl"] button[disabled],
       div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
-      div[data-testid="stSegmentedControl"] button[disabled] {{
-        background:#151923 !important; color:#7E8A98 !important; border-color:#2A2F36 !important; opacity:1 !important; box-shadow:none !important;
+      div[data-testid="stSegmentedControl"] button[disabled] > *,
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
       }}
 
       /* ---------- Tabs ---------- */
@@ -192,8 +211,8 @@ st.markdown(
       /* ---------- Labels & scrollbars ---------- */
       label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{ color: var(--muted) !important; }}
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
-      *::-webkit-scrollbar-thumb {{ background: #2A2F36; border-radius: 8px; }}
-      *::-webkit-scrollbar-track {{ background: #0B0D12; }}
+      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background:#0B0D12; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -221,8 +240,6 @@ def style_dark_df(df: pd.DataFrame):
 
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
-
-
 
 
 
