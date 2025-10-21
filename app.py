@@ -114,29 +114,39 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-      /* ---------- Info badges (red circle, right-aligned, with tooltip) ---------- */
-      .info-badge {{
-        display:inline-flex; align-items:center; justify-content:center;
-        width:22px; height:22px; min-width:22px; border-radius:50%;
-        background: var(--accent) !important; color:#FFF !important;
-        font-weight:700; font-size:12px; border: 1px solid rgba(255,255,255,.06);
-        margin-left: 8px; vertical-align: text-bottom;
-      }}
-      .chart-head {{ display:flex; align-items:center; }}
-      .chart-head .chart-title {{ flex: 1 1 auto; }}
-      .chart-head .info-badge {{ margin-left:auto; }} /* push to right end */
+    /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
+.info-badge {{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; min-width:22px; border-radius:50%;
+  background: transparent !important;               /* no fill */
+  color: var(--accent) !important;                  /* red “i” */
+  border: 2px solid var(--accent) !important;       /* red outline */
+  font-weight:700; font-size:12px;
+  margin-left:8px; vertical-align:text-bottom;
+}}
+.chart-head {{ display:flex; align-items:center; }}
+.chart-head .chart-title {{ flex:1 1 auto; }}
+.chart-head .info-badge {{ margin-left:auto; }}        /* push to right end */
 
-      .has-tip{{ position:relative; }}
-      .has-tip::after{{
-        content: attr(data-tip);
-        position:absolute; right:0; top:calc(100% + 8px);
-        background:#0B0D12; color:var(--text); border:1px solid var(--border);
-        padding:6px 10px; border-radius:8px; white-space:nowrap;
-        opacity:0; transform:translateY(6px); pointer-events:none;
-        transition:opacity .15s ease, transform .15s ease;
-        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
-      }}
-      .has-tip:hover::after, .has-tip:focus::after{{ opacity:1; transform:translateY(0); }}
+/* optional: subtle hover focus ring */
+.info-badge:hover, .info-badge:focus {{
+  box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+  outline: none;
+}}
+
+/* Tooltip stays the same */
+.has-tip {{ position:relative; }}
+.has-tip::after {{
+  content: attr(data-tip);
+  position:absolute; right:0; top:calc(100% + 8px);
+  background:#0B0D12; color:var(--text); border:1px solid var(--border);
+  padding:6px 10px; border-radius:8px; white-space:nowrap;
+  opacity:0; transform:translateY(6px); pointer-events:none;
+  transition:opacity .15s ease, transform .15s ease;
+  box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+}}
+.has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
+
 
       /* ---------- DataFrames & Tables (no white headers/rows) ---------- */
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
