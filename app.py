@@ -742,274 +742,128 @@ def render_change_since_2017():
 
 
 # -------------------------
-# RENDERER FOR TAB 3 — uses exact column names from your CSVs
+# RENDERER FOR TAB 3 — minimal: story cards + AUM-weighted KPIs only
 # -------------------------
 def render_tradeoff_scenarios():
     st.subheader("Tradeoff Scenarios")
-    st.caption("Baseline highlighted; Pragmatic Tilt (~2% TE budget); Strict Exclusion (hard screens).")
+    st.caption("Numbers below are **AUM-weighted across ETFs** to match the 2025 Overview. Baseline = current portfolio; Pragmatic Tilt ≈ 2% TE budget; Strict Exclusion = hard screens.")
 
-    with st.spinner("Loading scenario metrics, deltas, and returns…"):
-        met    = load_scenario_metrics()        # scenario_portfolio_metrics.csv
-        deltas = load_scenario_deltas()         # scenario_position_deltas.csv
-        rets   = load_returns_vector()          # returns_top_per_etf_2025.csv (optional for ER chart)
-
-    # --- canonical scenario names from scenario_id ---
-    def canon(sid: str) -> str:
-        sid = str(sid).strip().lower()
-        if sid.startswith("baseline"): return "Baseline"
-        if sid.startswith("pragmatic"): return "Pragmatic Tilt"
-        if sid.startswith("strict"): return "Strict Exclusion"
-        return sid
-
-    # color map
-    SCEN_COLORS = {
-        "Baseline": COLORS["primary"],
-        "Pragmatic Tilt": COLORS["clean"],
-        "Strict Exclusion": "#D08A00",
-    }
-    scen_order = ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]
-
-    # =========================
-    # A) KEY CARDS (aggregate across ETFs, equal-weight across ETFs)
-    # =========================
-    m = met.copy()
-    m["_Scenario"] = m["scenario_id"].apply(canon)
-
-    # Aggregate per scenario (equal avg across ETFs)
-    agg = (
-        m.groupby("_Scenario", as_index=False)[
-            ["pct_clean_scn", "pct_contro_scn", "pct_other_scn", "est_te_annual_pct", "active_share_pct"]
-        ].mean()
-    )
-
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">Key metrics by scenario</div>'
-        '<div class="info-badge has-tip" data-tip="Tracking Error (annual %) estimated per ETF, averaged across ETFs.">'
-        'i</div></div>', unsafe_allow_html=True
-    )
-    cols = st.columns(3)
-    for i, scen in enumerate(scen_order):
-        row = agg[agg["_Scenario"] == scen]
-        if row.empty:
-            continue
-        c  = float(row["pct_clean_scn"].iloc[0])
-        k  = float(row["pct_contro_scn"].iloc[0])
-        te = float(row["est_te_annual_pct"].iloc[0])
-        with cols[i]:
-            st.markdown(f"<h4 style='margin:4px 0 8px 0; color:{SCEN_COLORS.get(scen, COLORS['text'])};'>{scen}</h4>", unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            with c1: kpi_card("% Clean",  f"{c:.1f}%", tone="green")
-            with c2: kpi_card("% Contro", f"{k:.1f}%", tone="red" if k>0 else "neutral")
-            with c3: kpi_card("TE (ann.)", f"{te:.2f}%", tone="neutral")
-
-    gap(8)
-
-    # =========================
-    # B) COMPOSITION — Clean vs Controversial vs Other (exact columns)
-    # =========================
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">Portfolio Composition — Clean vs Controversial vs Other</div>'
-        '<div class="info-badge has-tip" data-tip="Averaged across ETFs for each scenario.">'
-        'i</div></div>', unsafe_allow_html=True
-    )
-
-    comp_rows = []
-    for scen in scen_order:
-        row = agg[agg["_Scenario"] == scen]
-        if row.empty: continue
-        comp_rows += [
-            {"Scenario": scen, "Category": "Clean",         "Value": float(row["pct_clean_scn"].iloc[0])},
-            {"Scenario": scen, "Category": "Controversial", "Value": float(row["pct_contro_scn"].iloc[0])},
-            {"Scenario": scen, "Category": "Other",         "Value": float(row["pct_other_scn"].iloc[0])},
-        ]
-    comp_df = pd.DataFrame(comp_rows)
-
-    comp_chart = (
-        alt.Chart(comp_df)
-        .mark_bar(opacity=0.94)
-        .encode(
-            x=alt.X("sum(Value):Q", stack="normalize",
-                    axis=alt.Axis(title=None, format="%", ticks=False, labels=False)),
-            y=alt.Y("Scenario:N", sort=scen_order, title=None),
-            color=alt.Color("Category:N",
-                            scale=alt.Scale(domain=["Clean","Controversial","Other"],
-                                            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]),
-                            title=None, legend=alt.Legend(orient="top", direction="horizontal")),
-            tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"),
-                     alt.Tooltip("sum(Value):Q", title="Share (%)", format=".1f")],
-        )
-        .properties(height=150)
-    )
-    st.altair_chart(comp_chart, use_container_width=True)
-
-    gap(10)
-
-    # =========================
-    # C) EXPECTED PERFORMANCE (uses returns_top_per_etf_2025.csv exactly)
-    #     ret is averaged per ticker across available dates, then scenario ER = Σ w_scn * avg_ret
-    #     (weights aggregated equally across ETFs inside each scenario)
-    # =========================
-    st.markdown('<div class="chart-head"><div class="chart-title">Expected performance</div></div>', unsafe_allow_html=True)
-
-    er_view = pd.DataFrame(columns=["Scenario","Expected Return"])
-
-    try:
-        # 1) average ret per ticker
-        avg_ret = rets.groupby("ticker", as_index=False)["ret"].mean().rename(columns={"ret":"avg_ret"})
-        # 2) average scenario weights per ticker across ETFs (from deltas)
-        d = deltas.copy()
-        d["_Scenario"] = d["scenario_id"].apply(canon)
-        # aggregate ticker weights within scenario: mean across ETFs
-        w_scn = d.groupby(["_Scenario","Ticker"], as_index=False)["weight_scn_pct"].mean()
-        # 3) join and compute ER
-        er = w_scn.merge(avg_ret, left_on="Ticker", right_on="ticker", how="left")
-        er["avg_ret"] = er["avg_ret"].fillna(0.0)
-        er["contrib"] = er["weight_scn_pct"] * er["avg_ret"]
-        er_view = (er.groupby("_Scenario", as_index=False)["contrib"].sum()
-                     .rename(columns={"_Scenario":"Scenario","contrib":"Expected Return"}))
-    except Exception:
-        pass
-
-    if not er_view.empty:
-        er_view["Color"] = er_view["Scenario"].map(lambda s: SCEN_COLORS.get(s, COLORS["text"]))
-        er_chart = (
-            alt.Chart(er_view)
-            .mark_bar(opacity=0.94)
-            .encode(
-                x=alt.X("Expected Return:Q", title="Weighted average return (units from 'ret')", axis=alt.Axis(format=".3f")),
-                y=alt.Y("Scenario:N", sort=scen_order, title=None),
-                color=alt.Color("Color:N", scale=None, legend=None),
-                tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Expected Return:Q", format=".4f")],
-            )
-            .properties(height=150)
-        )
-        st.altair_chart(er_chart, use_container_width=True)
-    else:
-        st.info("Could not compute expected performance — ensure 'returns_top_per_etf_2025.csv' has 'ticker' + 'ret', and deltas contain 'weight_scn_pct' by 'Ticker'.")
-
-    gap(10)
-
-    # =========================
-    # D) ACTIVE BETS — over/underweights vs benchmark (exact columns)
-    #     active weight = weight_scn_pct − weight_base_pct from deltas
-    # =========================
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">Top active bets — over/underweights vs benchmark</div>'
-        '<div class="info-badge has-tip" data-tip="Active weight = weight_scn_pct − weight_base_pct, aggregated across ETFs.">'
-        'i</div></div>', unsafe_allow_html=True
-    )
-
-    if deltas.empty:
-        st.info("No position deltas available.")
-    else:
-        dd = deltas.copy()
-        dd["_Scenario"] = dd["scenario_id"].apply(canon)
-        # aggregate by scenario + holding across ETFs
-        dd["_aw"] = dd["weight_scn_pct"] - dd["weight_base_pct"]
-        g = (dd.groupby(["_Scenario","Ticker","Name"], as_index=False)["_aw"].sum())
-
-        tabs = st.tabs(scen_order)
-        for tab, scen in zip(tabs, scen_order):
-            with tab:
-                vv = g[g["_Scenario"] == scen].copy()
-                if vv.empty:
-                    st.info("No active bets detected for this scenario.")
-                    continue
-                # pick symmetric top 10 (5 over, 5 under)
-                top_over = vv.nlargest(5, "_aw")
-                top_under= vv.nsmallest(5, "_aw")
-                show = pd.concat([top_under, top_over], ignore_index=True)
-                show["dir"] = show["_aw"].apply(lambda v: "Overweight" if v > 0 else "Underweight")
-                show["Holding"] = show["Ticker"].astype(str) + " — " + show["Name"].astype(str)
-
-                chart = (
-                    alt.Chart(show)
-                    .transform_calculate(abs_aw="abs(datum._aw)")
-                    .mark_bar()
-                    .encode(
-                        x=alt.X("_aw:Q", title="Active weight (pp)"),
-                        y=alt.Y("Holding:N", sort=alt.SortField(field="abs_aw", order="descending"), title=None),
-                        color=alt.Color("dir:N", title=None,
-                                        scale=alt.Scale(domain=["Underweight","Overweight"],
-                                                        range=[COLORS["contro"], COLORS["clean"]])),
-                        tooltip=[alt.Tooltip("Holding:N"), alt.Tooltip("_aw:Q", title="Active weight (pp)", format="+.3f")],
-                    )
-                    .properties(height=340)
-                )
-                st.altair_chart(chart, use_container_width=True)
-
-    gap(10)
-
-    # =========================
-    # E) HOW THE PORTFOLIO MOVED — adds/trims/exits/entries by class (exact columns)
-    #     uses: 'action', 'classification', and |delta_weight_pct|
-    # =========================
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">How the portfolio moved — adds / trims / exits / entries</div>'
-        '<div class="info-badge has-tip" data-tip="Share of total |Δweight| split by action and Clean/Contro/Other.">'
-        'i</div></div>', unsafe_allow_html=True
-    )
-
-    if not deltas.empty:
-        d2 = deltas.copy()
-        d2["_Scenario"] = d2["scenario_id"].apply(canon)
-        d2["_Action"]   = d2["action"].astype(str).str.upper()     # DROP / UP / DOWN / ADD etc.
-        d2["_Class"]    = d2["classification"].astype(str).str.title()
-        d2["_abs_pp"]   = d2["delta_weight_pct"].abs()
-
-        agg_mov = (d2.groupby(["_Scenario","_Action","_Class"], as_index=False)["_abs_pp"].sum())
-        agg_mov = agg_mov[agg_mov["_Scenario"].isin(scen_order)]
-
-        ch = (
-            alt.Chart(agg_mov)
-            .mark_bar(opacity=0.94)
-            .encode(
-                x=alt.X("sum(_abs_pp):Q", stack="normalize",
-                        axis=alt.Axis(title="Share of total |Δweight|", format="%")),
-                y=alt.Y("_Scenario:N", sort=scen_order, title=None),
-                color=alt.Color("_Class:N",
-                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
-                                                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]),
-                                title=None, legend=alt.Legend(orient="top")),
-                column=alt.Column("_Action:N", title=None, spacing=18),
-                tooltip=[
-                    alt.Tooltip("_Scenario:N", title="Scenario"),
-                    alt.Tooltip("_Action:N",   title="Action"),
-                    alt.Tooltip("_Class:N",    title="Class"),
-                    alt.Tooltip("sum(_abs_pp):Q", title="|Δweight| (pp)", format=".3f"),
-                ],
-            )
-            .resolve_scale(y="independent")
-            .properties(height=160)
-        )
-        st.altair_chart(ch, use_container_width=True)
-    else:
-        st.info("No deltas data available for movement breakdown.")
-
-    gap(10)
-
-    # =========================
-    # F) Scenario story strip (short narrative)
-    # =========================
+    # --- Top row: 3 short explanation cards ---
     st.markdown(
         """
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
-          <div class="blx-card"><b style="color:var(--text);">Baseline</b><br><span class="blx-muted">Closest to benchmark; moderate controversial exposure remains.</span></div>
-          <div class="blx-card"><b style="color:var(--text);">Pragmatic Tilt</b><br><span class="blx-muted">Uses small TE budget (~2%) to reduce controversial exposure while preserving balance.</span></div>
-          <div class="blx-card"><b style="color:var(--text);">Strict Exclusion</b><br><span class="blx-muted">Hard screens remove targeted areas; highest TE and largest active bets.</span></div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:10px;">
+          <div class="blx-card"><b style="color:var(--text);">Baseline</b><br><span class="blx-muted">Closest to benchmark; reflects current 2025 portfolio exposures.</span></div>
+          <div class="blx-card"><b style="color:var(--text);">Pragmatic Tilt</b><br><span class="blx-muted">Uses a small tracking-error budget (~2% annualized) to reduce controversial exposure with guardrails.</span></div>
+          <div class="blx-card"><b style="color:var(--text);">Strict Exclusion</b><br><span class="blx-muted">Applies hard screens (Fossil/Tobacco/Weapons/Prisons/Deforestation); results in larger active bets and higher TE.</span></div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    with st.spinner("Loading scenario metrics and ETF AUM for AUM-weighted KPIs…"):
+        # Analysis 3 — per-ETF scenario metrics
+        met = load_scenario_metrics()  # scenario_portfolio_metrics.csv
+        # Analysis 1 — per-ETF AUM (we read from holdings_explorer_2025.csv raw)
+        df_raw, _, _ = load_explorer()
+
+    # ---- Canonical scenario names from scenario_id
+    def _canon(s: str) -> str:
+        s = str(s).strip().lower()
+        if s.startswith("baseline"):    return "Baseline"
+        if s.startswith("pragmatic"):   return "Pragmatic Tilt"
+        if s.startswith("strict"):      return "Strict Exclusion"
+        return s
+
+    # ---- AUM by ETF from Analysis 1 raw (same source the Overview tab uses)
+    # df_raw columns: includes 'etf_ticker' and 'aum_usd'
+    aum_map = (
+        df_raw.groupby("etf_ticker", as_index=False)["aum_usd"].max()
+              .rename(columns={"etf_ticker": "etf", "aum_usd": "aum_usd"})
+    )
+
+    # ---- Join AUM into scenario metrics (exact column names)
+    # scenario_portfolio_metrics.csv expected columns used here:
+    # ['scenario_id','etf','pct_clean_base','pct_contro_base','pct_other_base',
+    #  'pct_clean_scn','pct_contro_scn','pct_other_scn','est_te_annual_pct', ...]
+    m = met.merge(aum_map, on="etf", how="left")
+    m["_Scenario"] = m["scenario_id"].apply(_canon)
+
+    # If any ETF is missing AUM (shouldn’t happen), drop or fallback to equal weight; we drop here to keep consistency with Overview.
+    m = m.dropna(subset=["aum_usd"])
+    # normalize weights within each scenario so Σ AUM > 0
+    # note: we weight each ETF's KPI contribution by its AUM
+    def _wavg(df, col):
+        w = df["aum_usd"].clip(lower=0)
+        x = pd.to_numeric(df[col], errors="coerce")
+        den = w.sum()
+        return float((x * w).sum() / den) if den > 0 else float("nan")
+
+    # For Baseline we prefer the *_base columns; for the two simulated scenarios we use *_scn
+    rows = []
+    for scen in ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]:
+        sub = m[m["_Scenario"] == scen].copy()
+        if sub.empty:
+            continue
+
+        if scen == "Baseline":
+            clean_col = "pct_clean_base"
+            contro_col = "pct_contro_base"
+            other_col = "pct_other_base"
+        else:
+            clean_col = "pct_clean_scn"
+            contro_col = "pct_contro_scn"
+            other_col = "pct_other_scn"
+
+        clean = _wavg(sub, clean_col)
+        contro = _wavg(sub, contro_col)
+        other = _wavg(sub, other_col)
+        te    = _wavg(sub, "est_te_annual_pct")  # TE always comes from scenario estimate
+
+        rows.append({
+            "Scenario": scen,
+            "pct_clean": clean,
+            "pct_contro": contro,
+            "pct_other": other,
+            "te_pct": te,
+        })
+
+    agg = pd.DataFrame(rows)
+
+    # ---- KPI strip (AUM-weighted)
+    st.markdown(
+        '<div class="chart-head"><div class="chart-title">Key metrics (AUM-weighted across ETFs)</div>'
+        '<div class="info-badge has-tip" data-tip="KPIs weight each ETF by its AUM (same logic as 2025 Overview). TE is annualized.">'
+        'i</div></div>',
+        unsafe_allow_html=True,
+    )
     gap(6)
-    cdl1, cdl2, _ = st.columns([0.3,0.3,0.4])
-    with cdl1:
-        st.download_button("Download scenario metrics (CSV)", met.to_csv(index=False).encode("utf-8"),
-                           file_name="scenario_portfolio_metrics.csv", mime="text/csv")
-    with cdl2:
-        st.download_button("Download position deltas (CSV)", deltas.to_csv(index=False).encode("utf-8"),
-                           file_name="scenario_position_deltas.csv", mime="text/csv")
+
+    # colors for scenario headings
+    SCEN_COLORS = {"Baseline": COLORS["primary"], "Pragmatic Tilt": COLORS["clean"], "Strict Exclusion": "#D08A00"}
+    scen_order = ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]
+
+    for scen in scen_order:
+        row = agg[agg["Scenario"] == scen]
+        if row.empty:
+            continue
+        c  = float(row["pct_clean"].iloc[0])
+        k  = float(row["pct_contro"].iloc[0])
+        te = float(row["te_pct"].iloc[0])
+
+        st.markdown(
+            f"<h4 style='margin:10px 0 10px 0; color:{SCEN_COLORS.get(scen, COLORS['text'])};'>{scen}</h4>",
+            unsafe_allow_html=True
+        )
+        c1, c2, c3 = st.columns([0.33, 0.33, 0.34])
+        with c1: kpi_card("% Clean",  f"{c:.1f}%", tone="green")
+        with c2: kpi_card("% Contro", f"{k:.1f}%", tone="red" if k > 0 else "neutral")
+        with c3: kpi_card("TE (ann.)", f"{te:.2f}%", tone="neutral")
+
+    gap(6)
+    st.caption("Tip: Once these KPIs feel right, we can re-enable composition and drivers underneath—still AUM-weighted—to keep the story tight.")
+
+
+
 
 
 
