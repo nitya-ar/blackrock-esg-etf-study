@@ -923,10 +923,9 @@ if mode == "Dashboard":
         st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
 
     # ---------- CHANGE SINCE 2017 ----------
-    
+    with tab2:
+        render_change_since_2017()
         # ---------- TRADEOFF SCENARIOS ----------
-    with tab3:
-        render_tradeoff_scenarios()
  
 
 else:
