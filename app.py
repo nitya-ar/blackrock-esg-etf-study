@@ -571,7 +571,7 @@ def render_change_since_2017():
         )
         tp_net = _two_points_from_series(s_net)
         if tp_net is not None:
-            st.altair_chart(slope_chart(tp_net, [-20, 0], "#8A93A6"), use_container_width=True)
+            st.altair_chart(slope_chart(tp_net, [-20, 10], "#8A93A6"), use_container_width=True)
 
     # KPI 2: Clean
     with k2:
