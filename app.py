@@ -360,6 +360,22 @@ def load_year_compare():             return load_csv(2, "year_compare_summary.cs
 @st.cache_data(show_spinner=False)
 def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.csv")
 
+# -------- Analysis 3 loaders (Tradeoff Scenarios) --------
+@st.cache_data(show_spinner=False)
+def load_scenario_specs():        return load_csv(3, "scenario_specs.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_metrics():      return load_csv(3, "scenario_portfolio_metrics.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_deltas():       return load_csv(3, "scenario_position_deltas.csv")
+
+@st.cache_data(show_spinner=False)
+def load_returns_top():           return load_csv(3, "returns_top_per_etf_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_covariance_daily():      return load_csv(3, "covariance_2025.csv") 
+
 
 # =========================
 # HEADER
@@ -724,10 +740,307 @@ def render_change_since_2017():
         grid(movers_view)
 
 
+# -------------------------
+# RENDERER FOR TAB 2
+# -------------------------
 
+# ---------- TRADEOFF SCENARIOS ----------
+def _pick_c(df, *cands):
+    """lenient column picker"""
+    lc = {c.lower(): c for c in df.columns}
+    for cand in cands:
+        k = cand.lower()
+        if k in lc: return lc[k]
+    # contains
+    for cand in cands:
+        for c in df.columns:
+            if cand.lower() in c.lower(): return c
+    return None
 
+def _fmt_bp(te):
+    try:
+        v = float(te)
+        return f"{v*1e4:.0f} bp"  # annual TE -> basis points
+    except:
+        return "–"
 
+def render_tradeoff_scenarios():
+    st.subheader("Tradeoff Scenarios")
 
+    # ---- Trade-off explainer (simple & small)
+    st.caption(
+        "We test three portfolio versions for each ETF — **Baseline** (unchanged), **Pragmatic Tilt** (gradually shift weight away from controversial names within a tracking-error guardrail), and **Strict Exclusion** (remove controversial names, then refill and cap names). "
+        "This lets you see the **trade-off** between cleaner exposures and **financial impact** (tracking error and realized return vs the baseline)."
+    )
+
+    # ---- Load inputs
+    try:
+        specs   = load_scenario_specs()
+        metrics = load_scenario_metrics()
+        deltas  = load_scenario_deltas()
+    except Exception as e:
+        st.error(f"Could not load Analysis 3 files: {e}")
+        st.stop()
+
+    # Canonical columns in metrics
+    scen_col  = _pick_c(metrics, "scenario")
+    etf_col   = _pick_c(metrics, "ETF_Ticker", "etf", "fund")
+    te_col    = _pick_c(metrics, "TE_annual", "tracking_error")
+    pc_clean  = _pick_c(metrics, "%Clean", "pct_clean")
+    pc_contro = _pick_c(metrics, "%Controversial", "pct_contro")
+    pc_other  = _pick_c(metrics, "%Other", "pct_other")
+    n_names   = _pick_c(metrics, "#names", "num_names")
+
+    if not {scen_col, etf_col, te_col, pc_clean, pc_contro, pc_other, n_names} - {None} == set():
+        st.error("scenario_portfolio_metrics.csv is missing one or more required columns.")
+        st.stop()
+
+    # ---- Scenario summary strip (from specs)
+    sp_scen  = _pick_c(specs, "scenario")
+    sp_type  = _pick_c(specs, "type")
+    sp_te    = _pick_c(specs, "te_budget_annual")
+    sp_cap   = _pick_c(specs, "single_name_cap_pct")
+    sp_mult  = _pick_c(specs, "single_name_cap_mult")
+    sp_secN  = _pick_c(specs, "sector_neutrality_pct")
+    sp_regN  = _pick_c(specs, "region_neutrality_pct")
+    sp_scr   = _pick_c(specs, "hard_screens")
+
+    if sp_scen and sp_type:
+        st.markdown('<div class="blx-card">', unsafe_allow_html=True)
+        cols = st.columns(3)
+        for i, scen in enumerate(["Baseline", "Pragmatic Tilt", "Strict Exclusion"]):
+            with cols[i]:
+                row = specs[specs[sp_scen].astype(str) == scen]
+                t  = row[sp_type].astype(str).iloc[0] if not row.empty else "—"
+                te = row[sp_te].iloc[0] if (sp_te and not row.empty) else ""
+                te_txt = ("No TE cap" if (te=="" or pd.isna(te)) else _fmt_bp(float(te)))
+                cap  = (f"{float(row[sp_cap].iloc[0]):.1f}%" if sp_cap and not row.empty else "–")
+                mult = (f"{float(row[sp_mult].iloc[0]):.1f}×" if sp_mult and not row.empty else "–")
+                secN = (f"±{float(row[sp_secN].iloc[0]):.1f} pp" if sp_secN and not row.empty else "–")
+                regN = (f"±{float(row[sp_regN].iloc[0]):.1f} pp" if sp_regN and not row.empty else "–")
+                scrs = (row[sp_scr].astype(str).iloc[0] if sp_scr and not row.empty else "")
+                scrs = scrs if scrs else "None"
+                st.markdown(
+                    f"""
+                    <div style="line-height:1.45">
+                      <div style="font-weight:700; font-size:15px">{scen}</div>
+                      <div class="blx-muted" style="font-size:12.5px">Type: <b>{t}</b></div>
+                      <div class="blx-muted" style="font-size:12.5px">TE budget: <b>{te_txt}</b></div>
+                      <div class="blx-muted" style="font-size:12.5px">Single-name cap: <b>{cap}</b> (×{mult})</div>
+                      <div class="blx-muted" style="font-size:12.5px">Neutrality (sector/region): <b>{secN}</b> / <b>{regN}</b></div>
+                      <div class="blx-muted" style="font-size:12.5px">Hard screens: <b>{scrs}</b></div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("")  # small gap
+
+    # ---- Filters
+    etfs = sorted(metrics[etf_col].dropna().unique().tolist())
+    l1, l2, l3 = st.columns([0.45, 0.25, 0.30])
+    with l1:
+        scope = st.segmented_control("scope", ["All ETFs", "Single ETF"], default="All ETFs", label_visibility="collapsed")
+    with l2:
+        sel_etf = st.selectbox("ETF", options=["—"] + etfs, index=0, disabled=(scope != "Single ETF"))
+    with l3:
+        show_movers_for = st.selectbox("Scenario for movers", ["Pragmatic Tilt", "Strict Exclusion"], index=0)
+
+    # active metrics slice
+    if scope == "Single ETF" and sel_etf != "—":
+        m = metrics[metrics[etf_col] == sel_etf].copy()
+    else:
+        m = metrics.copy()
+
+    # ---- Aggregate to scenario (mean across selected ETFs)
+    mp = m.groupby(scen_col, dropna=False).agg({
+        pc_clean: "mean",
+        pc_contro: "mean",
+        pc_other: "mean",
+        te_col: "mean",
+        n_names: "mean"
+    }).reset_index()
+
+    # convenience access
+    def _get(mp, scen, col):
+        try:
+            return float(mp.loc[mp[scen_col]==scen, col].iloc[0])
+        except Exception:
+            return float("nan")
+
+    # ---- KPI stacks (no tooltips) — %Clean, %Controversial, TE, #names
+    st.markdown('<div class="blx-card">', unsafe_allow_html=True)
+    cols = st.columns(3)
+    for i, scen in enumerate(["Baseline", "Pragmatic Tilt", "Strict Exclusion"]):
+        with cols[i]:
+            c  = _get(mp, scen, pc_clean)
+            k  = _get(mp, scen, pc_contro)
+            te = _get(mp, scen, te_col)
+            nn = _get(mp, scen, n_names)
+            k1, k2 = st.columns(2)
+            with k1: kpi_card("% Clean", f"{c:.1f}%","green")
+            with k2: kpi_card("% Controversial", f"{k:.1f}%","red")
+            k3, k4 = st.columns(2)
+            with k3: kpi_card("Tracking error", _fmt_bp(te), "neutral")
+            with k4: kpi_card("# securities", f"{int(round(nn)):,}" if pd.notna(nn) else "–", "neutral")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ---- Composition comparison (stacked bars; Baseline emphasized)
+    comp_df = mp[[scen_col, pc_clean, pc_contro, pc_other]].copy()
+    comp_df = comp_df.rename(columns={pc_clean:"Clean", pc_contro:"Controversial", pc_other:"Other"})
+    comp_m  = comp_df.melt(id_vars=[scen_col], value_vars=["Clean","Controversial","Other"],
+                           var_name="Class", value_name="Percent")
+    # Emphasize Baseline with thicker stroke
+    base_layer = alt.Chart(comp_m[comp_m[scen_col]=="Baseline"]).mark_bar(
+        opacity=0.95, stroke='#FFFFFF', strokeWidth=1.2
+    ).encode(
+        x=alt.X("Percent:Q", title="Share (%)", stack="normalize", axis=alt.Axis(format=".0f")),
+        y=alt.Y(f"{scen_col}:N", title=None, sort=["Baseline","Pragmatic Tilt","Strict Exclusion"]),
+        color=alt.Color("Class:N", title=None, scale=alt.Scale(
+            domain=["Clean","Controversial","Other"],
+            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+        ))
+    )
+
+    other_layer = alt.Chart(comp_m[comp_m[scen_col]!="Baseline"]).mark_bar(
+        opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6
+    ).encode(
+        x=alt.X("Percent:Q", title="Share (%)", stack="normalize", axis=alt.Axis(format=".0f")),
+        y=alt.Y(f"{scen_col}:N", title=None, sort=["Baseline","Pragmatic Tilt","Strict Exclusion"]),
+        color=alt.Color("Class:N", title=None, scale=alt.Scale(
+            domain=["Clean","Controversial","Other"],
+            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+        ))
+    )
+
+    st.markdown('<div class="chart-head"><div class="chart-title">Composition comparison</div></div>', unsafe_allow_html=True)
+    st.altair_chart((other_layer + base_layer).properties(height=180), use_container_width=True)
+
+    # ---- Tracking error comparison (simple bars)
+    te_view = mp[[scen_col, te_col]].copy().rename(columns={te_col:"TE_annual"})
+    st.markdown('<div class="chart-head"><div class="chart-title">Tracking error (annual)</div></div>', unsafe_allow_html=True)
+    te_chart = alt.Chart(te_view).mark_bar(opacity=0.9).encode(
+        x=alt.X("TE_annual:Q", title="Tracking error (annual)"),
+        y=alt.Y(f"{scen_col}:N", sort=["Baseline","Pragmatic Tilt","Strict Exclusion"], title=None),
+        tooltip=[alt.Tooltip(f"{scen_col}:N", title="Scenario"), alt.Tooltip("TE_annual:Q", title="Annual TE", format=".4f")]
+    ).properties(height=150)
+    st.altair_chart(te_chart, use_container_width=True)
+
+    # ---- Financial impact (backtest vs baseline), requires a single ETF
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="chart-head"><div class="chart-title">Financial impact — realized return vs baseline</div></div>', unsafe_allow_html=True)
+
+    if scope == "Single ETF" and sel_etf != "—":
+        try:
+            rets = load_returns_top()      # date, ticker, ret, etfs, location, agg_weight_pct, yahoo_symbol
+            # needed columns in deltas
+            d_etf  = _pick_c(deltas, "ETF_Ticker","etf")
+            d_scen = _pick_c(deltas, "scenario")
+            d_tic  = _pick_c(deltas, "company_ticker","ticker")
+            d_wb   = _pick_c(deltas, "w_base")
+            d_wn   = _pick_c(deltas, "w_new")
+            if not {d_etf, d_scen, d_tic, d_wb, d_wn} - {None} == set():
+                raise ValueError("scenario_position_deltas.csv missing a required column.")
+            # prep returns
+            r_date = _pick_c(rets, "date")
+            r_tic  = _pick_c(rets, "ticker")
+            r_ret  = _pick_c(rets, "ret")
+            ret_df = rets[[r_date, r_tic, r_ret]].copy()
+            ret_df[r_date] = pd.to_datetime(ret_df[r_date], errors="coerce")
+            ret_df = ret_df.dropna(subset=[r_date, r_tic, r_ret])
+
+            # weights for this ETF
+            d_etf_df = deltas[deltas[d_etf] == sel_etf].copy()
+            def _build_path(weights_col, label):
+                w = d_etf_df[[d_tic, weights_col]].copy().rename(columns={d_tic:"ticker", weights_col:"w"})
+                w["w"] = pd.to_numeric(w["w"], errors="coerce").fillna(0.0)
+                w = w.groupby("ticker", dropna=False)["w"].sum().reset_index()
+                # daily portfolio return
+                m = ret_df.merge(w, on="ticker", how="inner")
+                d = m.groupby(r_date).apply(lambda g: (g[r_ret]*g["w"]).sum()).reset_index(name="port_ret")
+                d = d.sort_values(r_date)
+                d["curve"] = label
+                d["value"] = (1.0 + d["port_ret"]).cumprod() * 100.0
+                return d[[r_date, "curve", "value"]]
+
+            base_curve = _build_path(d_wb, "Baseline")
+            tilt_curve = _build_path(d_wn, "Pragmatic Tilt") if show_movers_for == "Pragmatic Tilt" else None
+            excl_curve = _build_path(d_wn, "Strict Exclusion") if show_movers_for == "Strict Exclusion" else None
+
+            # We need both baseline and chosen scenario curves; rebuild chosen scenario with the correct filter
+            scen_for_curve = show_movers_for
+            d_etf_df = deltas[(deltas[d_etf] == sel_etf) & (deltas[d_scen] == scen_for_curve)].copy()
+            scen_curve = _build_path(d_wn, scen_for_curve)
+
+            curves = pd.concat([base_curve, scen_curve], ignore_index=True)
+            line = alt.Chart(curves).mark_line(point=False).encode(
+                x=alt.X(f"{r_date}:T", title=None),
+                y=alt.Y("value:Q", title="Index (start=100)"),
+                color=alt.Color("curve:N", title=None, scale=alt.Scale(
+                    domain=["Baseline", "Pragmatic Tilt", "Strict Exclusion"],
+                    range=[COLORS["other"], COLORS["clean"], COLORS["contro"]]
+                ))
+            ).properties(height=260)
+            st.altair_chart(line, use_container_width=True)
+
+            # summary stats
+            def _summary(df_curve):
+                out = {}
+                out["Total return"] = df_curve["value"].iloc[-1] / df_curve["value"].iloc[0] - 1.0 if len(df_curve) >= 2 else float("nan")
+                # simple drawdown calc
+                roll_max = df_curve["value"].cummax()
+                drawdown = (df_curve["value"] / roll_max) - 1.0
+                out["Max drawdown"] = drawdown.min() if len(drawdown) else float("nan")
+                return out
+
+            base_stats = _summary(base_curve)
+            scen_stats = _summary(scen_curve)
+            st.markdown("")
+            cA, cB, cC = st.columns(3)
+            with cA: kpi_card("ETF", sel_etf, "neutral")
+            with cB: kpi_card("Excess return vs Baseline", f"{(scen_stats['Total return'] - base_stats['Total return'])*100:.2f}%", "neutral")
+            with cC: kpi_card("Max DD diff (scen − base)", f"{(scen_stats['Max drawdown'] - base_stats['Max drawdown'])*100:.2f} pp", "neutral")
+
+        except Exception as e:
+            st.info("Select a single ETF to compute realized relative returns, or provide returns CSV. Details:")
+            st.code(str(e))
+
+    else:
+        st.info("Select **Single ETF** to see realized return vs baseline.")
+
+    # ---- Top movers table (for selected ETF & scenario)
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="chart-head"><div class="chart-title">Top movers (weight change vs Baseline)</div></div>', unsafe_allow_html=True)
+
+    d_etf  = _pick_c(deltas, "ETF_Ticker","etf")
+    d_scen = _pick_c(deltas, "scenario")
+    d_name = _pick_c(deltas, "company_name","name")
+    d_tic  = _pick_c(deltas, "company_ticker","ticker")
+    d_sec  = _pick_c(deltas, "Sector")
+    d_loc  = _pick_c(deltas, "Location")
+    d_wb   = _pick_c(deltas, "w_base")
+    d_wn   = _pick_c(deltas, "w_new")
+    d_d    = _pick_c(deltas, "delta")
+
+    dd = deltas.copy()
+    if scope == "Single ETF" and sel_etf != "—":
+        dd = dd[dd[d_etf] == sel_etf]
+    dd = dd[dd[d_scen] == show_movers_for]
+
+    if dd.empty:
+        st.info("No movers for the current selection.")
+    else:
+        tmp = dd[[d_name, d_tic, d_sec, d_loc, d_wb, d_wn, d_d]].copy()
+        tmp["_abs"] = pd.to_numeric(tmp[d_d], errors="coerce").abs()
+        up   = tmp.sort_values("_abs", ascending=False).head(10)
+        up = up.rename(columns={
+            d_name:"Holding", d_tic:"Ticker", d_sec:"Sector", d_loc:"Region",
+            d_wb:"Base w", d_wn:"New w", d_d:"Δ w"
+        })[["Holding","Ticker","Sector","Region","Base w","New w","Δ w"]]
+        for c in ["Base w","New w","Δ w"]:
+            up[c] = pd.to_numeric(up[c], errors="coerce").map(lambda v: f"{v*100:.2f}%")
+        st.dataframe(style_dark_df(up), use_container_width=True, hide_index=True)
 
 
 
@@ -926,7 +1239,8 @@ if mode == "Dashboard":
     with tab2:
         render_change_since_2017()
         # ---------- TRADEOFF SCENARIOS ----------
- 
+    with tab3:
+        render_tradeoff_scenarios()
 
 else:
     # ---------------- REPORT ----------------
