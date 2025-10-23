@@ -360,21 +360,6 @@ def load_year_compare():             return load_csv(2, "year_compare_summary.cs
 @st.cache_data(show_spinner=False)
 def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.csv")
 
-# Analysis 3 loaders (Tradeoff Scenarios)
-@st.cache_data(show_spinner=False)
-def load_scenario_metrics():         return load_csv(3, "scenario_portfolio_metrics.csv")
-
-@st.cache_data(show_spinner=False)
-def load_scenario_deltas():          return load_csv(3, "scenario_position_deltas.csv")
-
-@st.cache_data(show_spinner=False)
-def load_returns_vector():           return load_csv(3, "returns_top_per_etf_2025.csv")
-
-@st.cache_data(show_spinner=False)
-def load_covariance_matrix():        return load_csv(3, "covariance_2025.csv")
-
-@st.cache_data(show_spinner=False)
-def load_scenario_progress():        return load_csv(3, "scenario_progress.csv")
 
 # =========================
 # HEADER
@@ -741,128 +726,6 @@ def render_change_since_2017():
 
 
 
-# -------------------------
-# RENDERER FOR TAB 3 — minimal: story cards + AUM-weighted KPIs only
-# -------------------------
-def render_tradeoff_scenarios():
-    st.subheader("Tradeoff Scenarios")
-    st.caption("Numbers below are **AUM-weighted across ETFs** to match the 2025 Overview. Baseline = current portfolio; Pragmatic Tilt ≈ 2% TE budget; Strict Exclusion = hard screens.")
-
-    # --- Top row: 3 short explanation cards ---
-    st.markdown(
-        """
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:10px;">
-          <div class="blx-card"><b style="color:var(--text);">Baseline</b><br><span class="blx-muted">Closest to benchmark; reflects current 2025 portfolio exposures.</span></div>
-          <div class="blx-card"><b style="color:var(--text);">Pragmatic Tilt</b><br><span class="blx-muted">Uses a small tracking-error budget (~2% annualized) to reduce controversial exposure with guardrails.</span></div>
-          <div class="blx-card"><b style="color:var(--text);">Strict Exclusion</b><br><span class="blx-muted">Applies hard screens (Fossil/Tobacco/Weapons/Prisons/Deforestation); results in larger active bets and higher TE.</span></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    with st.spinner("Loading scenario metrics and ETF AUM for AUM-weighted KPIs…"):
-        # Analysis 3 — per-ETF scenario metrics
-        met = load_scenario_metrics()  # scenario_portfolio_metrics.csv
-        # Analysis 1 — per-ETF AUM (we read from holdings_explorer_2025.csv raw)
-        df_raw, _, _ = load_explorer()
-
-    # ---- Canonical scenario names from scenario_id
-    def _canon(s: str) -> str:
-        s = str(s).strip().lower()
-        if s.startswith("baseline"):    return "Baseline"
-        if s.startswith("pragmatic"):   return "Pragmatic Tilt"
-        if s.startswith("strict"):      return "Strict Exclusion"
-        return s
-
-    # ---- AUM by ETF from Analysis 1 raw (same source the Overview tab uses)
-    # df_raw columns: includes 'etf_ticker' and 'aum_usd'
-    aum_map = (
-        df_raw.groupby("etf_ticker", as_index=False)["aum_usd"].max()
-              .rename(columns={"etf_ticker": "etf", "aum_usd": "aum_usd"})
-    )
-
-    # ---- Join AUM into scenario metrics (exact column names)
-    # scenario_portfolio_metrics.csv expected columns used here:
-    # ['scenario_id','etf','pct_clean_base','pct_contro_base','pct_other_base',
-    #  'pct_clean_scn','pct_contro_scn','pct_other_scn','est_te_annual_pct', ...]
-    m = met.merge(aum_map, on="etf", how="left")
-    m["_Scenario"] = m["scenario_id"].apply(_canon)
-
-    # If any ETF is missing AUM (shouldn’t happen), drop or fallback to equal weight; we drop here to keep consistency with Overview.
-    m = m.dropna(subset=["aum_usd"])
-    # normalize weights within each scenario so Σ AUM > 0
-    # note: we weight each ETF's KPI contribution by its AUM
-    def _wavg(df, col):
-        w = df["aum_usd"].clip(lower=0)
-        x = pd.to_numeric(df[col], errors="coerce")
-        den = w.sum()
-        return float((x * w).sum() / den) if den > 0 else float("nan")
-
-    # For Baseline we prefer the *_base columns; for the two simulated scenarios we use *_scn
-    rows = []
-    for scen in ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]:
-        sub = m[m["_Scenario"] == scen].copy()
-        if sub.empty:
-            continue
-
-        if scen == "Baseline":
-            clean_col = "pct_clean_base"
-            contro_col = "pct_contro_base"
-            other_col = "pct_other_base"
-        else:
-            clean_col = "pct_clean_scn"
-            contro_col = "pct_contro_scn"
-            other_col = "pct_other_scn"
-
-        clean = _wavg(sub, clean_col)
-        contro = _wavg(sub, contro_col)
-        other = _wavg(sub, other_col)
-        te    = _wavg(sub, "est_te_annual_pct")  # TE always comes from scenario estimate
-
-        rows.append({
-            "Scenario": scen,
-            "pct_clean": clean,
-            "pct_contro": contro,
-            "pct_other": other,
-            "te_pct": te,
-        })
-
-    agg = pd.DataFrame(rows)
-
-    # ---- KPI strip (AUM-weighted)
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">Key metrics (AUM-weighted across ETFs)</div>'
-        '<div class="info-badge has-tip" data-tip="KPIs weight each ETF by its AUM (same logic as 2025 Overview). TE is annualized.">'
-        'i</div></div>',
-        unsafe_allow_html=True,
-    )
-    gap(6)
-
-    # colors for scenario headings
-    SCEN_COLORS = {"Baseline": COLORS["primary"], "Pragmatic Tilt": COLORS["clean"], "Strict Exclusion": "#D08A00"}
-    scen_order = ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]
-
-    for scen in scen_order:
-        row = agg[agg["Scenario"] == scen]
-        if row.empty:
-            continue
-        c  = float(row["pct_clean"].iloc[0])
-        k  = float(row["pct_contro"].iloc[0])
-        te = float(row["te_pct"].iloc[0])
-
-        st.markdown(
-            f"<h4 style='margin:10px 0 10px 0; color:{SCEN_COLORS.get(scen, COLORS['text'])};'>{scen}</h4>",
-            unsafe_allow_html=True
-        )
-        c1, c2, c3 = st.columns([0.33, 0.33, 0.34])
-        with c1: kpi_card("% Clean",  f"{c:.1f}%", tone="green")
-        with c2: kpi_card("% Contro", f"{k:.1f}%", tone="red" if k > 0 else "neutral")
-        with c3: kpi_card("TE (ann.)", f"{te:.2f}%", tone="neutral")
-
-    gap(6)
-    st.caption("Tip: Once these KPIs feel right, we can re-enable composition and drivers underneath—still AUM-weighted—to keep the story tight.")
-
-
 
 
 
@@ -1060,9 +923,7 @@ if mode == "Dashboard":
         st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
 
     # ---------- CHANGE SINCE 2017 ----------
-    with tab2:
-        render_change_since_2017()
-
+    
         # ---------- TRADEOFF SCENARIOS ----------
     with tab3:
         render_tradeoff_scenarios()
