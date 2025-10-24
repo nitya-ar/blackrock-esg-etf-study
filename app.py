@@ -1128,31 +1128,33 @@ def _portfolio_series_for_etf(etf: str, deltas: pd.DataFrame, returns_df: pd.Dat
 
 
 
-
+#render 3 
 def render_tradeoff_scenarios():
     import re
-    import numpy as np
     import pandas as pd
     import streamlit as st
 
-    # ---------- helpers ----------
+    # ---- small utils ----
     def _norm(s: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", str(s).lower()) if s is not None else ""
 
     def _pick(df: pd.DataFrame, *cands):
         for c in cands:
-            if c in df.columns: return c
+            if c in df.columns:
+                return c
         low = {c.lower(): c for c in df.columns}
         for c in cands:
-            if c.lower() in low: return low[c.lower()]
+            if c.lower() in low:
+                return low[c.lower()]
         for c in df.columns:
-            if any(cc.lower() in c.lower() for cc in cands): return c
+            if any(cc.lower() in c.lower() for cc in cands):
+                return c
         return None
 
     def _fmt_pct_auto(x):
         try:
             v = float(x)
-            if -1.5 <= v <= 1.5:  # treat as fraction
+            if -1.5 <= v <= 1.5:   # treat as fraction
                 return f"{v*100:.1f}%"
             return f"{v:.1f}%"
         except:
@@ -1170,11 +1172,11 @@ def render_tradeoff_scenarios():
             unsafe_allow_html=True,
         )
 
-    # ---------- load ----------
+    # ---- load data ----
     specs   = load_scenario_specs()
     metrics = load_scenario_metrics().copy()
 
-    # ---------- columns ----------
+    # ---- bind columns (robust) ----
     scen_col  = _pick(metrics, "scenario_id", "scenario")
     etf_col   = _pick(metrics, "ETF_Ticker", "etf", "fund_ticker")
     clean_col = _pick(metrics, "pct_clean_scn", "pct_clean", "%Clean")
@@ -1183,41 +1185,56 @@ def render_tradeoff_scenarios():
     te_col    = _pick(metrics, "est_te_annual_pct", "te_annual", "tracking_error", "TE_annual")
     n_col     = _pick(metrics, "#names", "n_holdings", "holdings", "num_names")
 
-    req = [scen_col, etf_col, clean_col, ctr_col, te_col]
-    if any(c is None for c in req):
+    need = [scen_col, etf_col, clean_col, ctr_col, te_col]
+    if any(c is None for c in need):
         st.error("scenario_portfolio_metrics.csv is missing required columns.")
         return
 
-    # normalize scenario ids
+    # ---- normalize scenario ids & pretty labels ----
     scen_map_in = {
         "baseline": "baseline",
         "pragmatictilt": "tilt", "tilt": "tilt",
         "strictexclusion": "exclude", "exclude": "exclude",
     }
-    metrics["scenario_id"] = metrics[scen_col].astype(str).apply(_norm).map(scen_map_in).fillna(metrics[scen_col].astype(str))
+    metrics["scenario_id"] = metrics[scen_col].astype(str).apply(_norm).map(scen_map_in).fillna(metrics[scen_col])
     scen_label = {"baseline": "Baseline", "tilt": "Pragmatic Tilt", "exclude": "Strict Exclusion"}
     metrics["scenario_label"] = metrics["scenario_id"].map(lambda s: scen_label.get(s, str(s).title()))
 
-    # ---------- header copy (simple, non-technical) ----------
+    # ==============================
+    # 1) Heading + short explainer
+    # ==============================
     st.subheader("Tradeoff Scenarios")
+    st.write(
+        "This analysis asks a simple question: **how much cleaner can we make each ETF, and what’s the cost in benchmark "
+        "tracking error and portfolio breadth?** We compare the current portfolio to two rules-based variants, then report "
+        "four headline metrics: **% Clean**, **% Controversial**, **Tracking Error (annualized)**, and **# Holdings**."
+    )
 
+    # ==============================
+    # 2) Scenario cards (what users need)
+    # ==============================
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("**Baseline**")
         st.caption("2025 current portfolio — unchanged holdings and weights.")
-        st.markdown("- Single-name cap: 5.0%")
+        st.markdown("- Single-name cap: **5.0%**")
+        st.markdown("- No additional screens")
     with c2:
         st.markdown("**Pragmatic Tilt**")
-        st.caption("Gently reduce exposure to controversial names while staying within a risk budget.")
-        st.markdown("- Target: ~2 pp cleaner (typical), within TE cap")
+        st.caption("Lightly reduce exposure to controversial names while staying within a tracking-error guardrail.")
+        st.markdown("- Target: **~2 pp cleaner** vs Baseline (typical)")
+        st.markdown("- Obeys TE cap; keeps single-name cap")
     with c3:
         st.markdown("**Strict Exclusion**")
-        st.caption("Remove controversial names; reweight inside each sector; keep the single-name cap.")
-        st.markdown("- Hard screens on controversial categories")
+        st.caption("Remove controversial names outright; rebalance within sectors; maintain the cap per name.")
+        st.markdown("- **Hard screens** on controversial categories")
+        st.markdown("- Sector-neutral reweighting; single-name cap enforced")
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # ---------- filter (ETF only) ----------
+    # ==============================
+    # 3) ETF filter (single control)
+    # ==============================
     etf_list = sorted(metrics[etf_col].dropna().astype(str).unique())
     sel_etf = st.selectbox("ETF filter", ["All"] + etf_list, index=0)
 
@@ -1225,8 +1242,11 @@ def render_tradeoff_scenarios():
     if sel_etf != "All":
         M = M[M[etf_col].astype(str) == sel_etf]
 
-    # ---------- aggregate KPIs per scenario ----------
-    agg = (
+    # ==============================
+    # 4) KPI rows — one scenario per row
+    # ==============================
+    # aggregate per scenario
+    kpis = (
         M.groupby(["scenario_id", "scenario_label"], dropna=False)
          .agg(
              clean=(clean_col, "mean"),
@@ -1237,28 +1257,29 @@ def render_tradeoff_scenarios():
          .reset_index()
     )
     order = ["baseline", "tilt", "exclude"]
-    agg["__o__"] = agg["scenario_id"].map({s: i for i, s in enumerate(order)})
-    agg = agg.sort_values(["__o__", "scenario_label"])
+    kpis["__o__"] = kpis["scenario_id"].map({s: i for i, s in enumerate(order)})
+    kpis = kpis.sort_values(["__o__", "scenario_label"])
 
-    # ---------- KPI row (color rules you requested) ----------
     st.markdown("**Key metrics**")
-    cols = st.columns(3)
-    for i, (_, r) in enumerate(agg.iterrows()):
-        with cols[i % 3]:
-            st.markdown(f"**{r['scenario_label']}**")
 
-            # Row of four small KPIs
-            k1, k2 = st.columns(2)
-            tone_clean  = "green" if (pd.notna(r["clean"]) and float(r["clean"]) > 0) else "neutral"
-            tone_contro = "red"   if (pd.notna(r["contro"]) and float(r["contro"]) > 0) else "neutral"
-            with k1: _kpi("% Clean", _fmt_pct_auto(r["clean"]), tone_clean)
-            with k2: _kpi("% Controversial", _fmt_pct_auto(r["contro"]), tone_contro)
+    # render each scenario on its own straight line of four KPIs
+    for _, r in kpis.iterrows():
+        st.markdown(f"**{r['scenario_label']}**")
+        col1, col2, col3, col4 = st.columns(4)
 
-            k3, k4 = st.columns(2)
-            with k3: _kpi("TE (ann.)", _fmt_pct_auto(r["te"]), "neutral")
-            with k4: _kpi("# Holdings", f"{int(round(r['n'])):,}" if pd.notna(r["n"]) else "–", "neutral")
+        tone_clean  = "green" if (pd.notna(r["clean"]) and float(r["clean"]) > 0) else "neutral"
+        tone_contro = "red"   if (pd.notna(r["contro"]) and float(r["contro"]) > 0) else "neutral"
 
-    # (visualizations come next; keeping the tab focused/compact for now)
+        with col1: _kpi("% Clean", _fmt_pct_auto(r["clean"]), tone_clean)
+        with col2: _kpi("% Controversial", _fmt_pct_auto(r["contro"]), tone_contro)
+        with col3: _kpi("TE (ann.)", _fmt_pct_auto(r["te"]), "neutral")
+        with col4: _kpi("# Holdings", f"{int(round(r['n'])):,}" if pd.notna(r["n"]) else "–", "neutral")
+
+        # small vertical gap between scenario rows
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
+    # (Visualizations will follow below in the next step.)
+
 
 
 
