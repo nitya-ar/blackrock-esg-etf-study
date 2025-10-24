@@ -361,37 +361,272 @@ def load_year_compare():             return load_csv(2, "year_compare_summary.cs
 def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.csv")
 
 # -------- Analysis 3 loaders (Tradeoff Scenarios) --------
+# -------- Analysis 3 loaders (Tradeoff Scenarios) --------
+import re
+import pandas as pd
+import streamlit as st
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(s).lower()) if s is not None else ""
+
+def _pick(cols, *cands):
+    low = { _norm(c): c for c in cols }
+    for cand in cands:
+        if _norm(cand) in low:
+            return low[_norm(cand)]
+    # fallback: "contains"
+    for c in cols:
+        cc = _norm(c)
+        for cand in cands:
+            if _norm(cand) and _norm(cand) in cc:
+                return c
+    return None
+
+def _pp(series: pd.Series) -> pd.Series:
+    """Ensure values are in percentage points (0–100)."""
+    s = pd.to_numeric(series, errors="coerce")
+    # if mostly in 0–1, scale to 0–100
+    if s.dropna().between(0, 1.5).mean() >= 0.8 and (s.max(skipna=True) or 0) <= 1.5:
+        s = s * 100.0
+    return s
+
+@st.cache_data(show_spinner=False)
+def load_etf_aum_2025():
+    """
+    Optional AUM table (one row per ETF) to enable AUM-weighted aggregation
+    consistent with the 2025 Overview tab.
+
+    Expected columns (robust to variants): ETF_Ticker, AUM_USD (or market_total_value_usd)
+    """
+    try:
+        a = load_csv(1, "context_summary_2025.csv")  # prefer Analysis 1 if present
+        # This file has multiple rows; derive AUM by ETF if available, else fallback to dedicated file
+        if {"etf_ticker","market_total_value_usd"}.issubset({c.lower() for c in a.columns}):
+            etf_col = _pick(a.columns, "ETF_Ticker", "etf_ticker", "fund", "etf")
+            aum_col = _pick(a.columns, "market_total_value_usd", "aum_usd", "net_assets_usd")
+            out = a[[etf_col, aum_col]].dropna().drop_duplicates()
+            return out.rename(columns={etf_col: "ETF_Ticker", aum_col: "AUM_USD"})
+    except Exception:
+        pass
+
+    # Fallback: dedicated AUM file placed in Analysis 3 (you uploaded: etf_aum_2025.csv)
+    try:
+        a = load_csv(3, "etf_aum_2025.csv")
+        etf_col = _pick(a.columns, "ETF_Ticker", "etf_ticker", "fund", "etf")
+        aum_col = _pick(a.columns, "AUM_USD", "market_total_value_usd", "net_assets_usd", "aum")
+        a = a[[etf_col, aum_col]].rename(columns={etf_col: "ETF_Ticker", aum_col: "AUM_USD"})
+        a["AUM_USD"] = pd.to_numeric(a["AUM_USD"], errors="coerce")
+        return a.dropna(subset=["ETF_Ticker"]).drop_duplicates("ETF_Ticker")
+    except Exception:
+        # If nothing found, return empty (the render code should handle AUM-weighting gracefully)
+        return pd.DataFrame(columns=["ETF_Ticker", "AUM_USD"])
+
 @st.cache_data(show_spinner=False)
 def load_scenario_specs():
-    # expected cols (from your generator): scenario, type, te_budget_annual, sector_neutrality_pct,
-    # region_neutrality_pct, single_name_cap_pct, single_name_cap_mult, hard_screens
-    return load_csv(3, "scenario_specs.csv")
+    """
+    scenario_specs.csv
+    Expected (robust): scenario, type, te_budget_annual, sector_neutrality_pct, region_neutrality_pct,
+                       single_name_cap_pct, single_name_cap_mult, hard_screens
+    """
+    df = load_csv(3, "scenario_specs.csv").copy()
+    # soft normalize common columns
+    ren = {}
+    for want, cands in {
+        "scenario": ["scenario", "name", "scenario_name", "label"],
+        "type": ["type", "scenario_type"],
+        "te_budget_annual": ["te_budget_annual", "te_budget", "te_limit", "te"],
+        "sector_neutrality_pct": ["sector_neutrality_pct", "sector_neutrality", "rule_sector_band"],
+        "region_neutrality_pct": ["region_neutrality_pct", "region_neutrality", "rule_region_band"],
+        "single_name_cap_pct": ["single_name_cap_pct", "rule_cap_abs_pct", "cap_pct"],
+        "single_name_cap_mult": ["single_name_cap_mult", "rule_cap_x_baseline", "cap_mult"],
+        "hard_screens": ["hard_screens", "screens", "exclusions"]
+    }.items():
+        col = _pick(df.columns, *cands)
+        if col and col != want:
+            ren[col] = want
+    if ren:
+        df = df.rename(columns=ren)
+
+    # keep types clean
+    for c in ["sector_neutrality_pct", "region_neutrality_pct", "single_name_cap_pct", "single_name_cap_mult"]:
+        if c in df.columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    if "te_budget_annual" in df.columns:
+        df["te_budget_annual"] = pd.to_numeric(df["te_budget_annual"], errors="coerce")
+    if "hard_screens" in df.columns:
+        df["hard_screens"] = df["hard_screens"].fillna("").astype(str)
+
+    return df
 
 @st.cache_data(show_spinner=False)
 def load_scenario_metrics():
-    # available (per your banner): 
-    # [scenario_id, scope, ETF_Ticker, pct_clean_base, pct_contro_base, pct_other_base,
-    #  pct_clean_scn, pct_contro_scn, pct_other_scn, active_share_pct, est_te_annual_pct,
-    #  factor_drift_sector_pct, factor_drift_region_pct, liquidity_status, notes,
-    #  rule_te_budget_annual_pct, rule_sector_band, rule_region_band, rule_cap_abs_pct,
-    #  rule_cap_x_baseline, rule_clean_tilt_target_pp, rule_excl_fossil, rule_excl_tobacco,
-    #  rule_excl_weapons, rule_excl_prisons, rule_excl_deforestation]
-    return load_csv(3, "scenario_portfolio_metrics.csv")
+    """
+    scenario_portfolio_metrics.csv (from Analysis 3 generator)
+
+    Normalizes to:
+      - scenario_id (baseline/tilt/exclude)
+      - scenario_label ("Baseline", "Pragmatic Tilt", "Strict Exclusion")
+      - ETF_Ticker
+      - %Clean, %Controversial, %Other (all in 0–100 pp)
+      - TE_annual (as fraction, NOT %; keep original if already a fraction)
+      - #names
+      - merges AUM_USD (to enable AUM-weighted rollups aligned with Overview)
+    """
+    m = load_csv(3, "scenario_portfolio_metrics.csv").copy()
+
+    # Column detection
+    scen = _pick(m.columns, "scenario_id", "scenario", "scenario_name", "type")
+    etf  = _pick(m.columns, "ETF_Ticker", "etf_ticker", "fund", "etf")
+    ccl  = _pick(m.columns, "%Clean", "pct_clean_scn", "pct_clean")
+    ctr  = _pick(m.columns, "%Controversial", "pct_contro_scn", "pct_controversial")
+    oth  = _pick(m.columns, "%Other", "pct_other_scn", "pct_other")
+    te   = _pick(m.columns, "TE_annual", "est_te_annual_pct", "tracking_error", "te_annual")
+    nn   = _pick(m.columns, "#names", "n_holdings", "holdings", "num_names")
+
+    # Rename selected to canonical
+    ren = {}
+    if scen and scen != "scenario": ren[scen] = "scenario"
+    if etf  and etf  != "ETF_Ticker": ren[etf]  = "ETF_Ticker"
+    if ccl  and ccl  != "%Clean": ren[ccl] = "%Clean"
+    if ctr  and ctr  != "%Controversial": ren[ctr] = "%Controversial"
+    if oth  and oth  != "%Other": ren[oth] = "%Other"
+    if te   and te   != "TE_annual": ren[te] = "TE_annual"
+    if nn   and nn   != "#names": ren[nn] = "#names"
+    if ren:
+        m = m.rename(columns=ren)
+
+    # Normalize scenario id/label
+    def _sid(x: str) -> str:
+        key = _norm(x)
+        if key in ("baseline",): return "baseline"
+        if key in ("tilt", "pragmatictilt", "pragmatic_tilt"): return "tilt"
+        if key in ("exclude", "strictexclusion", "strict_exclusion"): return "exclude"
+        return x
+    m["scenario_id"] = m["scenario"].astype(str).map(_sid)
+    label_map = {"baseline": "Baseline", "tilt": "Pragmatic Tilt", "exclude": "Strict Exclusion"}
+    m["scenario_label"] = m["scenario_id"].map(lambda s: label_map.get(s, str(s).title()))
+
+    # Percent fields -> 0–100 pp
+    if "%Clean" in m.columns:          m["%Clean"] = _pp(m["%Clean"])
+    if "%Controversial" in m.columns:  m["%Controversial"] = _pp(m["%Controversial"])
+    if "%Other" in m.columns:          m["%Other"] = _pp(m["%Other"])
+
+    # TE_annual: keep in fraction (e.g., 0.02 = 2%) — if values look like 0–100, convert down
+    if "TE_annual" in m.columns:
+        te_s = pd.to_numeric(m["TE_annual"], errors="coerce")
+        # if mostly >=1 and <=100, assume it's in %
+        if te_s.dropna().between(0, 1.5).mean() < 0.2 and te_s.dropna().between(0, 100).mean() > 0.7:
+            te_s = te_s / 100.0
+        m["TE_annual"] = te_s
+
+    # Names
+    if "#names" in m.columns:
+        m["#names"] = pd.to_numeric(m["#names"], errors="coerce").round().astype("Int64")
+
+    # Merge AUM (for AUM-weighted rollups aligned with Overview)
+    aum = load_etf_aum_2025()
+    if not aum.empty and "ETF_Ticker" in m.columns:
+        m = m.merge(aum, on="ETF_Ticker", how="left")
+
+    # Ensure required columns exist
+    for req in ["scenario_id", "scenario_label", "ETF_Ticker", "%Clean", "%Controversial", "%Other", "TE_annual"]:
+        if req not in m.columns:
+            m[req] = pd.NA
+
+    return m
 
 @st.cache_data(show_spinner=False)
 def load_scenario_deltas():
-    # preferred cols (from your generator): 
-    # [scenario, ETF_Ticker, company_ticker, company_name, Sector, Location, w_base, w_new, delta]
-    # but we defensively handle if w_new is missing.
-    return load_csv(3, "scenario_position_deltas.csv")
+    """
+    scenario_position_deltas.csv
+      Ensures: ETF_Ticker, scenario_id, company_ticker, company_name, Sector, Region, w_base, w_new, delta
+    """
+    d = load_csv(3, "scenario_position_deltas.csv").copy()
+    ren = {}
+    # essential cols
+    etf   = _pick(d.columns, "ETF_Ticker", "etf_ticker", "fund", "etf")
+    scen  = _pick(d.columns, "scenario_id", "scenario", "scenario_name", "type")
+    tkr   = _pick(d.columns, "company_ticker", "ticker", "symbol")
+    name  = _pick(d.columns, "company_name", "name", "security_name", "holding")
+    sec   = _pick(d.columns, "Sector", "sector")
+    reg   = _pick(d.columns, "Region", "region", "location_region", "location")
+    wb    = _pick(d.columns, "w_base", "weight_base", "base_weight")
+    wn    = _pick(d.columns, "w_new",  "new_weight", "weight_new", "w_scn")
+    dd    = _pick(d.columns, "delta",  "dw", "change", "weight_delta")
+
+    for c, tgt in [(etf, "ETF_Ticker"), (scen, "scenario"), (tkr, "company_ticker"),
+                   (name, "company_name"), (sec, "Sector"), (reg, "Region"),
+                   (wb, "w_base"), (wn, "w_new"), (dd, "delta")]:
+        if c and c != tgt: ren[c] = tgt
+    if ren: d = d.rename(columns=ren)
+
+    # normalize scenario_id
+    def _sid(x: str) -> str:
+        key = _norm(x)
+        if key in ("baseline",): return "baseline"
+        if key in ("tilt", "pragmatictilt", "pragmatic_tilt"): return "tilt"
+        if key in ("exclude", "strictexclusion", "strict_exclusion"): return "exclude"
+        return x
+    d["scenario_id"] = d["scenario"].astype(str).map(_sid)
+
+    # numeric weights
+    for c in ["w_base", "w_new", "delta"]:
+        if c in d.columns:
+            d[c] = pd.to_numeric(d[c], errors="coerce")
+
+    # reconstruct w_new / delta if one is missing
+    if "w_new" not in d.columns and {"w_base", "delta"}.issubset(d.columns):
+        d["w_new"] = d["w_base"] + d["delta"]
+    if "delta" not in d.columns and {"w_base", "w_new"}.issubset(d.columns):
+        d["delta"] = d["w_new"] - d["w_base"]
+
+    return d
 
 @st.cache_data(show_spinner=False)
 def load_returns_top():
-    return load_csv(3, "returns_top_per_etf_2025.csv")
+    """
+    returns_top_per_etf_2025.csv from Analysis 3 Phase 2.
+    Normalizes columns: date, ticker, ret, etfs (semicolon list), yahoo_symbol
+    """
+    r = load_csv(3, "returns_top_per_etf_2025.csv").copy()
+    ren = {}
+    for want, cands in {
+        "date": ["date", "Date"],
+        "ticker": ["ticker", "company_ticker", "symbol"],
+        "ret": ["ret", "return", "daily_return"],
+        "etfs": ["etfs", "funds"],
+        "yahoo_symbol": ["yahoo_symbol", "ticker_yahoo"]
+    }.items():
+        col = _pick(r.columns, *cands)
+        if col and col != want:
+            ren[col] = want
+    if ren: r = r.rename(columns=ren)
+
+    if "date" in r.columns:
+        r["date"] = pd.to_datetime(r["date"], errors="coerce")
+    if "ret" in r.columns:
+        r["ret"] = pd.to_numeric(r["ret"], errors="coerce")
+    for c in ["ticker", "etfs", "yahoo_symbol"]:
+        if c in r.columns:
+            r[c] = r[c].astype(str)
+
+    return r
 
 @st.cache_data(show_spinner=False)
 def load_covariance_daily():
-    return load_csv(3, "covariance_2025.csv")
+    """
+    covariance_2025.csv — daily return covariance matrix used for TE.
+    """
+    cov = load_csv(3, "covariance_2025.csv").copy()
+    # If the loader read it as a flat table, try to set index
+    if cov.columns[0] != cov.index.name and cov.columns[0].lower() not in ("", "unnamed: 0", "ticker"):
+        # assume first column is index/ticker
+        cov = cov.set_index(cov.columns[0])
+    # Coerce numeric and clean inf/nans
+    cov = cov.apply(pd.to_numeric, errors="coerce")
+    cov = cov.replace([float("inf"), float("-inf")], pd.NA).fillna(0.0)
+    return cov
+
 
 
 
