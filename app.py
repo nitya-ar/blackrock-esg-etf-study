@@ -1006,42 +1006,38 @@ def _portfolio_series_for_etf(etf: str, deltas: pd.DataFrame, returns_df: pd.Dat
 
 
 
-# =============== TAB 3: TRADEOFF SCENARIOS (SIMPLIFIED FIRST PASS) ===============
+
+
 def render_tradeoff_scenarios():
     import re
     import numpy as np
     import pandas as pd
     import streamlit as st
-    import altair as alt
 
-    # ---------- tiny utils ----------
+    # ---------- helpers ----------
     def _norm(s: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", str(s).lower()) if s is not None else ""
 
     def _pick(df: pd.DataFrame, *cands):
-        # exact then case-insensitive
         for c in cands:
             if c in df.columns: return c
         low = {c.lower(): c for c in df.columns}
         for c in cands:
             if c.lower() in low: return low[c.lower()]
-        # contains fall-back
         for c in df.columns:
-            if any(cc.lower() in c.lower() for cc in cands):
-                return c
+            if any(cc.lower() in c.lower() for cc in cands): return c
         return None
 
     def _fmt_pct_auto(x):
         try:
-            val = float(x)
-            # If values look like fractions (<= 1.5), show as %
-            if -1.5 <= val <= 1.5:
-                return f"{val*100:.1f}%"
-            return f"{val:.1f}%"
+            v = float(x)
+            if -1.5 <= v <= 1.5:  # treat as fraction
+                return f"{v*100:.1f}%"
+            return f"{v:.1f}%"
         except:
             return "–"
 
-    def _kpi_card(label, value, tone="neutral"):
+    def _kpi(label, value, tone="neutral"):
         tone_class = {"green": "kpi-green", "red": "kpi-red"}.get(tone, "kpi-neutral")
         st.markdown(
             f"""
@@ -1055,10 +1051,9 @@ def render_tradeoff_scenarios():
 
     # ---------- load ----------
     specs   = load_scenario_specs()
-    metrics = load_scenario_metrics()
+    metrics = load_scenario_metrics().copy()
 
-    # ---------- scenario id / labels ----------
-    # Canonical ids: baseline, tilt, exclude
+    # ---------- columns ----------
     scen_col  = _pick(metrics, "scenario_id", "scenario")
     etf_col   = _pick(metrics, "ETF_Ticker", "etf", "fund_ticker")
     clean_col = _pick(metrics, "pct_clean_scn", "pct_clean", "%Clean")
@@ -1067,31 +1062,24 @@ def render_tradeoff_scenarios():
     te_col    = _pick(metrics, "est_te_annual_pct", "te_annual", "tracking_error", "TE_annual")
     n_col     = _pick(metrics, "#names", "n_holdings", "holdings", "num_names")
 
-    if scen_col is None or etf_col is None or clean_col is None or ctr_col is None or te_col is None:
+    req = [scen_col, etf_col, clean_col, ctr_col, te_col]
+    if any(c is None for c in req):
         st.error("scenario_portfolio_metrics.csv is missing required columns.")
         return
 
-    # normalize scenario id text
+    # normalize scenario ids
     scen_map_in = {
         "baseline": "baseline",
-        "pragmatictilt": "tilt",
-        "tilt": "tilt",
-        "strictexclusion": "exclude",
-        "exclude": "exclude",
+        "pragmatictilt": "tilt", "tilt": "tilt",
+        "strictexclusion": "exclude", "exclude": "exclude",
     }
-    metrics = metrics.copy()
-    metrics["scenario_id"] = (
-        metrics[scen_col].astype(str).apply(_norm).map(scen_map_in).fillna(metrics[scen_col].astype(str))
-    )
-
-    # pretty labels
+    metrics["scenario_id"] = metrics[scen_col].astype(str).apply(_norm).map(scen_map_in).fillna(metrics[scen_col].astype(str))
     scen_label = {"baseline": "Baseline", "tilt": "Pragmatic Tilt", "exclude": "Strict Exclusion"}
     metrics["scenario_label"] = metrics["scenario_id"].map(lambda s: scen_label.get(s, str(s).title()))
 
-    # ---------- 1) Scenario overview (simple copy — no data dependency) ----------
+    # ---------- header copy (simple, non-technical) ----------
     st.subheader("Tradeoff Scenarios")
 
-    # very short, plain-English explainer boxes
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("**Baseline**")
@@ -1099,34 +1087,24 @@ def render_tradeoff_scenarios():
         st.markdown("- Single-name cap: 5.0%")
     with c2:
         st.markdown("**Pragmatic Tilt**")
-        st.caption("Light tilt away from controversial exposure under a TE budget.")
+        st.caption("Gently reduce exposure to controversial names while staying within a risk budget.")
         st.markdown("- Target: ~2 pp cleaner (typical), within TE cap")
     with c3:
         st.markdown("**Strict Exclusion**")
-        st.caption("Exclude controversial names, reweight within sectors, keep single-name cap.")
+        st.caption("Remove controversial names; reweight inside each sector; keep the single-name cap.")
         st.markdown("- Hard screens on controversial categories")
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # ---------- 2) Filters ----------
-    etf_list = sorted(metrics[etf_col].dropna().astype(str).unique().tolist())
-    f1, f2 = st.columns([0.62, 0.38])
-    with f1:
-        sel_etf = st.selectbox("ETF filter", ["All"] + etf_list, index=0)
-    with f2:
-        view_mode = st.segmented_control("View", options=["All ETFs (mean)", "Per ETF"], default="All ETFs (mean)")
+    # ---------- filter (ETF only) ----------
+    etf_list = sorted(metrics[etf_col].dropna().astype(str).unique())
+    sel_etf = st.selectbox("ETF filter", ["All"] + etf_list, index=0)
 
     M = metrics.copy()
     if sel_etf != "All":
         M = M[M[etf_col].astype(str) == sel_etf]
 
-    # ---------- 3) KPI cards (% Clean, % Controversial, TE ann., # Holdings)
-    # We color **by change vs Baseline**:
-    # - % Clean: delta > 0 => green, < 0 => red
-    # - % Controversial: delta > 0 => red, < 0 => green
-    # - Tracking Error: delta > 0 (higher TE) => red, < 0 => green
-    # - # Holdings: neutral (display only)
-    # Aggregate by scenario (mean across selected ETFs)
+    # ---------- aggregate KPIs per scenario ----------
     agg = (
         M.groupby(["scenario_id", "scenario_label"], dropna=False)
          .agg(
@@ -1137,59 +1115,29 @@ def render_tradeoff_scenarios():
          )
          .reset_index()
     )
-
-    # align baseline row and compute deltas
-    base_row = agg[agg["scenario_id"] == "baseline"].copy()
-    if base_row.empty:
-        # if no baseline present after filtering, use overall baseline as reference
-        base_row = (
-            metrics.groupby("scenario_id").agg(clean=(clean_col, "mean"),
-                                               contro=(ctr_col, "mean"),
-                                               te=(te_col, "mean")).reset_index()
-        )
-        base_row = base_row[base_row["scenario_id"] == "baseline"]
-
-    b_clean = float(base_row["clean"].iloc[0]) if len(base_row) else np.nan
-    b_contro = float(base_row["contro"].iloc[0]) if len(base_row) else np.nan
-    b_te = float(base_row["te"].iloc[0]) if len(base_row) else np.nan
-
-    # scenario order
     order = ["baseline", "tilt", "exclude"]
     agg["__o__"] = agg["scenario_id"].map({s: i for i, s in enumerate(order)})
     agg = agg.sort_values(["__o__", "scenario_label"])
 
+    # ---------- KPI row (color rules you requested) ----------
     st.markdown("**Key metrics**")
-    # One row: show each scenario block with four KPI boxes
     cols = st.columns(3)
-    for i, (_, row) in enumerate(agg.iterrows()):
+    for i, (_, r) in enumerate(agg.iterrows()):
         with cols[i % 3]:
-            st.markdown(f"**{row['scenario_label']}**")
-            k1, k2 = st.columns(2)
-            # % Clean — color by (clean - baseline)
-            d_clean = row["clean"] - b_clean if pd.notna(b_clean) else 0.0
-            tone_clean = "green" if d_clean > 1e-12 else ("red" if d_clean < -1e-12 else "neutral")
-            with k1:
-                _kpi_card("% Clean", _fmt_pct_auto(row["clean"]), tone_clean)
+            st.markdown(f"**{r['scenario_label']}**")
 
-            # % Controversial — color by inverse sign
-            d_ctr = row["contro"] - b_contro if pd.notna(b_contro) else 0.0
-            tone_ctr = "red" if d_ctr > 1e-12 else ("green" if d_ctr < -1e-12 else "neutral")
-            with k2:
-                _kpi_card("% Controversial", _fmt_pct_auto(row["contro"]), tone_ctr)
+            # Row of four small KPIs
+            k1, k2 = st.columns(2)
+            tone_clean  = "green" if (pd.notna(r["clean"]) and float(r["clean"]) > 0) else "neutral"
+            tone_contro = "red"   if (pd.notna(r["contro"]) and float(r["contro"]) > 0) else "neutral"
+            with k1: _kpi("% Clean", _fmt_pct_auto(r["clean"]), tone_clean)
+            with k2: _kpi("% Controversial", _fmt_pct_auto(r["contro"]), tone_contro)
 
             k3, k4 = st.columns(2)
-            # TE — lower is better
-            d_te = row["te"] - b_te if pd.notna(b_te) else 0.0
-            tone_te = "red" if d_te > 1e-12 else ("green" if d_te < -1e-12 else "neutral")
-            with k3:
-                _kpi_card("TE (ann.)", _fmt_pct_auto(row["te"]), tone_te)
+            with k3: _kpi("TE (ann.)", _fmt_pct_auto(r["te"]), "neutral")
+            with k4: _kpi("# Holdings", f"{int(round(r['n'])):,}" if pd.notna(r["n"]) else "–", "neutral")
 
-            with k4:
-                val_n = f"{int(round(row['n'])):,}" if pd.notna(row["n"]) else "–"
-                _kpi_card("# Holdings", val_n, "neutral")
-
-    # Nothing else for now — visuals come next iteration.
-
+    # (visualizations come next; keeping the tab focused/compact for now)
 
 
 
