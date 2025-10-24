@@ -362,19 +362,37 @@ def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.c
 
 # -------- Analysis 3 loaders (Tradeoff Scenarios) --------
 @st.cache_data(show_spinner=False)
-def load_scenario_specs():        return load_csv(3, "scenario_specs.csv")
+def load_scenario_specs():
+    # expected cols (from your generator): scenario, type, te_budget_annual, sector_neutrality_pct,
+    # region_neutrality_pct, single_name_cap_pct, single_name_cap_mult, hard_screens
+    return load_csv(3, "scenario_specs.csv")
 
 @st.cache_data(show_spinner=False)
-def load_scenario_metrics():      return load_csv(3, "scenario_portfolio_metrics.csv")
+def load_scenario_metrics():
+    # available (per your banner): 
+    # [scenario_id, scope, ETF_Ticker, pct_clean_base, pct_contro_base, pct_other_base,
+    #  pct_clean_scn, pct_contro_scn, pct_other_scn, active_share_pct, est_te_annual_pct,
+    #  factor_drift_sector_pct, factor_drift_region_pct, liquidity_status, notes,
+    #  rule_te_budget_annual_pct, rule_sector_band, rule_region_band, rule_cap_abs_pct,
+    #  rule_cap_x_baseline, rule_clean_tilt_target_pp, rule_excl_fossil, rule_excl_tobacco,
+    #  rule_excl_weapons, rule_excl_prisons, rule_excl_deforestation]
+    return load_csv(3, "scenario_portfolio_metrics.csv")
 
 @st.cache_data(show_spinner=False)
-def load_scenario_deltas():       return load_csv(3, "scenario_position_deltas.csv")
+def load_scenario_deltas():
+    # preferred cols (from your generator): 
+    # [scenario, ETF_Ticker, company_ticker, company_name, Sector, Location, w_base, w_new, delta]
+    # but we defensively handle if w_new is missing.
+    return load_csv(3, "scenario_position_deltas.csv")
 
 @st.cache_data(show_spinner=False)
-def load_returns_top():           return load_csv(3, "returns_top_per_etf_2025.csv")
+def load_returns_top():
+    return load_csv(3, "returns_top_per_etf_2025.csv")
 
 @st.cache_data(show_spinner=False)
-def load_covariance_daily():      return load_csv(3, "covariance_2025.csv") 
+def load_covariance_daily():
+    return load_csv(3, "covariance_2025.csv")
+
 
 
 # =========================
@@ -987,284 +1005,330 @@ def _portfolio_series_for_etf(etf: str, deltas: pd.DataFrame, returns_df: pd.Dat
     return pd.concat(out_frames, ignore_index=True).sort_values(["scenario","date"])
 
 
-# -------------------------
-# RENDERER FOR TAB 3
-# -------------------------
 def render_tradeoff_scenarios():
     st.subheader("Tradeoff Scenarios")
 
-    # Tiny explainer (per your notes)
     st.markdown(
         """
-        <div class="blx-muted" style="max-width:1200px;">
-        We simulate cleaner versions of each ETF to show the trade-off between <b>ESG alignment</b> and how closely the
-        portfolio tracks its original benchmark. Scenarios vary in strictness (tilts, exclusions, caps). We compare
-        <b>% Clean</b>, <b>% Controversial</b>, <b>tracking error</b> (annualized, est.), and <b>financial impact</b>
-        (active share, sector/region drift) vs Baseline.
-        </div>
-        """,
+We simulate cleaner versions of each ETF to show the trade-off between **ESG alignment** and how closely the portfolio tracks its original benchmark. 
+Scenarios vary in how strictly they reduce controversial exposure and cap single-name weights. 
+We compare **% Clean** / **% Controversial**, **tracking error**, and **financial returns vs Baseline**.
+        """
+    )
+
+    # ---------- Load ----------
+    try:
+        specs  = load_scenario_specs()
+        met    = load_scenario_metrics()
+        deltas = load_scenario_deltas()
+    except Exception as e:
+        st.error(f"Could not load scenario CSVs: {e}")
+        return
+
+    # ---------- Column guards (match what you showed in the red banner) ----------
+    need_metrics = [
+        "scenario_id", "ETF_Ticker",
+        "pct_clean_base", "pct_contro_base", "pct_other_base",
+        "pct_clean_scn",  "pct_contro_scn",  "pct_other_scn",
+        "est_te_annual_pct"               # <-- this is your TE column
+    ]
+    missing = [c for c in need_metrics if c not in met.columns]
+    if missing:
+        st.error(
+            "Could not load **scenario_portfolio_metrics.csv** — missing: "
+            + ", ".join([f"`{m}`" for m in missing])
+            + ".\n\nAvailable columns: " + ", ".join(met.columns.astype(str).tolist())
+        )
+        return
+
+    # Deltas optional columns
+    deltas_cols = set(deltas.columns)
+    has_w_new   = {"w_new", "delta"}.issubset(deltas_cols)
+    has_w_base  = "w_base" in deltas_cols
+
+    # ---------- Scenario dictionary / naming ----------
+    # We prefer 'scenario' from specs; else use any 'scenario' in metrics; else scenario_id
+    scen_map = {}
+    if "scenario" in specs.columns and "scenario_id" in specs.columns:
+        # If your Phase-2 wrote 'scenario' string names, map by order or id when present
+        s_rows = specs.copy()
+        # Normalize
+        s_rows["scenario"]   = s_rows["scenario"].astype(str)
+        if "scenario_id" in s_rows.columns:
+            for _, r in s_rows.iterrows():
+                scen_map[str(r.get("scenario_id", ""))] = r["scenario"]
+        # also keep an index fallback
+    elif "scenario" in met.columns:
+        met["scenario"] = met["scenario"].astype(str)
+        scen_map = {s: s for s in sorted(met["scenario"].unique())}
+    # build label column in metrics
+    if "scenario" in met.columns and met["scenario"].notna().any():
+        met["_scenario_label"] = met["scenario"].astype(str)
+    else:
+        # use scenario_id, map to nice label if we can
+        met["_scenario_label"] = met["scenario_id"].astype(str).map(lambda sid: scen_map.get(str(sid), f"Scenario {sid}"))
+
+    # A simple, consistent scenario set in UI
+    scenario_order = list(met["_scenario_label"].dropna().unique())
+    all_etfs       = sorted(met["ETF_Ticker"].astype(str).unique())
+
+    # ---------- UI: filters ----------
+    fc1, fc2 = st.columns([0.62, 0.38])
+    with fc1:
+        sel_etfs = st.multiselect("ETF", all_etfs, default=[], placeholder="All")
+    with fc2:
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">Focus scenarios</div>'
+            '<div class="info-badge has-tip" data-tip="Leave empty to include all scenarios.">i</div></div>',
+            unsafe_allow_html=True,
+        )
+        sel_scen = st.multiselect("Scenario", scenario_order, default=[], placeholder="All")
+
+    df = met.copy()
+    if sel_etfs:
+        df = df[df["ETF_Ticker"].astype(str).isin(sel_etfs)]
+    if sel_scen:
+        df = df[df["_scenario_label"].isin(sel_scen)]
+
+    if df.empty:
+        st.info("No rows for current filters.")
+        return
+
+    # ---------- Build per-scenario aggregates ----------
+    # a) Average exposures across ETFs (simple mean; AUM weighting not present here)
+    agg = (
+        df.groupby("_scenario_label", dropna=False)[
+            ["pct_clean_scn", "pct_contro_scn", "pct_other_scn",
+             "pct_clean_base", "pct_contro_base", "pct_other_base",
+             "est_te_annual_pct", "active_share_pct"]
+        ]
+        .mean(numeric_only=True)
+        .reset_index()
+    )
+
+    # b) #names per scenario from deltas (average names per ETF – matches “side by side KPI” intent)
+    names_stat = None
+    if not deltas.empty and "ETF_Ticker" in deltas.columns:
+        d = deltas.copy()
+        # Build scenario label to join
+        if "scenario" in d.columns:
+            d["_scenario_label"] = d["scenario"].astype(str)
+        elif "scenario_id" in d.columns:
+            d["_scenario_label"] = d["scenario_id"].astype(str).map(lambda sid: scen_map.get(str(sid), f"Scenario {sid}"))
+        else:
+            d["_scenario_label"] = "Unknown"
+
+        # Choose which weight indicates inclusion
+        if has_w_new:
+            d["_in"] = pd.to_numeric(d["w_new"], errors="coerce").fillna(0) > 0
+        elif has_w_base:
+            # fall back gracefully (won’t reflect scenario changes, but avoids breaking the UI)
+            d["_in"] = pd.to_numeric(d["w_base"], errors="coerce").fillna(0) > 0
+        else:
+            d["_in"] = False
+
+        names_stat = (
+            d.groupby(["_scenario_label", "ETF_Ticker"])["_in"]
+             .sum()
+             .groupby(level=0)
+             .mean()
+             .reset_index()
+             .rename(columns={"_in": "avg_names_per_etf"})
+        )
+
+        agg = agg.merge(names_stat, on="_scenario_label", how="left")
+    else:
+        agg["avg_names_per_etf"] = np.nan
+
+    # ---------- Scenario summary strip (from specs + rules in metrics) ----------
+    # First, get *one* representative row per label to extract rules/caps/TE budgets.
+    def _scenario_summary_text(lbl: str) -> str:
+        row = df.loc[df["_scenario_label"] == lbl].head(1)
+        # Pull rule hints if present
+        te_budget = row.get("rule_te_budget_annual_pct")
+        te_budget = float(te_budget.iloc[0]) if te_budget is not None and len(te_budget.dropna()) else None
+
+        cap_abs   = row.get("rule_cap_abs_pct")
+        cap_abs   = float(cap_abs.iloc[0]) if cap_abs is not None and len(cap_abs.dropna()) else None
+
+        clean_tilt = row.get("rule_clean_tilt_target_pp")
+        clean_tilt = float(clean_tilt.iloc[0]) if clean_tilt is not None and len(clean_tilt.dropna()) else None
+
+        excl_bits = []
+        for col, label in [
+            ("rule_excl_fossil", "Fossil"),
+            ("rule_excl_tobacco","Tobacco"),
+            ("rule_excl_weapons","Weapons"),
+            ("rule_excl_prisons","Prisons"),
+            ("rule_excl_deforestation","Deforestation")
+        ]:
+            v = row.get(col)
+            if v is not None and len(v.dropna()):
+                vv = str(v.iloc[0]).strip().lower()
+                if vv in ("1","y","yes","true","t"):
+                    excl_bits.append(label)
+
+        # Compose
+        parts = []
+        if cap_abs is not None: parts.append(f"Cap {cap_abs:.1f}%")
+        if te_budget is not None: parts.append(f"TE≤{te_budget:.2f}%")
+        if clean_tilt is not None and clean_tilt > 0: parts.append(f"Tilt +{clean_tilt:.1f}pp to Clean")
+        if excl_bits: parts.append("Exclude: " + ", ".join(excl_bits))
+        return " • ".join(parts) if parts else "Baseline (no extra rules)"
+
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+    st.markdown("**Scenarios:**")
+    st.caption(" • ".join([f"**{lbl}** — { _scenario_summary_text(lbl) }" for lbl in scenario_order if lbl in agg["_scenario_label"].values ]))
+
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+    # ---------- KPI cards row (side-by-side for three common scenarios if present) ----------
+    # We try to find standard 3 scenario names; else use first three in agg order
+    cand = [s for s in ["Baseline", "Pragmatic Tilt", "Strict Exclusion"] if s in agg["_scenario_label"].values]
+    if len(cand) < 3:
+        cand = agg["_scenario_label"].head(3).tolist()
+
+    kcols = st.columns(len(cand) * 4)  # four KPIs per scenario
+    idx = 0
+    for sname in cand:
+        row = agg.loc[agg["_scenario_label"] == sname]
+        if row.empty:
+            continue
+        r = row.iloc[0]
+        # values
+        clean  = float(r["pct_clean_scn"])
+        contro = float(r["pct_contro_scn"])
+        other  = float(r["pct_other_scn"])
+        te     = float(r["est_te_annual_pct"])
+        navg   = float(r["avg_names_per_etf"]) if not pd.isna(r["avg_names_per_etf"]) else None
+
+        with kcols[idx]:
+            kpi_card(f"{sname} — %Clean", f"{clean:.1f}%", tone="green")
+        with kcols[idx+1]:
+            kpi_card(f"{sname} — %Contro", f"{contro:.1f}%", tone=("red" if contro>0 else "neutral"))
+        with kcols[idx+2]:
+            kpi_card(f"{sname} — TE (ann.)", f"{te:.2f}%", tone=("red" if te>2 else "neutral"))
+        with kcols[idx+3]:
+            kpi_card(f"{sname} — #Names / ETF", f"{navg:,.0f}" if navg is not None else "–", tone="neutral")
+        idx += 4
+
+    gap(8)
+
+    # ---------- Composition bars (Clean / Contro / Other by scenario) ----------
+    st.markdown(
+        '<div class="chart-head"><div class="chart-title">Composition — Clean vs Controversial vs Other (scenario average across ETFs)</div></div>',
         unsafe_allow_html=True,
     )
-    gap(6)
-
-    # -------- Load scenario files (Analysis 3) --------
-    try:
-        met = load_csv(3, "scenario_portfolio_metrics.csv")
-    except Exception as e:
-        st.error(
-            "Could not load scenario_portfolio_metrics.csv — please ensure it has columns like "
-            "`scenario_id, ETF_Ticker, pct_clean_scn, pct_contro_scn, pct_other_scn, est_te_annual_pct, active_share_pct`.\n\n"
-            f"Loader error: {e}"
-        )
-        return
-
-    # Optional files (used if present)
-    try:
-        specs = load_csv(3, "scenario_specs.csv")
-    except Exception:
-        specs = pd.DataFrame()
-
-    try:
-        deltas = load_csv(3, "scenario_position_deltas.csv")
-    except Exception:
-        deltas = pd.DataFrame()
-
-    # -------- Column resolver (robust to slight name variations) --------
-    def _pick(df, *alts):
-        alts_norm = [a.lower() for a in alts]
-        for c in df.columns:
-            cl = c.lower()
-            if cl in alts_norm:
-                return c
-        # loose contains match
-        for c in df.columns:
-            cl = c.lower()
-            if any(a in cl for a in alts_norm):
-                return c
-        return None
-
-    # Canonical columns in metrics (based on YOUR file)
-    c_scn_id   = _pick(met, "scenario_id", "scenario")
-    c_etf      = _pick(met, "etf_ticker", "etf", "fund")
-    c_scope    = _pick(met, "scope")
-    c_clean_b  = _pick(met, "pct_clean_base")
-    c_contro_b = _pick(met, "pct_contro_base")
-    c_other_b  = _pick(met, "pct_other_base")
-    c_clean_s  = _pick(met, "pct_clean_scn")
-    c_contro_s = _pick(met, "pct_contro_scn")
-    c_other_s  = _pick(met, "pct_other_scn")
-    c_te       = _pick(met, "est_te_annual_pct", "te_annual")
-    c_as       = _pick(met, "active_share_pct")
-    c_drift_sec= _pick(met, "factor_drift_sector_pct")
-    c_drift_reg= _pick(met, "factor_drift_region_pct")
-
-    need = [c_scn_id, c_etf, c_clean_s, c_contro_s, c_other_s, c_te]
-    if any(x is None for x in need):
-        miss = [n for x,n in zip(need, ["scenario_id","ETF_Ticker","pct_clean_scn","pct_contro_scn","pct_other_scn","est_te_annual_pct"]) if x is None]
-        st.error(f"`scenario_portfolio_metrics.csv` is missing required columns: {miss}")
-        return
-
-    # Prettify scenario names from specs (optional)
-    name_map = {}
-    if not specs.empty:
-        c_scn_name = _pick(specs, "scenario", "scenario_name", "name")
-        c_scn_key  = _pick(specs, "scenario_id", "scenario")
-        if c_scn_key and c_scn_name and c_scn_key in specs.columns and c_scn_name in specs.columns:
-            name_map = dict(zip(specs[c_scn_key].astype(str), specs[c_scn_name].astype(str)))
-
-    # Work DF
-    df = met.copy()
-    df["_scenario_id"] = df[c_scn_id].astype(str)
-    df["_scenario"]    = df["_scenario_id"].map(name_map).fillna(df["_scenario_id"])
-    df["_ETF"]         = df[c_etf].astype(str)
-
-    # ---- Controls
-    etfs = sorted(df["_ETF"].unique().tolist())
-    scens = [s for s in ["Baseline", "Pragmatic Tilt", "Strict Exclusion"] if s in df["_scenario"].unique()]
-    if not scens:
-        # fall back to whatever exists
-        scens = sorted(df["_scenario"].unique().tolist())
-
-    c1, c2 = st.columns([0.55, 0.45])
-    with c1:
-        sel_etfs = st.multiselect("ETF", etfs, default=[], placeholder="All", key="tradeoff_etfs")
-    with c2:
-        sel_scens = st.multiselect("Scenarios", scens, default=scens, key="tradeoff_scens")
-
-    mask = pd.Series(True, index=df.index)
-    if sel_etfs:
-        mask &= df["_ETF"].isin(sel_etfs)
-    if sel_scens:
-        mask &= df["_scenario"].isin(sel_scens)
-    dfv = df[mask].copy()
-    if dfv.empty:
-        st.info("No rows for the current selection.")
-        return
-
-    # ---------- Scenario strip (very simple)
-    # Assemble concise rule summaries if present
-    rule_cols = [c for c in df.columns if c.startswith("rule_")]
-    rules = []
-    if rule_cols:
-        # summarize per scenario (unique, present rules)
-        for s, g in dfv.groupby("_scenario"):
-            flags = []
-            for r in rule_cols:
-                v = g[r]
-                if pd.api.types.is_bool_dtype(v) or set(pd.unique(v.dropna())).issubset({0,1,"0","1","Y","N","Yes","No"}):
-                    # any “true-ish”?
-                    val = (pd.to_numeric(v, errors="coerce") == 1).any()
-                    if val:
-                        flags.append(r.replace("rule_", "").replace("_", " "))
-                else:
-                    # numeric or text param (take first non-null)
-                    x = v.dropna()
-                    if not x.empty:
-                        flags.append(f"{r.replace('rule_','').replace('_',' ')}={x.iloc[0]}")
-            rules.append((s, " • ".join(flags[:6])))
-    if rules:
-        st.markdown(
-            "<div class='blx-muted'><b>Scenario summary:</b> " +
-            " • ".join([f"<b>{s}</b>: {desc}" if desc else f"<b>{s}</b>" for s,desc in rules]) +
-            "</div>",
-            unsafe_allow_html=True
-        )
-    gap(8)
-
-    # ---------- KPI block (avg across selected ETFs)
-    def _avg(col):
-        if col is None or col not in dfv.columns: return float("nan")
-        return pd.to_numeric(dfv[col], errors="coerce").mean()
-
-    # Prepare a tidy table for charts & KPIs
-    tidy = dfv[["_scenario", c_clean_s, c_contro_s, c_other_s, c_te, c_as, c_drift_sec, c_drift_reg]].copy()
-    tidy = tidy.rename(columns={
-        c_clean_s: "Clean (%)",
-        c_contro_s:"Controversial (%)",
-        c_other_s: "Other (%)",
-        c_te:      "TE annual (%)",
-        c_as:      "Active share (%)",
-        c_drift_sec:"Sector drift (%)",
-        c_drift_reg:"Region drift (%)",
-    })
-
-    # Aggregate by scenario (equal-weight across ETFs in view)
-    agg = (
-        tidy.groupby("_scenario", as_index=False)
-            .mean(numeric_only=True)
-            .sort_values("_scenario")
+    comp_long = pd.melt(
+        agg[["_scenario_label", "pct_clean_scn", "pct_contro_scn", "pct_other_scn"]].rename(
+            columns={"pct_clean_scn":"Clean", "pct_contro_scn":"Controversial", "pct_other_scn":"Other"}
+        ),
+        id_vars="_scenario_label",
+        var_name="category",
+        value_name="pct"
     )
-
-    # KPI row: %Clean, %Contro, TE, Active Share (all shown per-scenario)
-    st.markdown('<div class="chart-head"><div class="chart-title">Scenario KPIs (mean across selected ETFs)</div></div>', unsafe_allow_html=True)
-    kcols = st.columns(len(agg))
-    for col, (_, row) in zip(kcols, agg.iterrows()):
-        with col:
-            st.markdown(f"<div class='kpi kpi-neutral'><div class='label'>{row['_scenario']}</div>"
-                        f"<div class='value'>%Clean {row['Clean (%)']:.1f} • %Contro {row['Controversial (%)']:.1f}<br>"
-                        f"TE {row['TE annual (%)']:.2f}% • AS {row.get('Active share (%)', float('nan')):.1f}%</div></div>",
-                        unsafe_allow_html=True)
+    color_scale = alt.Scale(
+        domain=["Clean","Controversial","Other"],
+        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+    )
+    chart_comp = alt.Chart(comp_long).mark_bar().encode(
+        x=alt.X("pct:Q", title="Exposure (%)", axis=alt.Axis(format=".1f")),
+        y=alt.Y("_scenario_label:N", title=None, sort="-x"),
+        color=alt.Color("category:N", scale=color_scale, title=None),
+        tooltip=[alt.Tooltip("_scenario_label:N", title="Scenario"),
+                 alt.Tooltip("category:N", title="Category"),
+                 alt.Tooltip("pct:Q", title="Exposure (%)", format=".1f")]
+    ).properties(height=max(180, 36*comp_long["_scenario_label"].nunique()))
+    st.altair_chart(chart_comp, use_container_width=True)
 
     gap(8)
 
-    # ---------- Composition bars (Clean/Contro/Other) per scenario
-    st.markdown('<div class="chart-head"><div class="chart-title">Composition comparison</div></div>', unsafe_allow_html=True)
-    comp = agg.melt(id_vars=["_scenario"], value_vars=["Clean (%)","Controversial (%)","Other (%)"],
-                    var_name="Category", value_name="Value")
-    comp["Category"] = comp["Category"].str.replace(" (%)","", regex=False)
-    color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
-                            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
-    ch_comp = alt.Chart(comp).mark_bar().encode(
-        x=alt.X("Value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f")),
-        y=alt.Y("_scenario:N", title=None, sort=agg["_scenario"].tolist()),
-        color=alt.Color("Category:N", scale=color_scale, title=None),
-        tooltip=[alt.Tooltip("_scenario:N", title="Scenario"),
-                 alt.Tooltip("Category:N"),
-                 alt.Tooltip("Value:Q", title="Exposure (%)", format=".1f")]
-    ).properties(height=180)
-    st.altair_chart(ch_comp, use_container_width=True)
-
-    gap(6)
-
-    # ---------- Tracking Error (bar)
-    st.markdown('<div class="chart-head"><div class="chart-title">Tracking error (annualized, estimated)</div></div>', unsafe_allow_html=True)
-    te_df = agg[["_scenario","TE annual (%)"]].copy()
-    ch_te = alt.Chart(te_df).mark_bar().encode(
-        x=alt.X("_scenario:N", title=None, sort=agg["_scenario"].tolist()),
-        y=alt.Y("TE annual (%):Q", title="TE (%)", axis=alt.Axis(format=".2f")),
-        tooltip=[alt.Tooltip("_scenario:N", title="Scenario"),
-                 alt.Tooltip("TE annual (%):Q", title="TE (%)", format=".2f")]
-    ).properties(height=200)
-    st.altair_chart(ch_te, use_container_width=True)
-
-    gap(6)
-
-    # ---------- Financial impact mini-bars (Active share, sector/region drift)
-    fi = agg.melt(id_vars=["_scenario"],
-                  value_vars=[v for v in ["Active share (%)","Sector drift (%)","Region drift (%)"] if v in agg.columns],
-                  var_name="Metric", value_name="Value")
-    if not fi.empty:
-        st.markdown('<div class="chart-head"><div class="chart-title">Financial impact</div></div>', unsafe_allow_html=True)
-        ch_fi = alt.Chart(fi).mark_bar().encode(
-            x=alt.X("_scenario:N", sort=agg["_scenario"].tolist(), title=None),
-            y=alt.Y("Value:Q", axis=alt.Axis(format=".1f")),
-            column=alt.Column("Metric:N", title=None, header=alt.Header(labelColor=COLORS["text"])),
-            tooltip=[alt.Tooltip("_scenario:N", title="Scenario"),
-                     alt.Tooltip("Metric:N"),
-                     alt.Tooltip("Value:Q", format=".1f")]
-        ).resolve_scale(y='independent').properties(height=220)
-        st.altair_chart(ch_fi, use_container_width=True)
+    # ---------- Tracking error by ETF (small multiples strip) ----------
+    st.markdown(
+        '<div class="chart-head"><div class="chart-title">Tracking Error by ETF (annual %, scenario)</div></div>',
+        unsafe_allow_html=True,
+    )
+    te_df = df[["_scenario_label","ETF_Ticker","est_te_annual_pct"]].copy()
+    te_df["est_te_annual_pct"] = pd.to_numeric(te_df["est_te_annual_pct"], errors="coerce")
+    chart_te = (
+        alt.Chart(te_df)
+           .mark_circle(size=80, opacity=0.85)
+           .encode(
+               y=alt.Y("ETF_Ticker:N", title=None, sort=sorted(te_df["ETF_Ticker"].unique().tolist())),
+               x=alt.X("est_te_annual_pct:Q", title="TE (annual %)", axis=alt.Axis(format=".2f")),
+               color=alt.Color("_scenario_label:N", title=None),
+               tooltip=[
+                   alt.Tooltip("_scenario_label:N", title="Scenario"),
+                   alt.Tooltip("ETF_Ticker:N", title="ETF"),
+                   alt.Tooltip("est_te_annual_pct:Q", title="TE (ann. %)", format=".2f")
+               ]
+           )
+           .properties(height=max(220, 16*len(all_etfs)))
+    )
+    st.altair_chart(chart_te, use_container_width=True)
 
     gap(10)
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # ---------- Top movers (best-effort with available columns)
-    # Expect at least scenario & ETF to filter; prefer 'delta' (abs magnitude). If neither, skip.
-    st.markdown('<div class="chart-head"><div class="chart-title">Top movers (weights)</div></div>', unsafe_allow_html=True)
+    # ---------- Top Movers table ----------
+    st.markdown(
+        '<div class="chart-head"><div class="chart-title">Top Movers — weight changes within selected Scenario & ETF (vs Baseline)</div>'
+        '<div class="info-badge has-tip" data-tip="Shows largest absolute changes in security weights within the chosen scenario, compared to Baseline weights.">i</div></div>',
+        unsafe_allow_html=True,
+    )
 
-    topm_done = False
-    if not deltas.empty:
-        col_scn  = _pick(deltas, "scenario", "scenario_id")
-        col_etf  = _pick(deltas, "etf_ticker", "etf", "fund")
-        col_name = _pick(deltas, "company_name", "name", "holding")
-        col_tic  = _pick(deltas, "company_ticker", "ticker", "symbol")
-        col_delta= _pick(deltas, "delta", "weight_delta", "w_delta")
-        col_wnew = _pick(deltas, "w_new")  # may be missing
-        col_wb   = _pick(deltas, "w_base", "w_b")
+    # Controls
+    mv1, mv2, mv3 = st.columns([0.36, 0.36, 0.28])
+    with mv1:
+        scen_for_table = st.selectbox("Scenario", scenario_order, index=(scenario_order.index("Pragmatic Tilt") if "Pragmatic Tilt" in scenario_order else 0))
+    with mv2:
+        etf_for_table = st.selectbox("ETF", all_etfs, index=(all_etfs.index(sel_etfs[0]) if sel_etfs else 0))
+    with mv3:
+        n_rows = st.slider("Rows", min_value=5, max_value=30, value=12)
 
-        dmask = pd.Series(True, index=deltas.index)
-        if col_scn: dmask &= deltas[col_scn].astype(str).isin(sel_scens if sel_scens else df["_scenario"].unique())
-        if col_etf and sel_etfs: dmask &= deltas[col_etf].astype(str).isin(sel_etfs)
-        d0 = deltas[dmask].copy()
+    # Prepare movers dataset
+    if deltas.empty:
+        st.info("No deltas file found.")
+        return
 
-        if col_delta or col_wnew:
-            # magnitude = abs(delta) if available else w_new
-            if col_delta:
-                d0["_mag"] = pd.to_numeric(d0[col_delta], errors="coerce").abs()
-            else:
-                d0["_mag"] = pd.to_numeric(d0[col_wnew], errors="coerce").fillna(0)
+    dm = deltas.copy()
+    # attach label
+    if "scenario" in dm.columns:
+        dm["_scenario_label"] = dm["scenario"].astype(str)
+    elif "scenario_id" in dm.columns:
+        dm["_scenario_label"] = dm["scenario_id"].astype(str).map(lambda sid: scen_map.get(str(sid), f"Scenario {sid}"))
+    else:
+        dm["_scenario_label"] = "Unknown"
 
-            # pick latest scenario shown (first of sel_scens), else any
-            target_scn = (sel_scens[0] if sel_scens else df["_scenario"].unique().tolist()[0])
-            if col_scn:
-                d0 = d0[d0[col_scn].astype(str) == str(target_scn)]
+    mv = dm[(dm["_scenario_label"] == scen_for_table) & (dm["ETF_Ticker"] == etf_for_table)].copy()
+    # compute delta if absent
+    if "delta" not in mv.columns:
+        if {"w_new","w_base"}.issubset(mv.columns):
+            mv["delta"] = pd.to_numeric(mv["w_new"], errors="coerce").fillna(0) - pd.to_numeric(mv["w_base"], errors="coerce").fillna(0)
+        else:
+            mv["delta"] = np.nan
 
-            # simple top 10
-            d0 = d0.sort_values("_mag", ascending=False).head(10)
+    mv["_abs"] = mv["delta"].abs()
+    mv = mv.sort_values("_abs", ascending=False).head(n_rows)
 
-            disp = pd.DataFrame({
-                "Ticker": (d0[col_tic] if col_tic in d0.columns else pd.Series(["—"]*len(d0))),
-                "Holding": (d0[col_name] if col_name in d0.columns else pd.Series(["—"]*len(d0))),
-                "Δ weight (pp)": (pd.to_numeric(d0[col_delta], errors="coerce")*100 if col_delta in d0.columns else pd.Series([float("nan")]*len(d0))),
-                "ETF": (d0[col_etf] if col_etf in d0.columns else pd.Series(["—"]*len(d0))),
-                "Scenario": (d0[col_scn] if col_scn in d0.columns else pd.Series(["—"]*len(d0))),
-            })
-            if "Δ weight (pp)" in disp.columns:
-                disp["Δ weight (pp)"] = disp["Δ weight (pp)"].map(lambda v: f"{v:+.3f}" if pd.notna(v) else "—")
-            grid(disp)
-            topm_done = True
+    # display
+    view = pd.DataFrame({
+        "Ticker":       mv.get("company_ticker", pd.Series([""]*len(mv))),
+        "Name":         mv.get("company_name",  pd.Series([""]*len(mv))),
+        "Sector":       mv.get("Sector",        pd.Series([""]*len(mv))),
+        "Δ weight (pp)": (mv["delta"]*100.0).map(lambda v: f"{v:+.3f}" if pd.notna(v) else "–"),
+        "New weight (%)": (mv.get("w_new", pd.Series([np.nan]*len(mv)))*100.0).map(lambda v: f"{v:.3f}" if pd.notna(v) else "–"),
+        "Base weight (%)": (mv.get("w_base", pd.Series([np.nan]*len(mv)))*100.0).map(lambda v: f"{v:.3f}" if pd.notna(v) else "–")
+    })
+    grid(view)
 
-    if not topm_done:
-        st.info("Movers table is hidden: expected a `delta` column (or `w_new`) in `scenario_position_deltas.csv`.")
+    # Optional: download button
+    st.download_button(
+        "Download movers (CSV)",
+        data=view.to_csv(index=False).encode("utf-8"),
+        file_name=f"top_movers_{scen_for_table}_{etf_for_table}.csv",
+        mime="text/csv"
+    )
 
 
 
