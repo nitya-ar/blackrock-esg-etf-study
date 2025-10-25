@@ -884,6 +884,7 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -956,7 +957,8 @@ def render_tradeoff_scenarios():
     )
 
     # =========================
-    # styles (KPI tiny + tints FOR THIS TAB ONLY via unique class; tiny download button)
+    # styles (tiny KPIs + strong tints for THIS TAB ONLY via a unique class;
+    #         nicer small download icon beside right-aligned caption)
     # =========================
     st.markdown("""
     <style>
@@ -968,46 +970,64 @@ def render_tradeoff_scenarios():
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* KPI tiles — tiny size + hard tints; class-scoped so nothing leaks to other tabs */
+      /* ──────────────────────────────────────────────────────────────
+         KPI tiles — tiny size; label top-left; VALUE vertically centered
+         Scoped by .t3-kpi class so nothing leaks to other tabs.
+         ────────────────────────────────────────────────────────────── */
       .t3-kpi {
-        padding:6px 8px !important;
-        border-radius:8px !important;
-        border:1px solid var(--border) !important;
+        position: relative;
+        height: 74px !important;
+        padding: 6px 10px !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--border) !important;
         background: var(--card) !important;
-        min-height:56px !important;          /* smaller cards */
+        overflow: hidden;
       }
-      .t3-kpi .label { font-size:9px !important; color: var(--muted) !important; line-height:1.05 !important; }
-      .t3-kpi .value { font-size:16px !important; font-weight:700 !important; line-height:1.0 !important; }
+      .t3-kpi .label {
+        position: absolute; top: 6px; left: 10px;
+        font-size: 10px !important; color: var(--muted) !important; line-height: 1.1 !important;
+      }
+      .t3-kpi .value {
+        position: absolute; left: 10px;
+        top: 50%; transform: translateY(-35%);
+        font-size: 18px !important; font-weight: 700 !important; line-height: 1.0 !important;
+      }
 
+      /* Enhanced tints (like your screenshot): soft fill + subtle colored rims */
       .t3-kpi.t3-green {
-        background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06)) !important;
-        background-color: rgba(16,185,129,0.12) !important;
-        border-color: rgba(16,185,129,0.20) !important;
+        background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05)) !important;
+        border-color: rgba(16,185,129,0.22) !important;
+        box-shadow:
+          inset 0 0 0 1px rgba(16,185,129,0.28),
+          0 0 0 1px rgba(16,185,129,0.14) !important;
       }
       .t3-kpi.t3-red {
-        background: linear-gradient(180deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06)) !important;
-        background-color: rgba(239,68,68,0.12) !important;
-        border-color: rgba(239,68,68,0.20) !important;
+        background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05)) !important;
+        border-color: rgba(239,68,68,0.22) !important;
+        box-shadow:
+          inset 0 0 0 1px rgba(239,68,68,0.28),
+          0 0 0 1px rgba(239,68,68,0.14) !important;
       }
       .t3-kpi.t3-green .value,
       .t3-kpi.t3-red .value { color:#ffffff !important; }
 
-      /* caption + tiny download button row (right-aligned caption) */
-      .dl-row { display:flex; align-items:center; gap:12px; margin-top:6px; }
-      .dl-row .cap { color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; text-align:right; }
+      /* caption + tiny download button row (right aligned) */
+      .dl-row { display:flex; align-items:center; gap:10px; margin-top:8px; justify-content:flex-end; }
+      .dl-row .cap { color: var(--muted); font-size:13px; line-height:1.4; text-align:right; }
 
-      /* style Streamlit download button to 22x22 boxed icon */
-      .dl-row [data-testid="stDownloadButton"] > button {
-        width:22px !important; height:22px !important; min-width:22px !important;
-        padding:0 !important; border-radius:6px !important;
+      /* prettier, smaller download button to match caption weight */
+      [data-testid="stDownloadButton"] > button {
+        width:18px !important; height:18px !important; min-width:18px !important;
+        padding:0 !important; border-radius:50% !important;
         border:1px solid var(--border) !important; background: var(--card) !important;
         color: var(--muted) !important; display:flex !important; align-items:center !important; justify-content:center !important;
-        line-height:1 !important; font-size:14px !important; font-weight:600 !important;
+        line-height:1 !important; font-size:12px !important; font-weight:700 !important;
       }
-      .dl-row [data-testid="stDownloadButton"] > button:hover {
+      [data-testid="stDownloadButton"] > button:hover {
         border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
+        transform: translateY(-1px);
       }
-      .dl-row [data-testid="stDownloadButton"] > button p { margin:0 !important; }
+      [data-testid="stDownloadButton"] > button p { margin:0 !important; }
 
       @media (max-width: 992px) { .scn-card { height:auto; } }
     </style>
@@ -1140,7 +1160,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (caption right-aligned + tiny button on same row)
+    # download (right-aligned caption + tiny round icon)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1158,23 +1178,24 @@ def render_tradeoff_scenarios():
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
 
-    left, right = st.columns([1, 0.06])
-    with left:
+    cap_col, btn_col = st.columns([0.94, 0.06])
+    with cap_col:
         st.markdown(
-            "<div class='dl-row'>"
-            "<div class='cap'>Download CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, "
-            "annualized Tracking Error (fraction), and Number of Holdings.</div>"
-            "</div>",
+            "<div class='dl-row'><div class='cap'>"
+            "Download CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, "
+            "annualized Tracking Error (fraction), and Number of Holdings."
+            "</div></div>",
             unsafe_allow_html=True
         )
-    with right:
+    with btn_col:
         st.download_button(
-            label="↓",  # styled to 22x22 box by CSS above
+            label="⭳",  # styled small & circular by CSS above
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
             key="tradeoff_csv_dl"
         )
+
 
 
 
