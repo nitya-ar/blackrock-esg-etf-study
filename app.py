@@ -1097,6 +1097,91 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
+    # NEW: Visuals — Scenario composition + Tracking Error (added)
+    # =========================
+    import altair as alt
+
+    comp_rows = []
+    for _, r in KP.iterrows():
+        clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
+        contro = float(r["contro"]) if pd.notna(r["contro"]) else float("nan")
+        other  = 100.0 - (clean + contro) if (pd.notna(clean) and pd.notna(contro)) else float("nan")
+        comp_rows += [
+            {"Scenario": r["Scenario"], "Category": "Clean",         "Value": clean},
+            {"Scenario": r["Scenario"], "Category": "Controversial", "Value": contro},
+            {"Scenario": r["Scenario"], "Category": "Other",         "Value": other},
+        ]
+    comp_df = pd.DataFrame(comp_rows)
+
+    ch_left, ch_right = st.columns([0.58, 0.42])
+
+    with ch_left:
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">Scenario composition — Clean / Controversial / Other</div><div></div></div>',
+            unsafe_allow_html=True,
+        )
+        if not comp_df.empty and comp_df["Value"].notna().any():
+            comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
+            comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
+
+            color_scale = alt.Scale(
+                domain=["Clean","Controversial","Other"],
+                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
+            )
+
+            opacity_enc = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.88))
+
+            comp_chart = (
+                alt.Chart(comp_df)
+                .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
+                .encode(
+                    x=alt.X("Scenario:N", title=None),
+                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
+                    color=alt.Color("Category:N", title=None, scale=color_scale),
+                    opacity=opacity_enc,
+                    tooltip=[
+                        alt.Tooltip("Scenario:N"),
+                        alt.Tooltip("Category:N"),
+                        alt.Tooltip("Value:Q", title="Share (%)", format=".1f"),
+                    ],
+                )
+                .properties(height=280, padding={"left": 6, "right": 6})
+            )
+            st.altair_chart(comp_chart, use_container_width=True)
+        else:
+            st.info("Composition not available for the current selection.")
+
+    with ch_right:
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">Tracking Error (annualized)</div>'
+            '<div class="info-badge has-tip" data-tip="Estimated annualized tracking error of each scenario relative to the baseline index; lower is closer to the original risk profile.">i</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        te_df = KP.copy()
+        te_df["TE %"] = pd.to_numeric(te_df["te"], errors="coerce") * 100.0
+        te_df["Scenario"] = pd.Categorical(te_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
+
+        if te_df["TE %"].notna().any():
+            te_opacity = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.9))
+
+            te_chart = (
+                alt.Chart(te_df)
+                .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
+                .encode(
+                    x=alt.X("Scenario:N", title=None),
+                    y=alt.Y("TE %:Q", title="Tracking Error (%)", axis=alt.Axis(format=".2f")),
+                    color=alt.value("#8A93A6"),
+                    opacity=te_opacity,
+                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f")],
+                )
+                .properties(height=280, padding={"left": 6, "right": 6})
+            )
+            st.altair_chart(te_chart, use_container_width=True)
+        else:
+            st.info("Tracking Error not available for the current selection.")
+
+    # =========================
     # ultra-compact inline Download (right-aligned, 12px icon)
     # =========================
     show = (
@@ -1130,7 +1215,6 @@ def render_tradeoff_scenarios():
         """,
         unsafe_allow_html=True
     )
-
 
 
 
