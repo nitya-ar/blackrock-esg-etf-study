@@ -944,9 +944,6 @@ def render_tradeoff_scenarios():
     # =========================
     # page header
     # =========================
-    TAB_ID = "t3"  # used only to scope CSS so styles don't leak across tabs
-    st.markdown(f'<div id="{TAB_ID}">', unsafe_allow_html=True)
-
     st.subheader("Tradeoff Scenarios")
     st.write(
         "This section analyzes three portfolio versions for each fund: the current 2025 portfolio and two cleaner alternatives "
@@ -956,20 +953,21 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
+    # ==== OPEN TAB 3 SCOPE WRAPPER (for CSS scoping only) ====
+    TAB_ID = "t3"
+    st.markdown(f'<div id="{TAB_ID}">', unsafe_allow_html=True)
+
     # =========================
-    # styles (scoped to tab 3 ONLY)
+    # styles (KPI smaller + tiny icon-only downloader)
     # =========================
     st.markdown(f"""
     <style>
-      /* Scope everything in this function to Tab 3 */
-      #{TAB_ID} .scn-card {{
-        background: var(--card); border:1px solid var(--border); border-radius:14px;
-        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
-      }}
-      #{TAB_ID} .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
-      #{TAB_ID} .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
+      .scn-card {{ background: var(--card); border:1px solid var(--border); border-radius:14px;
+                  padding:12px 14px; height: 168px; display:flex; flex-direction:column; justify-content:space-between; }}
+      .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
+      .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
 
-      /* KPI tile sizes (same as your current Tab 3 look) */
+      /* Tab-3-scoped KPI sizing so it doesn't leak to other tabs */
       #{TAB_ID} .kpi {{ padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }}
       #{TAB_ID} .kpi .label {{ font-size:10px; color: var(--muted); line-height:1.1; }}
       #{TAB_ID} .kpi .value {{ font-size:18px; font-weight:700; line-height:1.0; }}
@@ -984,35 +982,44 @@ def render_tradeoff_scenarios():
       }}
       #{TAB_ID} .kpi-tint-green .value, #{TAB_ID} .kpi-tint-red .value {{ color: #ffffff; }}
 
-      /* Old downloader styles kept for consistency (still scoped) */
-      #{TAB_ID} #tradeoff-dl .dl-icon,
-      #{TAB_ID} #dl-row .dl-icon {{
+      /* Old tiny icon styles but scoped */
+      #{TAB_ID} #tradeoff-dl {{ margin-top: 2px; display:flex; align-items:center; gap:8px; }}
+      #{TAB_ID} #tradeoff-dl .dl-icon {{
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:6px;
         border:1px solid var(--border); background: var(--card); cursor:pointer;
         text-decoration:none; user-select:none; color: var(--muted);
       }}
-      #{TAB_ID} #tradeoff-dl .dl-icon:hover,
-      #{TAB_ID} #dl-row .dl-icon:hover {{ border-color: rgba(255,255,255,0.22); color: var(--text); }}
-      #{TAB_ID} #tradeoff-dl .dl-icon svg,
-      #{TAB_ID} #dl-row .dl-icon svg {{ width:14px; height:14px; }}
+      #{TAB_ID} #tradeoff-dl .dl-icon:hover {{ border-color: rgba(255,255,255,0.22); color: var(--text); }}
+      #{TAB_ID} #tradeoff-dl .dl-icon svg {{ width:14px; height:14px; }}
 
-      /* New: one-line caption with right-aligned icon */
+      #{TAB_ID} #tradeoff-dl [data-testid="stDownloadButton"] > button {{
+        opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
+      }}
+
+      /* New: caption + right-aligned icon on one line (scoped) */
       #{TAB_ID} #dl-row {{
-        display:flex; align-items:center; gap:12px; margin-top:6px;
+        display:flex; align-items:center; gap:12px; margin-top: 6px;
       }}
       #{TAB_ID} #dl-row .cap {{
         color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; white-space: normal;
       }}
-      @media (max-width: 992px) {{ #{TAB_ID} .scn-card {{ height:auto; }} }}
-      @media (max-width: 640px) {{
-        #{TAB_ID} #dl-row {{ flex-wrap: wrap; }}
+      #{TAB_ID} #dl-row .dl-icon {{
+        margin-left:auto;
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:6px;
+        border:1px solid var(--border); background: var(--card); cursor:pointer;
+        text-decoration:none; color: var(--muted);
       }}
+      #{TAB_ID} #dl-row .dl-icon:hover {{ border-color: rgba(255,255,255,0.22); color: var(--text); }}
+      #{TAB_ID} #dl-row .dl-icon svg {{ width:14px; height:14px; }}
+
+      @media (max-width: 992px) {{ .scn-card {{ height: auto; }} }}
     </style>
     """, unsafe_allow_html=True)
 
     # =========================
-    # scenario cards (unchanged)
+    # scenario cards (unchanged content)
     # =========================
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
@@ -1105,7 +1112,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (smaller) — unchanged markup
+    # KPI tiles (smaller)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
@@ -1138,7 +1145,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny icon, same row, right-aligned)
+    # download (tiny icon only; right-aligned on same row)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1162,8 +1169,8 @@ def render_tradeoff_scenarios():
       <div class="cap">
         CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.
       </div>
-      <a class="dl-icon" href="data:text/csv;base64,{b64}" type="text/csv" download="per_etf_metrics_all_scenarios.csv"
-         title="Download CSV" aria-label="Download CSV" target="_self" draggable="false" rel="noopener">
+      <a class="dl-icon" href="data:text/csv;base64,{b64}" type="text/csv"
+         download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1174,8 +1181,9 @@ def render_tradeoff_scenarios():
     </div>
     """, unsafe_allow_html=True)
 
-    # close the scope wrapper
+    # ==== CLOSE TAB 3 SCOPE WRAPPER ====
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
