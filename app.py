@@ -882,7 +882,7 @@ def render_change_since_2017():
 
 
 
-#render tab 3 
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -949,16 +949,15 @@ def render_tradeoff_scenarios():
     bad_contro = M[(M[ctr_col]    < 0) | (M[ctr_col]    > 100) | (M[ctr_col].isna())]
     bad_te     = M[(M[te_col]     < 0) | (M[te_col]     > 0.10) | (M[te_col].isna())]  # 0–10% annualized
 
-    if not bad_clean.empty:  qa_msgs.append(f"⚠️ %Clean outside [0,100] or NaN: {len(bad_clean)} rows")
-    if not bad_contro.empty: qa_msgs.append(f"⚠️ %Controversial outside [0,100] or NaN: {len(bad_contro)} rows")
-    if not bad_te.empty:     qa_msgs.append(f"⚠️ TE_annual outside [0.00, 0.10] or NaN: {len(bad_te)} rows")
-
-    st.subheader("Tradeoff Scenarios")
-    if qa_msgs:
+    if qa_msgs or (not bad_clean.empty or not bad_contro.empty or not bad_te.empty):
+        if not bad_clean.empty:  qa_msgs.append(f"⚠️ %Clean outside [0,100] or NaN: {len(bad_clean)} rows")
+        if not bad_contro.empty: qa_msgs.append(f"⚠️ %Controversial outside [0,100] or NaN: {len(bad_contro)} rows")
+        if not bad_te.empty:     qa_msgs.append(f"⚠️ TE_annual outside [0.00, 0.10] or NaN: {len(bad_te)} rows")
         with st.expander("Data QA — Issues detected", expanded=True):
             for msg in qa_msgs:
                 st.write(msg)
 
+    st.subheader("Tradeoff Scenarios")
     st.write(
         "For each ETF and scenario we show **% Clean**, **% Controversial**, **Tracking Error (annualized)**, "
         "and **# Holdings**. These values are rendered **exactly as stored** in "
@@ -970,13 +969,19 @@ def render_tradeoff_scenarios():
     # =========================
     st.markdown("""
     <style>
-      .scenario-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+      .scenario-card { background: var(--card); border: 1px solid var(--border);
+                       border-radius: 14px; padding: 16px 18px; }
       .scenario-card h4 { margin: 0 0 6px 0; font-size: 16px; }
       .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
       .scenario-card ul { margin: 0; padding-left: 18px; }
       .scenario-card li { font-size: 13px; margin: 4px 0; }
-      .kpi.kpi-sm { padding: 14px 16px; } .kpi.kpi-sm .label { font-size: 11px; }
+      .kpi.kpi-sm { padding: 14px 16px; }
+      .kpi.kpi-sm .label { font-size: 11px; }
       .kpi.kpi-sm .value { font-size: 24px; font-weight: 700; line-height: 1.05; }
+      /* New coloring rules for KPI values */
+      .kpi-green .value { color: var(--green-9, #16a34a); }
+      .kpi-red   .value { color: var(--red-9,   #dc2626); }
+      .kpi-neutral .value { color: inherit; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1064,7 +1069,7 @@ def render_tradeoff_scenarios():
 
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
-    # Override Baseline cleanliness with Overview totals for "All" (optional)
+    # Optional override for Baseline cleanliness with Overview totals for "All"
     if sel_etf == "All":
         try:
             ctx = load_context_summary()
@@ -1079,42 +1084,68 @@ def render_tradeoff_scenarios():
         except Exception:
             pass
 
-    # KPI tiles
-    def _tone(v, pos_color):
-        try:
-            vv = float(v)
-            if abs(vv) < 0.05:   # tiny values look neutral
-                return "neutral"
-            return pos_color
-        except:
-            return "neutral"
-
+    # ---------- KPI tiles with requested coloring ----------
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
         st.markdown(f"**{r['Scenario']}**")
+
+        # color rules: Clean -> green if != 0; Contro -> red if != 0; else neutral
+        def _klass_for_clean(v):
+            try:
+                return "kpi-green" if abs(float(v)) > 0.0 else "kpi-neutral"
+            except:
+                return "kpi-neutral"
+
+        def _klass_for_contro(v):
+            try:
+                return "kpi-red" if abs(float(v)) > 0.0 else "kpi-neutral"
+            except:
+                return "kpi-neutral"
+
         c1, c2, c3, c4 = st.columns(4)
-        with c1: st.markdown(f"<div class='kpi kpi-sm'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>", unsafe_allow_html=True)
-        with c2: st.markdown(f"<div class='kpi kpi-sm'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>", unsafe_allow_html=True)
-        with c3: st.markdown(f"<div class='kpi kpi-sm'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
+        with c1:
+            st.markdown(
+                f"<div class='kpi kpi-sm {_klass_for_clean(r['clean'])}'>"
+                f"<div class='label'>% Clean</div>"
+                f"<div class='value'>{_fmt_pct_value(r['clean'])}</div>"
+                f"</div>", unsafe_allow_html=True
+            )
+        with c2:
+            st.markdown(
+                f"<div class='kpi kpi-sm {_klass_for_contro(r['contro'])}'>"
+                f"<div class='label'>% Controversial</div>"
+                f"<div class='value'>{_fmt_pct_value(r['contro'])}</div>"
+                f"</div>", unsafe_allow_html=True
+            )
+        with c3:
+            st.markdown(
+                f"<div class='kpi kpi-sm kpi-neutral'>"
+                f"<div class='label'>Tracking Error (ann.)</div>"
+                f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
+                f"</div>", unsafe_allow_html=True
+            )
         with c4:
             n_txt = _fmt_int(r["n"])
             label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            st.markdown(f"<div class='kpi kpi-sm'><div class='label'>{label_txt}</div><div class='value'>{n_txt}</div></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='kpi kpi-sm kpi-neutral'>"
+                f"<div class='label'>{label_txt}</div>"
+                f"<div class='value'>{n_txt}</div>"
+                f"</div>", unsafe_allow_html=True
+            )
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # PER-ETF TABLE (ALL SCENARIOS) — EXACT
+    # PER-ETF TABLE REMOVED — tiny download button only
     # =========================
-    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
-    st.markdown("**Per-ETF metrics (all scenarios)**")
-
+    # Prepare the exact per-ETF metrics (authoritative numbers) for download
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
         .rename(columns={
             etf_col: "ETF",
             clean_col: "% Clean",
             ctr_col: "% Controversial",
-            te_col: "TE_annual",
+            te_col: "TE_annual",          # fraction in file
             n_col: "Holdings",
         })
         .copy()
@@ -1123,27 +1154,17 @@ def render_tradeoff_scenarios():
     show["__ord__"] = show["Scenario"].map(order_map).fillna(99)
     show = show.sort_values(["ETF", "__ord__"]).drop(columns="__ord__")
 
-    # Display-friendly copy (formatting only)
-    disp = show.copy()
-    disp["% Clean"] = disp["% Clean"].map(_fmt_pct_value)
-    disp["% Controversial"] = disp["% Controversial"].map(_fmt_pct_value)
-    disp["Tracking Error (ann.)"] = show["TE_annual"].map(_fmt_te_from_fraction)
-    disp["# Holdings"] = show["Holdings"].map(_fmt_int)
-    disp = disp[["ETF", "Scenario", "% Clean", "% Controversial", "Tracking Error (ann.)", "# Holdings"]]
-
-    try:
-        grid(disp)  # if you have a custom grid() helper
-    except Exception:
-        st.dataframe(disp, use_container_width=True, hide_index=True)
-
-    # Unformatted authoritative CSV for downstream use
+    # Tiny note + download button (no on-screen table)
+    st.caption("Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion.")
     st.download_button(
-        "Download per-ETF metrics (authoritative CSV)",
+        "Download per-ETF metrics (CSV)",
         data=show.to_csv(index=False).encode("utf-8"),
-        file_name="per_etf_metrics_all_scenarios_authoritative.csv",
+        file_name="per_etf_metrics_all_scenarios.csv",
         mime="text/csv",
         use_container_width=False,
+        help="Per-ETF: % Clean, % Controversial, TE_annual (fraction), # Holdings — for all three scenarios."
     )
+
 
 
 
