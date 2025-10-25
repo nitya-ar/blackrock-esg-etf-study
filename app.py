@@ -964,12 +964,13 @@ def render_tradeoff_scenarios():
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* KPI tiles: restore original tint look (numbers white only when tinted) */
+      /* KPI tiles base */
       .kpi { padding:14px 16px; border-radius:12px; border:1px solid var(--border); background: var(--card); }
       .kpi .label { font-size:11px; color: var(--muted); }
       .kpi .value { font-size:24px; font-weight:700; line-height:1.05; }
 
-      .kpi-tint-green { 
+      /* gradient-tint styles (as in your screenshot) */
+      .kpi-tint-green {
         background: linear-gradient(180deg, rgba(21,128,61,0.28), rgba(21,128,61,0.18));
         border-color: rgba(21,128,61,0.40);
       }
@@ -979,26 +980,27 @@ def render_tradeoff_scenarios():
       }
       .kpi-tint-green .value, .kpi-tint-red .value { color: #ffffff; }
 
-      /* tiny text-link style download control */
+      /* tiny card-like download link */
+      #tradeoff-dl .dl-card {
+        display: inline-block; padding: 6px 10px; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--card);
+        font-size: 12px; color: var(--muted); text-decoration: none; line-height: 1;
+        transition: all .12s ease-in-out;
+      }
+      #tradeoff-dl .dl-card:hover { border-color: rgba(255,255,255,0.22); color: var(--foreground); }
+      #tradeoff-dl .dl-card:active { transform: translateY(1px); }
+
+      /* visually hide the built-in button but keep it for the actual download event */
       #tradeoff-dl [data-testid="stDownloadButton"] > button {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        font-size: 12px !important;
-        text-decoration: underline;
-        color: var(--muted) !important;
-        opacity: 0.85 !important;
+        opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }
-      #tradeoff-dl { margin-top: 6px; }
-      @media (max-width: 992px) {
-        .scn-card { height: auto; }
-      }
+
+      @media (max-width: 992px) { .scn-card { height: auto; } }
     </style>
     """, unsafe_allow_html=True)
 
     # =========================
-    # scenario cards (no bullets in descriptions)
+    # scenario cards (exact descriptions; no bullets)
     # =========================
     c1, c2, c3 = st.columns(3, gap="medium")
 
@@ -1008,7 +1010,7 @@ def render_tradeoff_scenarios():
           <div>
             <h4>Baseline</h4>
             <div class="desc">
-              Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies. 
+              Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
               Serves as the reference point for all comparisons, with no adjustments to weights or constraints.
             </div>
           </div>
@@ -1021,7 +1023,7 @@ def render_tradeoff_scenarios():
           <div>
             <h4>Pragmatic Tilt</h4>
             <div class="desc">
-              Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure. 
+              Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
               Maintains diversification limits, sector balance within ±2%, and a 5% single-name cap to keep tracking error within a realistic range.
             </div>
           </div>
@@ -1034,7 +1036,7 @@ def render_tradeoff_scenarios():
           <div>
             <h4>Strict Exclusion</h4>
             <div class="desc">
-              Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality. 
+              Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
               Applies the same 5% single-name cap and refills weights to achieve full allocation with minimum deviation from the baseline.
             </div>
           </div>
@@ -1084,10 +1086,7 @@ def render_tradeoff_scenarios():
             rows.append({"Scenario": s, "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
             continue
 
-        if sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0:
-            w = d["__aum__"].clip(lower=0).values
-        else:
-            w = np.ones(len(d), dtype=float)
+        w = d["__aum__"].clip(lower=0).values if (sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0) else np.ones(len(d))
 
         rows.append({
             "Scenario": s,
@@ -1138,7 +1137,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny link instead of big button)
+    # download (tiny card-like link instead of big button)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1154,20 +1153,30 @@ def render_tradeoff_scenarios():
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-    st.caption("Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion.")
+    st.caption(
+        "Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), "
+        "and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion."
+    )
+
     st.markdown('<div id="tradeoff-dl">', unsafe_allow_html=True)
+
+    # hidden real downloader (triggered by the link below)
     st.download_button(
         "Download per-ETF metrics (CSV)",
         data=show.to_csv(index=False).encode("utf-8"),
         file_name="per_etf_metrics_all_scenarios.csv",
         mime="text/csv",
         use_container_width=False,
-        key="dl_tradeoff_metrics"
+        key="dl_tradeoff_metrics_hidden"
     )
+
+    # visible tiny card-like link
+    st.markdown(
+        "<a class='dl-card' onclick=\"document.querySelector('#tradeoff-dl button').click()\">Download per-ETF metrics (CSV)</a>",
+        unsafe_allow_html=True
+    )
+
     st.markdown('</div>', unsafe_allow_html=True)
-
-
-
 
 
 
