@@ -831,6 +831,8 @@ def render_change_since_2017():
 
 
 
+
+
 # render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
@@ -862,8 +864,8 @@ def render_tradeoff_scenarios():
         try: return abs(float(v)) < 0.05
         except: return False
 
-    # flexible loader for position deltas (turnover / active share)
     def _load_scenario_deltas_flexible() -> pd.DataFrame:
+        """Turnover/Active Share source (best-effort)."""
         try:
             D = pd.read_csv("/mnt/data/scenario_position_deltas.csv")
         except Exception:
@@ -916,14 +918,10 @@ def render_tradeoff_scenarios():
                           text-decoration:none; vertical-align:baseline; transition: transform .12s ease, color .12s ease; }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
-
-      /* keep download icon neutral (not link-blue/purple) */
-      .t3-dl-inline-wrap a,
-      .t3-dl-inline-wrap a:link,
-      .t3-dl-inline-wrap a:visited,
-      .t3-dl-inline-wrap a:active { color: var(--muted) !important; text-decoration: none !important; }
-      .t3-dl-inline-wrap a:hover  { color: var(--text)  !important; }
-
+      .t3-dl-inline-wrap a, .t3-dl-inline-wrap a:link, .t3-dl-inline-wrap a:visited, .t3-dl-inline-wrap a:active {
+        color: var(--muted) !important; text-decoration: none !important;
+      }
+      .t3-dl-inline-wrap a:hover { color: var(--text) !important; }
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
@@ -1010,7 +1008,6 @@ def render_tradeoff_scenarios():
     for _, r in KP.iterrows():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
-
         with c1:
             tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>", unsafe_allow_html=True)
@@ -1022,10 +1019,9 @@ def render_tradeoff_scenarios():
         with c4:
             lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
-
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
-    # ---------------- download notice (before visuals) ----------------
+    # ---------------- download notice ----------------
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
         .rename(columns={etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial", te_col:"TE_annual", n_col:"Holdings"})
@@ -1035,7 +1031,6 @@ def render_tradeoff_scenarios():
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
     csv_b64 = base64.b64encode(show.to_csv(index=False).encode("utf-8")).decode("ascii")
     csv_href = f"data:text/csv;base64,{csv_b64}"
-
     st.markdown(
         f"""
         <div class="t3-dl-inline-wrap">
@@ -1057,14 +1052,13 @@ def render_tradeoff_scenarios():
         """,
         unsafe_allow_html=True
     )
-
     st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # VISUALS (clean layout)
+    # VISUALS
     # =========================
 
-    # ---------- Build Composition DF ----------
+    # Composition DF
     comp_rows = []
     for _, r in KP.iterrows():
         clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
@@ -1088,11 +1082,8 @@ def render_tradeoff_scenarios():
         if not comp_df.empty and comp_df["Value"].notna().any():
             comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
-
-            color_scale = alt.Scale(
-                domain=["Clean","Controversial","Other"],
-                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
-            )
+            color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
             comp_chart = (
                 alt.Chart(comp_df)
                 .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
@@ -1100,11 +1091,9 @@ def render_tradeoff_scenarios():
                     x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
                     y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
                     color=alt.Color("Category:N", title=None, scale=color_scale),
-                    tooltip=[
-                        alt.Tooltip("Scenario:N"),
-                        alt.Tooltip("Category:N"),
-                        alt.Tooltip("Value:Q", title="Share (%)", format=".1f"),
-                    ],
+                    tooltip=[alt.Tooltip("Scenario:N"),
+                             alt.Tooltip("Category:N"),
+                             alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
                 )
                 .properties(height=320, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
             )
@@ -1112,7 +1101,7 @@ def render_tradeoff_scenarios():
         else:
             st.info("Composition not available for the current selection.")
 
-    # Cleanliness Uplift vs Tracking Error (bubble)
+    # Cleanliness Uplift vs Tracking Error (bubble) — smaller dots
     with top_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
@@ -1162,7 +1151,7 @@ def render_tradeoff_scenarios():
                     size=alt.Size(
                         "AUM_sum:Q",
                         title="ETF AUM ($B)",
-                        scale=alt.Scale(range=[120, 1600]),
+                        scale=alt.Scale(range=[40, 500]),   # smaller bubbles
                         legend=alt.Legend(format="~s", labelExpr="replace(datum.label, 'G', 'B')"),
                     ),
                     color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=bub_domain, range=bub_range)),
@@ -1266,7 +1255,7 @@ def render_tradeoff_scenarios():
                         .encode(text=alt.Text("Cost (bps):Q", format=".1f"))
             st.altair_chart(bar + labels, use_container_width=True)
 
-    # Active Share vs % Clean
+    # Active Share vs % Clean — smaller dots
     with bot_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Active Share vs % Clean</div>'
@@ -1306,7 +1295,7 @@ def render_tradeoff_scenarios():
                     size=alt.Size(
                         "AUM_sum:Q",
                         title="ETF AUM ($B)",
-                        scale=alt.Scale(range=[120, 1600]),
+                        scale=alt.Scale(range=[40, 500]),   # smaller bubbles
                         legend=alt.Legend(format="~s", labelExpr="replace(datum.label, 'G', 'B')"),
                     ),
                     color=alt.Color("Scenario:N", title=None,
