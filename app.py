@@ -1079,7 +1079,7 @@ def render_tradeoff_scenarios():
     # =========================
     # KPI tiles (IDENTICAL tint to other tabs, just smaller)
     # =========================
-    st.markdown("**Key metrics**")
+    st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
         st.markdown(f"**{r['Scenario']}**")
         c1, c2, c3, c4 = st.columns(4)
