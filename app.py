@@ -1130,50 +1130,59 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny icon only; no blue text)
-    # =========================
-    show = (
-        M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
-        .rename(columns={
-            etf_col: "ETF",
-            clean_col: "% Clean",
-            ctr_col: "% Controversial",
-            te_col: "TE_annual",
-            n_col: "Holdings",
-        })
-        .copy()
-    )
-    show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
-    show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
+# download (tiny icon only; no Streamlit button)
+# =========================
+import base64
 
-    st.caption("Download per-ETF metrics (CSV).")
-    st.markdown('<div id="tradeoff-dl">', unsafe_allow_html=True)
+show = (
+    M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
+    .rename(columns={
+        etf_col: "ETF",
+        clean_col: "% Clean",
+        ctr_col: "% Controversial",
+        te_col: "TE_annual",
+        n_col: "Holdings",
+    })
+    .copy()
+)
+show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
+show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-    # hidden real downloader (kept for functionality, fully hidden by CSS above)
-    st.download_button(
-        "Download per-ETF metrics (CSV)",
-        data=show.to_csv(index=False).encode("utf-8"),
-        file_name="per_etf_metrics_all_scenarios.csv",
-        mime="text/csv",
-        key="dl_tradeoff_metrics_hidden"
-    )
+csv_bytes = show.to_csv(index=False).encode("utf-8")
+b64 = base64.b64encode(csv_bytes).decode("utf-8")
 
-    # visible, tiny icon-only trigger (no text)
-    st.markdown(
-        """
-        <a class="dl-icon" title="Download CSV" aria-label="Download CSV"
-           onclick="const btn=document.querySelector('#tradeoff-dl button'); if(btn){btn.click();}">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-             <polyline points="7 10 12 15 17 10"/>
-             <line x1="12" y1="15" x2="12" y2="3"/>
-           </svg>
-        </a>
-        """,
-        unsafe_allow_html=True
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
+
+st.markdown("""
+<style>
+  #tradeoff-dl { margin-top: 2px; }
+  #tradeoff-dl .dl-icon{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; min-width:22px; border-radius:6px;
+    border:1px solid var(--border); background: var(--card); cursor:pointer;
+    text-decoration:none; color: var(--muted);
+  }
+  #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
+  #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown(
+    f"""
+    <div id="tradeoff-dl">
+      <a class="dl-icon" href="data:text/csv;base64,{b64}"
+         download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 
