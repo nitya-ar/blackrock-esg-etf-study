@@ -883,6 +883,7 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -954,11 +955,11 @@ def render_tradeoff_scenarios():
     )
 
     # =========================
-    # styles
+    # styles (subtle tint + tiny text link)
     # =========================
     st.markdown("""
     <style>
-      /* scenario cards (equal size, small text) */
+      /* scenario cards (unchanged) */
       .scn-card { background: var(--card); border:1px solid var(--border); border-radius:14px;
                   padding:12px 14px; height: 168px; display:flex; flex-direction:column; justify-content:space-between; }
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
@@ -969,28 +970,33 @@ def render_tradeoff_scenarios():
       .kpi .label { font-size:11px; color: var(--muted); }
       .kpi .value { font-size:24px; font-weight:700; line-height:1.05; }
 
-      /* gradient-tint styles (as in your screenshot) */
+      /* more subtle gradient tints */
       .kpi-tint-green {
-        background: linear-gradient(180deg, rgba(21,128,61,0.28), rgba(21,128,61,0.18));
-        border-color: rgba(21,128,61,0.40);
+        background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06));
+        border-color: rgba(16,185,129,0.18);
       }
       .kpi-tint-red {
-        background: linear-gradient(180deg, rgba(185,28,28,0.28), rgba(185,28,28,0.18));
-        border-color: rgba(185,28,28,0.40);
+        background: linear-gradient(180deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06));
+        border-color: rgba(239,68,68,0.18);
       }
       .kpi-tint-green .value, .kpi-tint-red .value { color: #ffffff; }
 
-      /* tiny card-like download link */
+      /* tiny text link for download */
       #tradeoff-dl .dl-card {
-        display: inline-block; padding: 6px 10px; border-radius: 10px;
-        border: 1px solid var(--border); background: var(--card);
-        font-size: 12px; color: var(--muted); text-decoration: none; line-height: 1;
-        transition: all .12s ease-in-out;
+        display: inline-block;
+        font-size: 11px;
+        color: var(--muted);
+        text-decoration: underline;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card);
+        padding: 4px 8px;
+        line-height: 1;
       }
-      #tradeoff-dl .dl-card:hover { border-color: rgba(255,255,255,0.22); color: var(--foreground); }
-      #tradeoff-dl .dl-card:active { transform: translateY(1px); }
+      #tradeoff-dl .dl-card:hover { color: var(--foreground); border-color: rgba(255,255,255,0.22); }
+      #tradeoff-dl { margin-top: 4px; }
 
-      /* visually hide the built-in button but keep it for the actual download event */
+      /* hide the actual Streamlit button; we will click it via JS */
       #tradeoff-dl [data-testid="stDownloadButton"] > button {
         opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }
@@ -1000,10 +1006,9 @@ def render_tradeoff_scenarios():
     """, unsafe_allow_html=True)
 
     # =========================
-    # scenario cards (exact descriptions; no bullets)
+    # scenario cards (unchanged content)
     # =========================
     c1, c2, c3 = st.columns(3, gap="medium")
-
     with c1:
         st.markdown("""
         <div class="scn-card">
@@ -1016,7 +1021,6 @@ def render_tradeoff_scenarios():
           </div>
         </div>
         """, unsafe_allow_html=True)
-
     with c2:
         st.markdown("""
         <div class="scn-card">
@@ -1029,7 +1033,6 @@ def render_tradeoff_scenarios():
           </div>
         </div>
         """, unsafe_allow_html=True)
-
     with c3:
         st.markdown("""
         <div class="scn-card">
@@ -1085,9 +1088,7 @@ def render_tradeoff_scenarios():
         if d.empty:
             rows.append({"Scenario": s, "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
             continue
-
         w = d["__aum__"].clip(lower=0).values if (sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0) else np.ones(len(d))
-
         rows.append({
             "Scenario": s,
             "clean":  np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w),
@@ -1099,45 +1100,40 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (neutral when display is 0.0%)
+    # KPI tiles (subtle tint; neutral when display is 0.0%)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
         st.markdown(f"**{r['Scenario']}**")
-
         c1, c2, c3, c4 = st.columns(4)
 
         with c1:
-            tone_class = "kpi" if _is_zero_display(r["clean"]) else "kpi kpi-tint-green"
+            tone = "kpi" if _is_zero_display(r["clean"]) else "kpi kpi-tint-green"
             st.markdown(
-                f"<div class='{tone_class}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>",
+                f"<div class='{tone}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>",
                 unsafe_allow_html=True
             )
-
         with c2:
-            tone_class = "kpi" if _is_zero_display(r["contro"]) else "kpi kpi-tint-red"
+            tone = "kpi" if _is_zero_display(r["contro"]) else "kpi kpi-tint-red"
             st.markdown(
-                f"<div class='{tone_class}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>",
+                f"<div class='{tone}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>",
                 unsafe_allow_html=True
             )
-
         with c3:
             st.markdown(
                 f"<div class='kpi'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
                 unsafe_allow_html=True
             )
-
         with c4:
-            hold_lab = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
+            label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
             st.markdown(
-                f"<div class='kpi'><div class='label'>{hold_lab}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
+                f"<div class='kpi'><div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
                 unsafe_allow_html=True
             )
-
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny card-like link instead of big button)
+    # download (only a tiny text link; no visible button)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1153,30 +1149,24 @@ def render_tradeoff_scenarios():
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-    st.caption(
-        "Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), "
-        "and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion."
-    )
-
+    st.caption("Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion.")
     st.markdown('<div id="tradeoff-dl">', unsafe_allow_html=True)
 
-    # hidden real downloader (triggered by the link below)
+    # hidden real downloader (kept for functionality, fully hidden by CSS)
     st.download_button(
         "Download per-ETF metrics (CSV)",
         data=show.to_csv(index=False).encode("utf-8"),
         file_name="per_etf_metrics_all_scenarios.csv",
         mime="text/csv",
-        use_container_width=False,
         key="dl_tradeoff_metrics_hidden"
     )
-
-    # visible tiny card-like link
+    # visible tiny text link
     st.markdown(
         "<a class='dl-card' onclick=\"document.querySelector('#tradeoff-dl button').click()\">Download per-ETF metrics (CSV)</a>",
         unsafe_allow_html=True
     )
-
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
