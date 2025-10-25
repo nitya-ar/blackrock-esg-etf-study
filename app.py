@@ -883,6 +883,7 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -909,12 +910,11 @@ def render_tradeoff_scenarios():
 
     # ---------- load authoritative source ----------
     M = load_scenario_metrics().copy()
-
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
-    clean_col = _need(M, "%Clean")          # percent already
-    ctr_col   = _need(M, "%Controversial")  # percent already
-    te_col    = _need(M, "TE_annual")       # fraction (0.0153 -> 1.53%)
+    clean_col = _need(M, "%Clean")
+    ctr_col   = _need(M, "%Controversial")
+    te_col    = _need(M, "TE_annual")   # fraction
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -936,13 +936,13 @@ def render_tradeoff_scenarios():
     # ---------- styles ----------
     st.markdown("""
     <style>
-      /* Scenario cards: equal size, small text */
+      /* Scenario cards: side-by-side, equal size, very small text */
       .scenario-wrap { display:flex; gap:16px; }
       .scenario-card {
         background: var(--card);
         border:1px solid var(--border);
         border-radius:14px;
-        padding:14px 16px;
+        padding:12px 14px;
         flex:1 1 0;
         min-height:150px;
         display:flex; flex-direction:column; justify-content:space-between;
@@ -954,37 +954,42 @@ def render_tradeoff_scenarios():
 
       /* KPI tiles */
       .kpi.kpi-sm { padding:14px 16px; border-radius:12px; border:1px solid var(--border); }
-      .kpi .label { font-size:11px; color:var(--muted); }
+      .kpi .label { font-size:11px; color: var(--muted); }
       .kpi .value { font-size:24px; font-weight:700; line-height:1.05; }
 
-      /* Tint card background only; numbers white on tinted cards */
+      /* Card tint only; numbers white on tinted cards */
       .kpi-green { background: rgba(22,163,74,0.18); border-color: rgba(22,163,74,0.35); }
       .kpi-red   { background: rgba(220,38,38,0.18); border-color: rgba(220,38,38,0.35); }
       .kpi-green .value, .kpi-red .value { color:#ffffff; }
       .kpi-neutral { background: var(--card); }
 
-      /* Make download button very small and unobtrusive */
+      /* Make the download button very, very small */
       #tradeoff-dl div[data-testid="stDownloadButton"] > button {
-        transform: scale(0.50);
+        transform: scale(0.40);
         transform-origin: left center;
-        width: 22%;
-        min-width: 92px;
+        width: 18%;
+        min-width: 84px;
         padding: 1px 4px;
-        opacity: 0.85;
+        opacity: 0.7;
       }
+
       @media (max-width: 900px) {
         .scenario-wrap { flex-direction:column; }
       }
     </style>
     """, unsafe_allow_html=True)
 
-    # ---------- scenario cards (equal heights, small text) ----------
+    # ---------- scenario cards (copy EXACTLY as requested) ----------
     st.markdown('<div class="scenario-wrap">', unsafe_allow_html=True)
+
     st.markdown("""
       <div class="scenario-card">
         <div>
           <h4>Baseline</h4>
-          <div class="desc">Represents each fund’s actual 2025 portfolio based on current holdings and existing exclusion policies. Serves as the reference point with no changes to weights or constraints.</div>
+          <div class="desc">
+            Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
+            Serves as the reference point for all comparisons, with no adjustments to weights or constraints.
+          </div>
         </div>
         <ul>
           <li>Single name cap 5%</li>
@@ -992,11 +997,15 @@ def render_tradeoff_scenarios():
         </ul>
       </div>
     """, unsafe_allow_html=True)
+
     st.markdown("""
       <div class="scenario-card">
         <div>
           <h4>Pragmatic Tilt</h4>
-          <div class="desc">Moderately increases clean holdings and lowers controversial exposure while staying close to the market.</div>
+          <div class="desc">
+            Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
+            Maintains diversification limits, sector balance within ±2%, and a 5% single-name cap to keep tracking error within a realistic range.
+          </div>
         </div>
         <ul>
           <li>Targets a few percentage points cleaner than Baseline</li>
@@ -1004,20 +1013,24 @@ def render_tradeoff_scenarios():
         </ul>
       </div>
     """, unsafe_allow_html=True)
+
     st.markdown("""
       <div class="scenario-card">
         <div>
           <h4>Strict Exclusion</h4>
-          <div class="desc">Removes all controversial holdings and rebalances to maintain sector neutrality, pursuing the cleanest feasible portfolio.</div>
+          <div class="desc">
+            Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
+            Applies the same 5% single-name cap and refills weights to achieve full allocation with minimum deviation from the baseline.
+          </div>
         </div>
         <ul>
           <li>Single name cap 5% with sector neutrality</li>
-          <li>Weights refilled with minimum deviation from Baseline</li>
+          <li>Minimum deviation from Baseline</li>
         </ul>
       </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
+    st.markdown('</div>', unsafe_allow_html=True)
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
     # ---------- KPI summary (AUM-weight when "All") ----------
@@ -1105,7 +1118,7 @@ def render_tradeoff_scenarios():
             )
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- no on-screen table; tiny download button ----------
+    # ---------- tiny download button only ----------
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
         .rename(columns={etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial", te_col:"TE_annual", n_col:"Holdings"})
@@ -1125,9 +1138,6 @@ def render_tradeoff_scenarios():
         key="dl_tradeoff_metrics"
     )
     st.markdown('</div>', unsafe_allow_html=True)
-
-
-
 
 
 
