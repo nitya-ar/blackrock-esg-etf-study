@@ -884,7 +884,6 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1195,6 +1194,7 @@ def render_tradeoff_scenarios():
             mime="text/csv",
             key="tradeoff_csv_dl"
         )
+
 
 
 
