@@ -819,7 +819,7 @@ def render_change_since_2017():
 
     gap(10)
 
-        # ---------- Top movers (no filters) ----------
+          # ---------- Top movers (no filters) ----------
     st.markdown(
         '<div class="chart-head">'
         '<div class="chart-title">Top movers — holdings (Year A → 2025)</div>'
@@ -878,7 +878,7 @@ def render_change_since_2017():
     if movers_view.empty:
         st.info("No movers found for the selected start year.")
     else:
-        st.data_editor(df, use_container_width=True, hide_index=True, disabled=True)
+        st.dataframe(movers_view, use_container_width=True, hide_index=True)
 
 
 
