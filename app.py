@@ -908,8 +908,7 @@ def render_tradeoff_scenarios():
     def _fmt_pct(x):
         try:
             v = float(x)
-            # If value is in [−1.5,1.5] assume it was stored as a fraction; convert to %
-            v = (v * 100.0) if -1.5 <= v <= 1.5 else v
+            v = (v * 100.0) if -1.5 <= v <= 1.5 else v  # convert fractions to %
             return f"{v:.1f}%"
         except:
             return "–"
@@ -956,7 +955,7 @@ def render_tradeoff_scenarios():
         if f and v:
             aum_map = a[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
     except Exception:
-        # fallback to explorer (Analysis 1) if available
+        # fallback to explorer (Analysis 1)
         try:
             _, df_disp, _ = load_explorer()
             f = _pick(df_disp, "ETF")
@@ -993,24 +992,27 @@ def render_tradeoff_scenarios():
       .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
       .scenario-card ul { margin: 0; padding-left: 18px; }
       .scenario-card li { font-size: 13px; margin: 4px 0; }
+
+      /* Smaller KPI tiles for this tab only */
+      .kpi.kpi-sm { padding: 14px 16px; }
+      .kpi.kpi-sm .label { font-size: 11px; }
+      .kpi.kpi-sm .value { font-size: 24px; font-weight: 700; line-height: 1.05; }
     </style>
     """, unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
-    
     with c1:
         st.markdown("""
         <div class="scenario-card">
           <h4>Baseline</h4>
           <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
-          <div style="height:16.5px;"></div>
+          <div style="height:16px;"></div>
           <ul>
             <li>Single-name cap: <b>5.0%</b></li>
             <li>No extra exclusions</li>
           </ul>
         </div>
         """, unsafe_allow_html=True)
-            
     with c2:
         st.markdown("""
         <div class="scenario-card">
@@ -1043,7 +1045,6 @@ def render_tradeoff_scenarios():
     X = M.copy()
     if sel_etf != "All":
         X = X[X[etf_col].astype(str) == sel_etf]
-
     X["__aum__"] = X[etf_col].astype(str).map(_aum)
 
     # ---------- compute KPIs per scenario ----------
@@ -1055,6 +1056,7 @@ def render_tradeoff_scenarios():
                          "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
             continue
 
+        # weights: AUM for "All" if available; else equal
         if sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0:
             w = d["__aum__"].clip(lower=0).values
         else:
@@ -1090,6 +1092,19 @@ def render_tradeoff_scenarios():
         except Exception:
             pass
 
+    # ---------- local small KPI (same look, just smaller) ----------
+    def small_kpi(label: str, value: str, tone: str = "neutral"):
+        tone_class = {"red": "kpi-red", "green": "kpi-green", "neutral": "kpi-neutral"}.get(tone, "kpi-neutral")
+        st.markdown(
+            f"""
+            <div class="kpi kpi-sm {tone_class}">
+              <div class="label">{label}</div>
+              <div class="value">{value}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     # ---------- render KPIs ----------
     st.markdown("**Key metrics**")
     order = {"baseline": 0, "tilt": 1, "exclude": 2}
@@ -1103,29 +1118,29 @@ def render_tradeoff_scenarios():
             try:
                 vv = float(v)
                 vv = vv * 100.0 if -1.5 <= vv <= 1.5 else vv
-                if abs(vv) < 0.05:   # treat as 0.0%
+                if abs(vv) < 0.05:   # treat ~0% as neutral
                     return "neutral"
                 return pos_color
             except:
                 return "neutral"
 
         c1, c2, c3, c4 = st.columns(4)
-
         with c1:
-            kpi_card("% Clean", _fmt_pct(r["clean"]), tone=_tone(r["clean"], "green"))
+            small_kpi("% Clean", _fmt_pct(r["clean"]), tone=_tone(r["clean"], "green"))
         with c2:
-            kpi_card("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
+            small_kpi("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
         with c3:
-            kpi_card("Tracking Error (ann.)", _fmt_pct(r["te"]), tone="neutral")
+            small_kpi("Tracking Error (ann.)", _fmt_pct(r["te"]), tone="neutral")
         with c4:
             n_txt = "–"
             if pd.notna(r["n"]):
                 try: n_txt = f"{int(round(float(r['n']))):,}"
                 except: pass
             label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            kpi_card(label_txt, n_txt, tone="neutral")
+            small_kpi(label_txt, n_txt, tone="neutral")
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
 
 
 
