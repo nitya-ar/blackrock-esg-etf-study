@@ -1003,7 +1003,7 @@ def render_tradeoff_scenarios():
         <div class="scenario-card">
           <h4>Baseline</h4>
           <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
-          st.markdown('<div style="height:20px;"></div>', unsafe_allow_html=True)
+          <div style="height:20px;"></div>
           <ul>
             <li>Single-name cap: <b>5.0%</b></li>
             <li>No extra exclusions</li>
