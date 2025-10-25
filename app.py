@@ -882,7 +882,7 @@ def render_change_since_2017():
 
 
 
-
+#render tab 3 
 def render_tradeoff_scenarios():
     import re
     import numpy as np
@@ -905,7 +905,7 @@ def render_tradeoff_scenarios():
     def _fmt_pct(x):
         try:
             v = float(x)
-            v = (v * 100.0) if -1.5 <= v <= 1.5 else v
+            v = (v * 100.0) if -1.5 <= v <= 1.5 else v  # convert only fractions (e.g., TE)
             return f"{v:.1f}%"
         except:
             return "–"
@@ -915,9 +915,9 @@ def render_tradeoff_scenarios():
 
     scen_col  = _pick(M, "scenario", "scenario_id", "name")
     etf_col   = _pick(M, "ETF_Ticker", "etf_ticker", "fund", "etf")
-    clean_col = _pick(M, "pct_clean_scn", "%Clean", "clean")
-    ctr_col   = _pick(M, "pct_contro_scn", "%Controversial", "controversial")
-    te_col    = _pick(M, "est_te_annual_pct", "TE_annual", "tracking_error")
+    clean_col = _pick(M, "%Clean", "pct_clean_scn", "clean")
+    ctr_col   = _pick(M, "%Controversial", "pct_contro_scn", "controversial")
+    te_col    = _pick(M, "TE_annual", "est_te_annual_pct", "tracking_error")
     n_col     = _pick(M, "#names", "n_holdings", "num_names", "holdings")
 
     if any(c is None for c in [scen_col, etf_col, clean_col, ctr_col, te_col]):
@@ -944,7 +944,7 @@ def render_tradeoff_scenarios():
     try:
         a = load_etf_aum_2025()
         f = _pick(a, "ETF_Ticker", "etf_ticker", "etf")
-        v = _pick(a, "AUM_USD", "aum_usd", "net_assets", "market_total_value_usd")
+        v = _pick(a, "ETF_AUM_USD", "AUM_USD", "net_assets", "market_total_value_usd")
         if f and v:
             aum_map = a[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
     except Exception:
@@ -974,19 +974,12 @@ def render_tradeoff_scenarios():
     # ---------- Scenario descriptions (SIDE-BY-SIDE) ----------
     st.markdown("""
     <style>
-      .scenario-card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 16px 18px;
-      }
+      .scenario-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
       .scenario-card h4 { margin: 0 0 6px 0; font-size: 16px; }
       .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
       .scenario-card ul { margin: 0; padding-left: 18px; }
       .scenario-card li { font-size: 13px; margin: 4px 0; }
-
-      .kpi.kpi-sm { padding: 14px 16px; }
-      .kpi.kpi-sm .label { font-size: 11px; }
+      .kpi.kpi-sm { padding: 14px 16px; } .kpi.kpi-sm .label { font-size: 11px; }
       .kpi.kpi-sm .value { font-size: 24px; font-weight: 700; line-height: 1.05; }
     </style>
     """, unsafe_allow_html=True)
@@ -997,11 +990,7 @@ def render_tradeoff_scenarios():
         <div class="scenario-card">
           <h4>Baseline</h4>
           <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
-          <div style="height:16px;"></div>
-          <ul>
-            <li>Single-name cap: <b>5.0%</b></li>
-            <li>No extra exclusions</li>
-          </ul>
+          <ul><li>Single-name cap: <b>5.0%</b></li><li>No extra exclusions</li></ul>
         </div>
         """, unsafe_allow_html=True)
     with c2:
@@ -1009,21 +998,15 @@ def render_tradeoff_scenarios():
         <div class="scenario-card">
           <h4>Pragmatic Tilt</h4>
           <div class="desc">Gently tilts away from controversial exposure while staying inside a TE guardrail.</div>
-          <ul>
-            <li>Typical target: <b>~2pp cleaner</b> vs Baseline</li>
-            <li>Respects TE cap; keeps 5% single-name cap</li>
-          </ul>
+          <ul><li>Typical target: <b>~2pp cleaner</b> vs Baseline</li><li>Respects TE cap; 5% single-name cap</li></ul>
         </div>
         """, unsafe_allow_html=True)
     with c3:
         st.markdown("""
         <div class="scenario-card">
           <h4>Strict Exclusion</h4>
-          <div class="desc">Hard screens for controversial names; sector-neutral reweighting; cap still applies.</div>
-          <ul>
-            <li><b>Hard screens</b> on controversial categories</li>
-            <li>Sector-neutral; 5% single-name cap</li>
-          </ul>
+          <div class="desc">Hard screens for controversial categories; sector-neutral reweighting.</div>
+          <ul><li><b>Hard screens</b> on controversial categories</li><li>Sector-neutral; 5% single-name cap</li></ul>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1047,15 +1030,16 @@ def render_tradeoff_scenarios():
                          "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
             continue
 
-        # weights: AUM for "All" if available; else equal
+        # weights: AUM for "All" if available; else equal-weight
         if sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0:
             w = d["__aum__"].clip(lower=0).values
         else:
             w = np.ones(len(d), dtype=float)
 
+        # %Clean / %Contro are already in percent units in source; TE_annual is a fraction → keep as fraction here
         clean  = np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w)
         contro = np.average(pd.to_numeric(d[ctr_col],   errors="coerce"), weights=w)
-        te     = np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w)  # <-- FIXED
+        te     = np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w)
 
         n_val = float(pd.to_numeric(d.get(n_col, pd.Series(np.nan, index=d.index)), errors="coerce").mean()) \
                 if n_col in d.columns else np.nan
@@ -1065,18 +1049,16 @@ def render_tradeoff_scenarios():
 
     KP = pd.DataFrame(rows)
 
-    # ---------- override Baseline Clean/Contro with 2025 Overview (for All) ----------
+    # ---------- optional override for Baseline (% Clean/% Contro) when "All" ----------
     if sel_etf == "All":
         try:
             ctx = load_context_summary()
             if {"classification", "share_of_total_aum_pct"}.issubset(ctx.columns):
                 ov_clean = pd.to_numeric(
-                    ctx.loc[ctx["classification"].str.lower() == "clean", "share_of_total_aum_pct"],
-                    errors="coerce"
+                    ctx.loc[ctx["classification"].str.lower() == "clean", "share_of_total_aum_pct"], errors="coerce"
                 ).sum()
                 ov_contro = pd.to_numeric(
-                    ctx.loc[ctx["classification"].str.lower() == "controversial", "share_of_total_aum_pct"],
-                    errors="coerce"
+                    ctx.loc[ctx["classification"].str.lower() == "controversial", "share_of_total_aum_pct"], errors="coerce"
                 ).sum()
                 KP.loc[KP["scenario_id"] == "baseline", ["clean", "contro"]] = [ov_clean, ov_contro]
         except Exception:
@@ -1114,20 +1096,15 @@ def render_tradeoff_scenarios():
                 return "neutral"
 
         c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            small_kpi("% Clean", _fmt_pct(r["clean"]),  tone=_tone(r["clean"],  "green"))
-        with c2:
-            small_kpi("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
-        with c3:
-            small_kpi("Tracking Error (ann.)", _fmt_pct(r["te"]), tone="neutral")
+        with c1: small_kpi("% Clean", _fmt_pct(r["clean"]),  tone=_tone(r["clean"],  "green"))
+        with c2: small_kpi("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
+        with c3: small_kpi("Tracking Error (ann.)", _fmt_pct(r["te"]), tone="neutral")
         with c4:
             n_txt = "–"
             if pd.notna(r["n"]):
                 try: n_txt = f"{int(round(float(r['n']))):,}"
                 except: pass
-            label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            small_kpi(label_txt, n_txt, tone="neutral")
-
+            small_kpi("# Holdings" if sel_etf != "All" else "# Holdings (avg)", n_txt, tone="neutral")
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ---------- Per-ETF table (all scenarios) ----------
@@ -1147,6 +1124,7 @@ def render_tradeoff_scenarios():
             "exclude":  f"Strict Exclusion • {col_title}",
         })
 
+    # %Clean/%Contro are already % values; TE is a fraction (will be formatted as % in display)
     p_clean  = _pivot_metric(clean_col, "% Clean")
     p_contro = _pivot_metric(ctr_col,   "% Controversial")
     p_te     = _pivot_metric(te_col,    "TE (ann.)")
