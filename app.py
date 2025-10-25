@@ -992,8 +992,6 @@ def render_tradeoff_scenarios():
       .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
       .scenario-card ul { margin: 0; padding-left: 18px; }
       .scenario-card li { font-size: 13px; margin: 4px 0; }
-
-      /* Smaller KPI tiles for this tab only */
       .kpi.kpi-sm { padding: 14px 16px; }
       .kpi.kpi-sm .label { font-size: 11px; }
       .kpi.kpi-sm .value { font-size: 24px; font-weight: 700; line-height: 1.05; }
@@ -1064,7 +1062,7 @@ def render_tradeoff_scenarios():
 
         clean  = np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w)
         contro = np.average(pd.to_numeric(d[ctr_col],   errors="coerce"), weights=w)
-        te     = np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w)
+        te     = np.average(pd.to_numeric(d[te_col],    errors=w))
 
         # holdings: mean across ETFs for "All"; for single ETF it's that ETF's value
         n_val = float(pd.to_numeric(d.get(n_col, pd.Series(np.nan, index=d.index)), errors="coerce").mean()) \
@@ -1113,12 +1111,12 @@ def render_tradeoff_scenarios():
     for _, r in KP.iterrows():
         st.markdown(f"**{r['scenario_label']}**")
 
-        # neutralize color when shown value is 0.0
+        # neutralize color when shown value is ~0%
         def _tone(v, pos_color):
             try:
                 vv = float(v)
                 vv = vv * 100.0 if -1.5 <= vv <= 1.5 else vv
-                if abs(vv) < 0.05:   # treat ~0% as neutral
+                if abs(vv) < 0.05:
                     return "neutral"
                 return pos_color
             except:
@@ -1126,7 +1124,7 @@ def render_tradeoff_scenarios():
 
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            small_kpi("% Clean", _fmt_pct(r["clean"]), tone=_tone(r["clean"], "green"))
+            small_kpi("% Clean", _fmt_pct(r["clean"]),  tone=_tone(r["clean"],  "green"))
         with c2:
             small_kpi("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
         with c3:
@@ -1141,7 +1139,76 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
+    # =====================================================================
+    # NEW SECTION: Per-ETF metrics (ALL ETFs in one table, across 3 scenarios)
+    # =====================================================================
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+    st.markdown("**Per-ETF metrics (all scenarios)**")
 
+    # Keep only the three scenarios we care about
+    ALL = M[M["scenario_id"].isin(["baseline", "tilt", "exclude"])].copy()
+
+    # Build a wide table with columns like:
+    #   Baseline • % Clean | Baseline • % Controversial | Baseline • TE (ann.) | Baseline • # Holdings | ...
+    def _pivot_metric(col_in: str, col_title: str) -> pd.DataFrame:
+        p = pd.pivot_table(
+            ALL[[etf_col, "scenario_id", col_in]],
+            index=etf_col,
+            columns="scenario_id",
+            values=col_in,
+            aggfunc="first"
+        )
+        # Rename columns to friendly titles
+        p = p.rename(columns={
+            "baseline": f"Baseline • {col_title}",
+            "tilt":     f"Pragmatic Tilt • {col_title}",
+            "exclude":  f"Strict Exclusion • {col_title}",
+        })
+        return p
+
+    p_clean  = _pivot_metric(clean_col, "% Clean")
+    p_contro = _pivot_metric(ctr_col,   "% Controversial")
+    p_te     = _pivot_metric(te_col,    "TE (ann.)")
+    p_n      = _pivot_metric(n_col,     "# Holdings") if n_col in ALL.columns else pd.DataFrame(index=p_clean.index)
+
+    wide = p_clean.join([p_contro, p_te, p_n], how="outer")
+    wide = wide.reset_index().rename(columns={etf_col: "ETF"})
+
+    # Format for display (percents to “xx.x%”; TE to percent; holdings to int)
+    def _fmt_series_pct(s):
+        return s.map(_fmt_pct)
+
+    def _fmt_series_int(s):
+        try:
+            return s.fillna(np.nan).map(lambda v: f"{int(round(v)):,}" if pd.notna(v) else "–")
+        except Exception:
+            return s
+
+    # Identify columns by suffix
+    pct_cols = [c for c in wide.columns if c.endswith("% Clean") or c.endswith("% Controversial") or c.endswith("TE (ann.)")]
+    n_cols   = [c for c in wide.columns if c.endswith("# Holdings")]
+
+    wide_fmt = wide.copy()
+    for c in pct_cols:
+        wide_fmt[c] = _fmt_series_pct(pd.to_numeric(wide_fmt[c], errors="coerce"))
+    for c in n_cols:
+        wide_fmt[c] = _fmt_series_int(pd.to_numeric(wide_fmt[c], errors="coerce"))
+
+    # Show the table
+    try:
+        grid(wide_fmt)  # if your dark grid() helper is available
+    except Exception:
+        st.dataframe(wide_fmt, use_container_width=True, hide_index=True)
+
+    # Download
+    csv_bytes = wide.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download per-ETF metrics (CSV)",
+        data=csv_bytes,
+        file_name="per_etf_metrics_all_scenarios.csv",
+        mime="text/csv",
+        use_container_width=False,
+    )
 
 
 
