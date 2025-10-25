@@ -884,12 +884,10 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
     import streamlit as st
-    import base64
 
     # =========================
     # helpers
@@ -952,34 +950,37 @@ def render_tradeoff_scenarios():
     st.markdown("""
     <style>
       /* scenario description cards */
-      .scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-                padding:12px 14px;height:168px;display:flex;flex-direction:column;justify-content:space-between;}
-      .scn-card h4{margin:0 0 8px 0;font-size:14px;font-weight:600;}
-      .scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
+      .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+                   padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
+      .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
+      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
 
-      /* ——— KPI size tweak ONLY for this tab ———
-         We REUSE your global .kpi + tint classes for identical shading;
-         this selector just makes them smaller and vertically centered here. */
+      /* smaller scenario row titles (Baseline / Pragmatic Tilt / Strict Exclusion) */
+      .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
+
+      /* KPI size tweak ONLY for this tab.
+         We reuse global .kpi + tint classes so tint matches other tabs. */
       .kpi.t3{
         padding:10px 14px !important;
         border-radius:16px !important;
-        min-height:84px !important;
+        min-height:78px !important;
         display:flex;flex-direction:column;justify-content:center;
       }
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
 
-      /* download row (right aligned) + tiny iconified button */
-      .dl-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;}
-      .dl-row .cap{color:var(--muted);font-size:13px;text-align:right;}
+      /* download row (right aligned) + smaller iconified button */
+      .t3-dl-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;}
+      .t3-dl-row .cap{color:var(--muted);font-size:13px;text-align:right;}
 
-      #dl-wrap [data-testid="stDownloadButton"] > button{
-        width:16px !important;height:16px !important;min-width:16px !important;
+      /* make the Streamlit download button look like a small icon */
+      #t3-dl [data-testid="stDownloadButton"] > button{
+        width:14px !important;height:14px !important;min-width:14px !important;
         padding:0 !important;border-radius:6px !important;
         border:1px solid var(--border) !important;background:var(--card) !important;
         color:transparent !important;font-size:0 !important;line-height:0 !important;
-        vertical-align:baseline; background-repeat:no-repeat !important;
-        background-position:center !important;background-size:12px !important;
+        vertical-align:baseline;background-repeat:no-repeat !important;
+        background-position:center !important;background-size:10px !important;
         transition:transform .12s ease,border-color .12s ease;
         background-image:url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
@@ -988,9 +989,12 @@ def render_tradeoff_scenarios():
 <line x1='12' y1='15' x2='12' y2='3'/>\
 </svg>");
       }
-      #dl-wrap [data-testid="stDownloadButton"] > button *{display:none !important;}
-      #dl-wrap [data-testid="stDownloadButton"] > button:hover{border-color:rgba(255,255,255,0.24) !important;transform:translateY(-1px);}
-      @media (max-width: 992px){ .scn-card{height:auto;} }
+      #t3-dl [data-testid="stDownloadButton"] > button *{display:none !important;}
+      #t3-dl [data-testid="stDownloadButton"] > button:hover{
+        border-color:rgba(255,255,255,.24) !important;transform:translateY(-1px);
+      }
+
+      @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1000,7 +1004,7 @@ def render_tradeoff_scenarios():
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
         st.markdown("""
-        <div class="scn-card">
+        <div class="t3-scn-card">
           <div>
             <h4>Baseline</h4>
             <div class="desc">Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
@@ -1009,7 +1013,7 @@ def render_tradeoff_scenarios():
         </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown("""
-        <div class="scn-card">
+        <div class="t3-scn-card">
           <div>
             <h4>Pragmatic Tilt</h4>
             <div class="desc">Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
@@ -1018,7 +1022,7 @@ def render_tradeoff_scenarios():
         </div>""", unsafe_allow_html=True)
     with c3:
         st.markdown("""
-        <div class="scn-card">
+        <div class="t3-scn-card">
           <div>
             <h4>Strict Exclusion</h4>
             <div class="desc">Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
@@ -1077,11 +1081,11 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (IDENTICAL tint to other tabs, just smaller)
+    # KPI tiles (IDENTICAL tint to other tabs, just smaller here)
     # =========================
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
-        st.markdown(f"**{r['Scenario']}**")
+        st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
 
         with c1:
@@ -1106,7 +1110,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # Download (right-aligned, tiny icon)
+    # Download (right-aligned, small icon)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1117,26 +1121,28 @@ def render_tradeoff_scenarios():
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
     csv_bytes = show.to_csv(index=False).encode("utf-8")
 
-    left, right = st.columns([0.96, 0.04])
+    left, right = st.columns([0.962, 0.038])
     with left:
         st.markdown(
-            "<div class='dl-row'><div class='cap'>"
+            "<div class='t3-dl-row'><div class='cap'>"
             "Download CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, "
             "annualized Tracking Error (fraction), and Number of Holdings."
             "</div></div>",
             unsafe_allow_html=True
         )
     with right:
-        st.markdown("<div id='dl-wrap'>", unsafe_allow_html=True)
+        st.markdown("<div id='t3-dl'>", unsafe_allow_html=True)
         st.download_button(
             label="",
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
             key="t3_dl_icon",
-            help="Download CSV"
+            help="Download CSV",
+            use_container_width=False
         )
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
