@@ -884,15 +884,15 @@ def render_change_since_2017():
 
 
 # -------------------------
-# RENDERER FOR TAB 3 — TRADEOFF SCENARIOS (desc cards first, then filter, then KPIs)
+# RENDERER FOR TAB 3 — TRADEOFF SCENARIOS
 # -------------------------
 def render_tradeoff_scenarios():
-    import re, numpy as np, pandas as pd, streamlit as st
+    import re
+    import numpy as np
+    import pandas as pd
+    import streamlit as st
 
-    # ---------- helpers ----------
-    def _norm(s: str) -> str:
-        return re.sub(r"[^a-z0-9]+", "", str(s).lower()) if s is not None else ""
-
+    # ---------- small helpers ----------
     def _pick(df: pd.DataFrame, *keys):
         low = {c.lower(): c for c in df.columns}
         for k in keys:
@@ -902,30 +902,23 @@ def render_tradeoff_scenarios():
             if any(k.lower() in c.lower() for k in keys): return c
         return None
 
+    def _norm(s: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", str(s).lower()) if s is not None else ""
+
     def _fmt_pct(x):
         try:
             v = float(x)
-            return f"{(v*100 if -1.5 <= v <= 1.5 else v):.1f}%"
+            # If value is in [−1.5,1.5] assume it was stored as a fraction; convert to %
+            v = (v * 100.0) if -1.5 <= v <= 1.5 else v
+            return f"{v:.1f}%"
         except:
             return "–"
 
-    def _is_zero(x, tol=1e-12):
-        try:
-            v = float(x)
-            v = v*100 if -1.5 <= v <= 1.5 else v
-            return abs(v) <= tol
-        except:
-            return False
-
-    def _fmt_int(x):
-        try: return f"{int(round(float(x))):,}"
-        except: return "–"
-
-    # ---------- load data (Analysis 3) ----------
+    # ---------- load Analysis 3 metrics ----------
     try:
         M = load_scenario_metrics().copy()
     except Exception as e:
-        st.error(f"Could not load scenario metrics: {e}")
+        st.error(f"Could not load scenario_portfolio_metrics.csv: {e}")
         return
 
     scen_col  = _pick(M, "scenario", "scenario_id", "name")
@@ -935,26 +928,51 @@ def render_tradeoff_scenarios():
     te_col    = _pick(M, "est_te_annual_pct", "TE_annual", "tracking_error")
     n_col     = _pick(M, "#names", "n_holdings", "num_names", "holdings")
 
-    need = [scen_col, etf_col, clean_col, ctr_col, te_col]
-    if any(c is None for c in need):
+    if any(c is None for c in [scen_col, etf_col, clean_col, ctr_col, te_col]):
         st.error("scenario_portfolio_metrics.csv is missing required columns.")
         return
 
-    # normalize scenario ids
+    # Normalize scenario ids -> labels
     M["scenario_id"] = M[scen_col].astype(str).apply(_norm).map({
-        "baseline":"baseline",
-        "tilt":"tilt", "pragmatictilt":"tilt",
-        "exclude":"exclude", "strictexclusion":"exclude"
+        "baseline": "baseline",
+        "tilt": "tilt", "pragmatictilt": "tilt",
+        "exclude": "exclude", "strictexclusion": "exclude"
     }).fillna(M[scen_col].astype(str))
-    label_map = {"baseline":"Baseline", "tilt":"Pragmatic Tilt", "exclude":"Strict Exclusion"}
+    label_map = {"baseline": "Baseline", "tilt": "Pragmatic Tilt", "exclude": "Strict Exclusion"}
+    M["scenario_label"] = M["scenario_id"].map(lambda s: label_map.get(s, str(s).title()))
 
-    # numeric casts
+    # Cast numeric
     for c in [clean_col, ctr_col, te_col]:
         M[c] = pd.to_numeric(M[c], errors="coerce")
     if n_col in M.columns:
         M[n_col] = pd.to_numeric(M[n_col], errors="coerce")
 
-    # ---------- (1) Scenario descriptions (SIDE-BY-SIDE right under heading) ----------
+    # ---------- optional AUM map for AUM-weighting ----------
+    aum_map = {}
+    try:
+        a = load_etf_aum_2025()
+        f = _pick(a, "ETF_Ticker", "etf_ticker", "etf")
+        v = _pick(a, "AUM_USD", "aum_usd", "net_assets", "market_total_value_usd")
+        if f and v:
+            aum_map = a[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
+    except Exception:
+        # fallback to explorer (Analysis 1) if available
+        try:
+            _, df_disp, _ = load_explorer()
+            f = _pick(df_disp, "ETF")
+            v = _pick(df_disp, "ETF AUM (USD)", "aum_usd")
+            if f and v:
+                aum_map = df_disp[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
+        except Exception:
+            pass
+
+    def _aum(etf):
+        try:
+            return float(aum_map.get(str(etf)))
+        except:
+            return np.nan
+
+    # ---------- Heading ----------
     st.subheader("Tradeoff Scenarios")
     st.write(
         "We run two simple “what-if” versions of each ETF to see **how much cleaner** it can be made and "
@@ -962,63 +980,60 @@ def render_tradeoff_scenarios():
         "**Tracking Error (annualized)**, and **# Holdings**."
     )
 
-    # reuse your larger description card style
-# ---------- Scenario descriptions (SIDE-BY-SIDE) ----------
-st.markdown("""
-<style>
-  .scenario-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 18px;
-  }
-  .scenario-card h4 { margin: 0 0 6px 0; font-size: 16px; }
-  .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
-  .scenario-card ul { margin: 0; padding-left: 18px; }
-  .scenario-card li { font-size: 13px; margin: 4px 0; }
-</style>
-""", unsafe_allow_html=True)
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
+    # ---------- Scenario descriptions (SIDE-BY-SIDE) ----------
     st.markdown("""
-    <div class="scenario-card">
-      <h4>Baseline</h4>
-      <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
-      <ul>
-        <li>Single-name cap: <b>5.0%</b></li>
-        <li>No extra exclusions</li>
-      </ul>
-    </div>
+    <style>
+      .scenario-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      .scenario-card h4 { margin: 0 0 6px 0; font-size: 16px; }
+      .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
+      .scenario-card ul { margin: 0; padding-left: 18px; }
+      .scenario-card li { font-size: 13px; margin: 4px 0; }
+    </style>
     """, unsafe_allow_html=True)
 
-with c2:
-    st.markdown("""
-    <div class="scenario-card">
-      <h4>Pragmatic Tilt</h4>
-      <div class="desc">Gently tilts away from controversial exposure while staying inside a TE guardrail.</div>
-      <ul>
-        <li>Typical target: <b>~2pp cleaner</b> vs Baseline</li>
-        <li>Respects TE cap; keeps 5% single-name cap</li>
-      </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("""
+        <div class="scenario-card">
+          <h4>Baseline</h4>
+          <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
+          <ul>
+            <li>Single-name cap: <b>5.0%</b></li>
+            <li>No extra exclusions</li>
+          </ul>
+        </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown("""
+        <div class="scenario-card">
+          <h4>Pragmatic Tilt</h4>
+          <div class="desc">Gently tilts away from controversial exposure while staying inside a TE guardrail.</div>
+          <ul>
+            <li>Typical target: <b>~2pp cleaner</b> vs Baseline</li>
+            <li>Respects TE cap; keeps 5% single-name cap</li>
+          </ul>
+        </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown("""
+        <div class="scenario-card">
+          <h4>Strict Exclusion</h4>
+          <div class="desc">Hard screens for controversial names; sector-neutral reweighting; cap still applies.</div>
+          <ul>
+            <li><b>Hard screens</b> on controversial categories</li>
+            <li>Sector-neutral; 5% single-name cap</li>
+          </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
-with c3:
-    st.markdown("""
-    <div class="scenario-card">
-      <h4>Strict Exclusion</h4>
-      <div class="desc">Hard screens for controversial names; sector-neutral reweighting; cap still applies.</div>
-      <ul>
-        <li><b>Hard screens</b> on controversial categories</li>
-        <li>Sector-neutral; 5% single-name cap</li>
-      </ul>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-
-    # ---------- (2) ETF filter ----------
+    # ---------- ETF filter ----------
     etf_list = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etf_list, index=0)
 
@@ -1026,41 +1041,15 @@ with c3:
     if sel_etf != "All":
         X = X[X[etf_col].astype(str) == sel_etf]
 
-    # ---------- AUM map (for AUM-weighted aggregation on All) ----------
-    aum_map = {}
-    try:
-        a = load_etf_aum_2025()
-        f = _pick(a, "ETF_Ticker", "etf_ticker", "etf")
-        v = _pick(a, "AUM_USD", "aum_usd", "net_assets", "market_total_value_usd")
-        if f and v:
-            aum_map = a[[f, v]].dropna().groupby(f)[v].first().to_dict()
-    except Exception:
-        pass
-    if not aum_map:
-        try:
-            _, df_disp, _ = load_explorer()
-            ef = _pick(df_disp, "ETF")
-            au = _pick(df_disp, "ETF AUM (USD)", "aum_usd")
-            if ef and au:
-                aum_map = df_disp[[ef, au]].dropna().groupby(ef)[au].first().to_dict()
-        except Exception:
-            pass
-
-    def _aum(etf):
-        try:
-            v = aum_map.get(str(etf))
-            return float(v) if v is not None else np.nan
-        except:
-            return np.nan
-
     X["__aum__"] = X[etf_col].astype(str).map(_aum)
 
-    # ---------- (3) Aggregate KPIs per scenario ----------
+    # ---------- compute KPIs per scenario ----------
     rows = []
-    for scn in ["baseline", "tilt", "exclude"]:
-        d = X[X["scenario_id"] == scn].copy()
+    for sid in ["baseline", "tilt", "exclude"]:
+        d = X[X["scenario_id"] == sid].copy()
         if d.empty:
-            rows.append({"scenario_id": scn, "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
+            rows.append({"scenario_id": sid, "scenario_label": label_map.get(sid, sid.title()),
+                         "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan})
             continue
 
         if sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0:
@@ -1071,47 +1060,69 @@ with c3:
         clean  = np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w)
         contro = np.average(pd.to_numeric(d[ctr_col],   errors="coerce"), weights=w)
         te     = np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w)
-        n_val  = float(pd.to_numeric(d.get(n_col, pd.Series(np.nan, index=d.index)), errors="coerce").mean())
 
-        rows.append({"scenario_id": scn, "clean": clean, "contro": contro, "te": te, "n": n_val})
+        # holdings: mean across ETFs for "All"; for single ETF it's that ETF's value
+        n_val = float(pd.to_numeric(d.get(n_col, pd.Series(np.nan, index=d.index)), errors="coerce").mean()) \
+                if n_col in d.columns else np.nan
+
+        rows.append({"scenario_id": sid, "scenario_label": label_map.get(sid, sid.title()),
+                     "clean": clean, "contro": contro, "te": te, "n": n_val})
 
     KP = pd.DataFrame(rows)
 
-    # Override baseline %s with 2025 Overview when “All” is selected
+    # ---------- override Baseline Clean/Contro with 2025 Overview (for All) ----------
     if sel_etf == "All":
         try:
             ctx = load_context_summary()
-            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-                ov_clean  = pd.to_numeric(ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"], errors="coerce").sum()
-                ov_contro = pd.to_numeric(ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"], errors="coerce").sum()
-                KP.loc[KP["scenario_id"]=="baseline", ["clean","contro"]] = [ov_clean, ov_contro]
+            if {"classification", "share_of_total_aum_pct"}.issubset(ctx.columns):
+                ov_clean = pd.to_numeric(
+                    ctx.loc[ctx["classification"].str.lower() == "clean", "share_of_total_aum_pct"],
+                    errors="coerce"
+                ).sum()
+                ov_contro = pd.to_numeric(
+                    ctx.loc[ctx["classification"].str.lower() == "controversial", "share_of_total_aum_pct"],
+                    errors="coerce"
+                ).sum()
+                KP.loc[KP["scenario_id"] == "baseline", ["clean", "contro"]] = [ov_clean, ov_contro]
         except Exception:
             pass
 
-    # ---------- (4) KPI rows ----------
+    # ---------- render KPIs ----------
     st.markdown("**Key metrics**")
-    holdings_label = "# Holdings (avg)" if sel_etf == "All" else "# Holdings"
+    order = {"baseline": 0, "tilt": 1, "exclude": 2}
+    KP = KP.sort_values(by="scenario_id", key=lambda s: s.map(order))
 
-    for scn in ["baseline","tilt","exclude"]:
-        r = KP.loc[KP["scenario_id"] == scn]
-        if r.empty:
-            continue
-        clean, contro, te, n = r.iloc[0][["clean","contro","te","n"]]
+    for _, r in KP.iterrows():
+        st.markdown(f"**{r['scenario_label']}**")
 
-        st.markdown(f"**{label_map.get(scn, scn.title())}**")
+        # neutralize color when shown value is 0.0
+        def _tone(v, pos_color):
+            try:
+                vv = float(v)
+                vv = vv * 100.0 if -1.5 <= vv <= 1.5 else vv
+                if abs(vv) < 0.05:   # treat as 0.0%
+                    return "neutral"
+                return pos_color
+            except:
+                return "neutral"
+
         c1, c2, c3, c4 = st.columns(4)
 
-        # tone: grey if value is exactly zero (after % normalization), else green/red
-        tone_clean  = "neutral" if _is_zero(clean)  else "green"
-        tone_contro = "neutral" if _is_zero(contro) else "red"
+        with c1:
+            kpi_card("% Clean", _fmt_pct(r["clean"]), tone=_tone(r["clean"], "green"))
+        with c2:
+            kpi_card("% Controversial", _fmt_pct(r["contro"]), tone=_tone(r["contro"], "red"))
+        with c3:
+            kpi_card("Tracking Error (ann.)", _fmt_pct(r["te"]), tone="neutral")
+        with c4:
+            n_txt = "–"
+            if pd.notna(r["n"]):
+                try: n_txt = f"{int(round(float(r['n']))):,}"
+                except: pass
+            label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
+            kpi_card(label_txt, n_txt, tone="neutral")
 
-        with c1: kpi_card("% Clean", _fmt_pct(clean),  tone=tone_clean)
-        with c2: kpi_card("% Controversial", _fmt_pct(contro), tone=tone_contro)
-        with c3: kpi_card("Tracking Error (ann.)", _fmt_pct(te), tone="neutral")
-        with c4: kpi_card(holdings_label, _fmt_int(n), tone="neutral")
-
-        st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
-
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
 
 
