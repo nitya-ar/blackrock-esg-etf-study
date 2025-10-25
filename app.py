@@ -884,7 +884,6 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1166,7 +1165,7 @@ def render_tradeoff_scenarios():
         if te_df["TE %"].notna().any():
             # three distinct hues (no grey, no shade variants)
             te_domain = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
-            te_range  = [COLORS["primary"], "#9A6AFF", "#35C0A1"]  # blue, violet, teal
+            te_range  = [COLORS["#5EB1BF"], "#C77DBB", "#B66BB2"]  # blue, violet, teal
 
             te_opacity = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.92))
 
