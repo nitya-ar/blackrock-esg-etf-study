@@ -1149,54 +1149,53 @@ def render_tradeoff_scenarios():
         else:
             st.info("Composition not available for the current selection.")
 
-# --- Tracking Error
-with ch_right:
-    st.markdown(
-        '<div class="chart-head"><div class="chart-title">Tracking Error (annualized)</div>'
-        '<div class="info-badge has-tip" data-tip="Estimated annualized tracking error of each scenario relative to the baseline index; lower is closer to the original risk profile.">i</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+    # --- Tracking Error  (FIX: correctly indented under the function and sibling to ch_left)
+    with ch_right:
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">Tracking Error (annualized)</div>'
+            '<div class="info-badge has-tip" data-tip="Estimated annualized tracking error of each scenario relative to the baseline index; lower is closer to the original risk profile.">i</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
-    te_df = KP.copy()
-    te_df["TE %"] = pd.to_numeric(te_df["te"], errors="coerce") * 100.0
-    te_df["Scenario"] = pd.Categorical(
-        te_df["Scenario"],
-        categories=["Baseline","Pragmatic Tilt","Strict Exclusion"],
-        ordered=True
-    )
+        te_df = KP.copy()
+        te_df["TE %"] = pd.to_numeric(te_df["te"], errors="coerce") * 100.0
+        te_df["Scenario"] = pd.Categorical(
+            te_df["Scenario"],
+            categories=["Baseline","Pragmatic Tilt","Strict Exclusion"],
+            ordered=True
+        )
 
-    if te_df["TE %"].notna().any():
-         # Palette: Baseline distinct (aqua), PT/SE close (mauve/plum)
-         te_domain = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
-         te_range  = ["#5EB1BF", "#C77DBB", "#B66BB2"]  # aqua, mauve, plum
+        if te_df["TE %"].notna().any():
+            # Palette: Baseline distinct (aqua), PT/SE close (mauve/plum)
+            te_domain = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
+            te_range  = ["#5EB1BF", "#C77DBB", "#B66BB2"]  # aqua, mauve, plum
 
-         te_opacity = alt.condition(
-             alt.datum.Scenario == "Baseline",
-             alt.value(1.0),
-             alt.value(0.92)
-         )
+            te_opacity = alt.condition(
+                alt.datum.Scenario == "Baseline",
+                alt.value(1.0),
+                alt.value(0.92)
+            )
 
-         te_chart = (
-             alt.Chart(te_df)
-             .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
-             .encode(
-                 x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
-                 y=alt.Y("TE %:Q", title="Tracking Error (%)", axis=alt.Axis(format=".2f")),
-                 color=alt.Color("Scenario:N", title=None,
-                                 scale=alt.Scale(domain=te_domain, range=te_range)),
-                 opacity=te_opacity,
-                 tooltip=[
-                     alt.Tooltip("Scenario:N"),
-                     alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"),
-                 ],
-             )
-             .properties(height=300, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
-         )
-         st.altair_chart(te_chart, use_container_width=True)
-    else:
-         st.info("Tracking Error not available for the current selection.")
-
+            te_chart = (
+                alt.Chart(te_df)
+                .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
+                .encode(
+                    x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("TE %:Q", title="Tracking Error (%)", axis=alt.Axis(format=".2f")),
+                    color=alt.Color("Scenario:N", title=None,
+                                    scale=alt.Scale(domain=te_domain, range=te_range)),
+                    opacity=te_opacity,
+                    tooltip=[
+                        alt.Tooltip("Scenario:N"),
+                        alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"),
+                    ],
+                )
+                .properties(height=300, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
+            )
+            st.altair_chart(te_chart, use_container_width=True)
+        else:
+            st.info("Tracking Error not available for the current selection.")
 
 
 # =========================
