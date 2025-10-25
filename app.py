@@ -759,7 +759,7 @@ def render_change_since_2017():
                 d = d[(d[year_col] >= start_year) & (d[year_col] <= end_year)]
 
                 screen_domain = keep
-                screen_range  = ["#5C6ACF","#C97F64","#EDE7DE","#B5A793","#2FA08A","#A99ABD"]
+                screen_range  = ["#2FA08A","#C97F64","#EDE7DE","#B5A793","#5C6ACF","#A99ABD"]
 
                 chart = alt.Chart(d).mark_line(
                     strokeWidth=2, opacity=0.95,
