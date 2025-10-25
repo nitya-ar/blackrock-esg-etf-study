@@ -973,32 +973,35 @@ def render_tradeoff_scenarios():
       .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
       .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
 
-      /* KPI tiles — TINY size + tints, scoped only to this tab */
-      #{TAB_ID} .kpi {{
+      /* KPI tiles — TINY size + hard tints, scoped to this tab only */
+      #{TAB_ID} div.kpi {{
         padding:6px 8px !important;
         border-radius:8px !important;
         border:1px solid var(--border) !important;
         background: var(--card) !important;
+        min-height:56px !important;          /* smaller cards */
       }}
-      #{TAB_ID} .kpi .label {{ font-size:9px !important; color: var(--muted) !important; line-height:1.05 !important; }}
-      #{TAB_ID} .kpi .value {{ font-size:16px !important; font-weight:700 !important; line-height:1.0 !important; }}
+      #{TAB_ID} div.kpi .label {{ font-size:9px !important; color: var(--muted) !important; line-height:1.05 !important; }}
+      #{TAB_ID} div.kpi .value {{ font-size:16px !important; font-weight:700 !important; line-height:1.0 !important; }}
 
-      #{TAB_ID} .kpi.kpi-tint-green {{
+      #{TAB_ID} div.kpi.kpi-tint-green {{
         background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06)) !important;
+        background-color: rgba(16,185,129,0.12) !important;
         border-color: rgba(16,185,129,0.20) !important;
       }}
-      #{TAB_ID} .kpi.kpi-tint-red {{
+      #{TAB_ID} div.kpi.kpi-tint-red {{
         background: linear-gradient(180deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06)) !important;
+        background-color: rgba(239,68,68,0.12) !important;
         border-color: rgba(239,68,68,0.20) !important;
       }}
-      #{TAB_ID} .kpi.kpi-tint-green .value,
-      #{TAB_ID} .kpi.kpi-tint-red .value {{ color:#ffffff !important; }}
+      #{TAB_ID} div.kpi.kpi-tint-green .value,
+      #{TAB_ID} div.kpi.kpi-tint-red .value {{ color:#ffffff !important; }}
 
       /* caption + tiny download button in the same row, right aligned */
       #{TAB_ID} .dl-row {{ display:flex; align-items:center; gap:12px; margin-top:6px; }}
-      #{TAB_ID} .dl-row .cap {{ color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; }}
+      #{TAB_ID} .dl-row .cap {{ color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; text-align:right; }}
 
-      /* style streamlit download button to look like your 22x22 icon box */
+      /* style streamlit download button to 22x22 boxed icon */
       #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button {{
         width:22px !important; height:22px !important; min-width:22px !important;
         padding:0 !important; border-radius:6px !important;
@@ -1009,7 +1012,6 @@ def render_tradeoff_scenarios():
       #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button:hover {{
         border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
       }}
-      /* hide default label spacing */
       #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button p {{ margin:0 !important; }}
 
       @media (max-width: 992px) {{ .scn-card {{ height:auto; }} }}
@@ -1143,7 +1145,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (caption + tiny button on same row, right side; true download)
+    # download (caption right-aligned + tiny button on same row)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1161,19 +1163,18 @@ def render_tradeoff_scenarios():
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
 
-    # render caption + tiny download button in one row
     left, right = st.columns([1, 0.06])
     with left:
         st.markdown(
             "<div class='dl-row'>"
-            "<div class='cap'>CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.</div>"
+            "<div class='cap'>Download CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, "
+            "annualized Tracking Error (fraction), and Number of Holdings.</div>"
             "</div>",
             unsafe_allow_html=True
         )
     with right:
-        # Use a real download control and style it to a tiny icon box
         st.download_button(
-            label="↓",  # will appear as the small arrow; styled by CSS to 22x22 box
+            label="↓",  # styled to 22x22 box by CSS above
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
