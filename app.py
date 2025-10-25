@@ -887,6 +887,7 @@ def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
     import streamlit as st
+    import base64
 
     # =========================
     # helpers (strict + formatting)
@@ -958,18 +959,15 @@ def render_tradeoff_scenarios():
     # =========================
     st.markdown("""
     <style>
-      /* scenario cards (unchanged) */
       .scn-card { background: var(--card); border:1px solid var(--border); border-radius:14px;
                   padding:12px 14px; height: 168px; display:flex; flex-direction:column; justify-content:space-between; }
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* KPI tiles — reduced size */
       .kpi { padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }
       .kpi .label { font-size:10px; color: var(--muted); line-height:1.1; }
       .kpi .value { font-size:18px; font-weight:700; line-height:1.0; }
 
-      /* subtle gradient tints (unchanged colors) */
       .kpi-tint-green {
         background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05));
         border-color: rgba(16,185,129,0.16);
@@ -980,20 +978,16 @@ def render_tradeoff_scenarios():
       }
       .kpi-tint-green .value, .kpi-tint-red .value { color: #ffffff; }
 
-      /* tiny download icon container */
       #tradeoff-dl { margin-top: 2px; display:flex; align-items:center; gap:8px; }
       #tradeoff-dl .dl-icon {
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:6px;
         border:1px solid var(--border); background: var(--card); cursor:pointer;
-        text-decoration:none; user-select:none;
+        text-decoration:none; user-select:none; color: var(--muted);
       }
-      #tradeoff-dl .dl-icon:hover { border-color: rgba(255,255,255,0.22); }
-
-      /* SVG icon inherits currentColor; keep it subtle */
+      #tradeoff-dl .dl-icon:hover { border-color: rgba(255,255,255,0.22); color: var(--text); }
       #tradeoff-dl .dl-icon svg { width:14px; height:14px; }
 
-      /* completely hide the actual Streamlit download button */
       #tradeoff-dl [data-testid="stDownloadButton"] > button {
         opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }
@@ -1051,7 +1045,6 @@ def render_tradeoff_scenarios():
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
 
-    # optional AUM map
     aum_map = {}
     try:
         A = load_etf_aum_2025()
@@ -1130,60 +1123,56 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-# download (tiny icon only; no Streamlit button)
-# =========================
-import base64
+    # download (tiny icon only; no Streamlit button)
+    # =========================
+    show = (
+        M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
+        .rename(columns={
+            etf_col: "ETF",
+            clean_col: "% Clean",
+            ctr_col: "% Controversial",
+            te_col: "TE_annual",
+            n_col: "Holdings",
+        })
+        .copy()
+    )
+    show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
+    show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-show = (
-    M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
-    .rename(columns={
-        etf_col: "ETF",
-        clean_col: "% Clean",
-        ctr_col: "% Controversial",
-        te_col: "TE_annual",
-        n_col: "Holdings",
-    })
-    .copy()
-)
-show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
-show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
+    csv_bytes = show.to_csv(index=False).encode("utf-8")
+    b64 = base64.b64encode(csv_bytes).decode("utf-8")
 
-csv_bytes = show.to_csv(index=False).encode("utf-8")
-b64 = base64.b64encode(csv_bytes).decode("utf-8")
+    st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
+    st.markdown("""
+    <style>
+      #tradeoff-dl { margin-top: 2px; }
+      #tradeoff-dl .dl-icon{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:6px;
+        border:1px solid var(--border); background: var(--card); cursor:pointer;
+        text-decoration:none; color: var(--muted);
+      }
+      #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
+      #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
-
-st.markdown("""
-<style>
-  #tradeoff-dl { margin-top: 2px; }
-  #tradeoff-dl .dl-icon{
-    display:inline-flex; align-items:center; justify-content:center;
-    width:22px; height:22px; min-width:22px; border-radius:6px;
-    border:1px solid var(--border); background: var(--card); cursor:pointer;
-    text-decoration:none; color: var(--muted);
-  }
-  #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
-  #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    f"""
-    <div id="tradeoff-dl">
-      <a class="dl-icon" href="data:text/csv;base64,{b64}"
-         download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </a>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+    st.markdown(
+        f"""
+        <div id="tradeoff-dl">
+          <a class="dl-icon" href="data:text/csv;base64,{b64}"
+             download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 
