@@ -954,7 +954,7 @@ def render_tradeoff_scenarios():
     )
 
     # =========================
-    # styles (subtle tint + tiny text link)
+    # styles (KPI smaller + tiny icon-only downloader)
     # =========================
     st.markdown("""
     <style>
@@ -964,38 +964,36 @@ def render_tradeoff_scenarios():
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* KPI tiles base */
-      .kpi { padding:14px 16px; border-radius:12px; border:1px solid var(--border); background: var(--card); }
-      .kpi .label { font-size:11px; color: var(--muted); }
-      .kpi .value { font-size:24px; font-weight:700; line-height:1.05; }
+      /* KPI tiles — reduced size */
+      .kpi { padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }
+      .kpi .label { font-size:10px; color: var(--muted); line-height:1.1; }
+      .kpi .value { font-size:18px; font-weight:700; line-height:1.0; }
 
-      /* more subtle gradient tints */
+      /* subtle gradient tints (unchanged colors) */
       .kpi-tint-green {
-        background: linear-gradient(180deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06));
-        border-color: rgba(16,185,129,0.18);
+        background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05));
+        border-color: rgba(16,185,129,0.16);
       }
       .kpi-tint-red {
-        background: linear-gradient(180deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06));
-        border-color: rgba(239,68,68,0.18);
+        background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05));
+        border-color: rgba(239,68,68,0.16);
       }
       .kpi-tint-green .value, .kpi-tint-red .value { color: #ffffff; }
 
-      /* tiny text link for download */
-      #tradeoff-dl .dl-card {
-        display: inline-block;
-        font-size: 11px;
-        color: var(--muted);
-        text-decoration: underline;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: var(--card);
-        padding: 4px 8px;
-        line-height: 1;
+      /* tiny download icon container */
+      #tradeoff-dl { margin-top: 2px; display:flex; align-items:center; gap:8px; }
+      #tradeoff-dl .dl-icon {
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:6px;
+        border:1px solid var(--border); background: var(--card); cursor:pointer;
+        text-decoration:none; user-select:none;
       }
-      #tradeoff-dl .dl-card:hover { color: var(--foreground); border-color: rgba(255,255,255,0.22); }
-      #tradeoff-dl { margin-top: 4px; }
+      #tradeoff-dl .dl-icon:hover { border-color: rgba(255,255,255,0.22); }
 
-      /* hide the actual Streamlit button; we will click it via JS */
+      /* SVG icon inherits currentColor; keep it subtle */
+      #tradeoff-dl .dl-icon svg { width:14px; height:14px; }
+
+      /* completely hide the actual Streamlit download button */
       #tradeoff-dl [data-testid="stDownloadButton"] > button {
         opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }
@@ -1099,7 +1097,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (subtle tint; neutral when display is 0.0%)
+    # KPI tiles (smaller)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
@@ -1129,10 +1127,10 @@ def render_tradeoff_scenarios():
                 f"<div class='kpi'><div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
                 unsafe_allow_html=True
             )
-        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (only a tiny text link; no visible button)
+    # download (tiny icon only; no blue text)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1140,7 +1138,7 @@ def render_tradeoff_scenarios():
             etf_col: "ETF",
             clean_col: "% Clean",
             ctr_col: "% Controversial",
-            te_col: "TE_annual",   # fraction in file
+            te_col: "TE_annual",
             n_col: "Holdings",
         })
         .copy()
@@ -1148,10 +1146,10 @@ def render_tradeoff_scenarios():
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-    st.caption("Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion.")
+    st.caption("Download per-ETF metrics (CSV).")
     st.markdown('<div id="tradeoff-dl">', unsafe_allow_html=True)
 
-    # hidden real downloader (kept for functionality, fully hidden by CSS)
+    # hidden real downloader (kept for functionality, fully hidden by CSS above)
     st.download_button(
         "Download per-ETF metrics (CSV)",
         data=show.to_csv(index=False).encode("utf-8"),
@@ -1159,12 +1157,24 @@ def render_tradeoff_scenarios():
         mime="text/csv",
         key="dl_tradeoff_metrics_hidden"
     )
-    # visible tiny text link
+
+    # visible, tiny icon-only trigger (no text)
     st.markdown(
-        "<a class='dl-card' onclick=\"document.querySelector('#tradeoff-dl button').click()\">Download per-ETF metrics (CSV)</a>",
+        """
+        <a class="dl-icon" title="Download CSV" aria-label="Download CSV"
+           onclick="const btn=document.querySelector('#tradeoff-dl button'); if(btn){btn.click();}">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+             <polyline points="7 10 12 15 17 10"/>
+             <line x1="12" y1="15" x2="12" y2="3"/>
+           </svg>
+        </a>
+        """,
         unsafe_allow_html=True
     )
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
