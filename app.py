@@ -883,6 +883,7 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -918,7 +919,6 @@ def render_tradeoff_scenarios():
         except:
             return "–"
 
-    # treat as "display zero" if it would render as 0.0% at 1dp
     def _is_zero_display(v) -> bool:
         try:
             return abs(float(v)) < 0.05
@@ -931,9 +931,9 @@ def render_tradeoff_scenarios():
     M = load_scenario_metrics().copy()
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
-    clean_col = _need(M, "%Clean")          # already in %
-    ctr_col   = _need(M, "%Controversial")  # already in %
-    te_col    = _need(M, "TE_annual")       # fraction (0.0123 -> 1.23%)
+    clean_col = _need(M, "%Clean")
+    ctr_col   = _need(M, "%Controversial")
+    te_col    = _need(M, "TE_annual")   # fraction (0.0123 -> 1.23%)
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -954,50 +954,55 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
+    # open a local scope container so styles only affect this tab
+    st.markdown('<div id="tradeoff-root">', unsafe_allow_html=True)
+
     # =========================
-    # styles (KPI smaller + tiny icon-only downloader)
+    # styles (scoped to #tradeoff-root)
     # =========================
     st.markdown("""
     <style>
-      .scn-card { background: var(--card); border:1px solid var(--border); border-radius:14px;
-                  padding:12px 14px; height: 168px; display:flex; flex-direction:column; justify-content:space-between; }
-      .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
-      .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
+      /* scope everything to this tab only */
+      #tradeoff-root .scn-card {
+        background: var(--card); border:1px solid var(--border); border-radius:14px;
+        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
+      }
+      #tradeoff-root .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
+      #tradeoff-root .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      .kpi { padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }
-      .kpi .label { font-size:10px; color: var(--muted); line-height:1.1; }
-      .kpi .value { font-size:18px; font-weight:700; line-height:1.0; }
+      /* smaller KPI tiles — scoped so other tabs keep their original size */
+      #tradeoff-root .kpi { padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }
+      #tradeoff-root .kpi .label { font-size:10px; color: var(--muted); line-height:1.1; }
+      #tradeoff-root .kpi .value { font-size:18px; font-weight:700; line-height:1.0; }
 
-      .kpi-tint-green {
+      #tradeoff-root .kpi-tint-green {
         background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05));
         border-color: rgba(16,185,129,0.16);
       }
-      .kpi-tint-red {
+      #tradeoff-root .kpi-tint-red {
         background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05));
         border-color: rgba(239,68,68,0.16);
       }
-      .kpi-tint-green .value, .kpi-tint-red .value { color: #ffffff; }
+      #tradeoff-root .kpi-tint-green .value, #tradeoff-root .kpi-tint-red .value { color: #ffffff; }
 
-      #tradeoff-dl { margin-top: 2px; display:flex; align-items:center; gap:8px; }
-      #tradeoff-dl .dl-icon {
+      /* caption + tiny icon inline */
+      #tradeoff-root #tradeoff-dl { display:flex; align-items:center; gap:8px; margin-top:8px; }
+      #tradeoff-root #tradeoff-dl .dl-text { color: var(--muted); font-size:13px; }
+      #tradeoff-root #tradeoff-dl .dl-icon{
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:6px;
         border:1px solid var(--border); background: var(--card); cursor:pointer;
-        text-decoration:none; user-select:none; color: var(--muted);
+        text-decoration:none; color: var(--muted);
       }
-      #tradeoff-dl .dl-icon:hover { border-color: rgba(255,255,255,0.22); color: var(--text); }
-      #tradeoff-dl .dl-icon svg { width:14px; height:14px; }
+      #tradeoff-root #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
+      #tradeoff-root #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
 
-      #tradeoff-dl [data-testid="stDownloadButton"] > button {
-        opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
-      }
-
-      @media (max-width: 992px) { .scn-card { height: auto; } }
+      @media (max-width: 992px) { #tradeoff-root .scn-card { height:auto; } }
     </style>
     """, unsafe_allow_html=True)
 
     # =========================
-    # scenario cards (unchanged content)
+    # scenario cards
     # =========================
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
@@ -1090,40 +1095,27 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (smaller)
+    # KPI tiles (scoped smaller)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
         st.markdown(f"**{r['Scenario']}**")
         c1, c2, c3, c4 = st.columns(4)
-
         with c1:
             tone = "kpi" if _is_zero_display(r["clean"]) else "kpi kpi-tint-green"
-            st.markdown(
-                f"<div class='{tone}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='{tone}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>", unsafe_allow_html=True)
         with c2:
             tone = "kpi" if _is_zero_display(r["contro"]) else "kpi kpi-tint-red"
-            st.markdown(
-                f"<div class='{tone}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='{tone}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>", unsafe_allow_html=True)
         with c3:
-            st.markdown(
-                f"<div class='kpi'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='kpi'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
         with c4:
             label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            st.markdown(
-                f"<div class='kpi'><div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='kpi'><div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny icon only; no Streamlit button)
+    # download (caption + tiny icon inline)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1142,24 +1134,10 @@ def render_tradeoff_scenarios():
     csv_bytes = show.to_csv(index=False).encode("utf-8")
     b64 = base64.b64encode(csv_bytes).decode("utf-8")
 
-    st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
-    st.markdown("""
-    <style>
-      #tradeoff-dl { margin-top: 2px; }
-      #tradeoff-dl .dl-icon{
-        display:inline-flex; align-items:center; justify-content:center;
-        width:22px; height:22px; min-width:22px; border-radius:6px;
-        border:1px solid var(--border); background: var(--card); cursor:pointer;
-        text-decoration:none; color: var(--muted);
-      }
-      #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
-      #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown(
         f"""
         <div id="tradeoff-dl">
+          <span class="dl-text">CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.</span>
           <a class="dl-icon" href="data:text/csv;base64,{b64}"
              download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1173,6 +1151,9 @@ def render_tradeoff_scenarios():
         """,
         unsafe_allow_html=True
     )
+
+    # close scope container
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 
