@@ -949,8 +949,8 @@ def render_tradeoff_scenarios():
     # Description (clear, brief)
     # -------------------------
     st.write(
-        "This section explores how portfolio composition would change if greater weight were placed on Clean200 holdings and stricter limits were applied to controversial categories such as fossil fuels, weapons, tobacco, prisons, and deforestation. It compares three portfolio versions to show how cleaner allocations affect controversial exposure, tracking error, and diversification."
-    )
+    "This section analyzes three portfolio versions for each fund: the current 2025 portfolio and two cleaner alternatives that increase the weight of clean holdings and reduce exposure to controversial areas such as fossil fuels, weapons, tobacco, prisons, and deforestation. The analysis highlights how progressive improvements in portfolio cleanliness affect diversification, risk, and financial performance, providing a clear view of the tradeoff between sustainability alignment and portfolio stability."
+)
 
     # =========================
     # SCENARIO CARDS + KPI STYLES
