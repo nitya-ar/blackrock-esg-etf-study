@@ -884,9 +884,6 @@ def render_change_since_2017():
 
 
 # -------------------------
-# RENDERER FOR TAB 3 — TRADEOFF SCENARIOS (compact, side-by-side)
-# -------------------------
-# -------------------------
 # RENDERER FOR TAB 3 — TRADEOFF SCENARIOS (desc cards first, then filter, then KPIs)
 # -------------------------
 def render_tradeoff_scenarios():
@@ -966,54 +963,60 @@ def render_tradeoff_scenarios():
     )
 
     # reuse your larger description card style
+# ---------- Scenario descriptions (SIDE-BY-SIDE) ----------
+st.markdown("""
+<style>
+  .scenario-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .scenario-card h4 { margin: 0 0 6px 0; font-size: 16px; }
+  .scenario-card .desc { color: var(--muted); font-size: 13px; margin: 0 0 8px 0; }
+  .scenario-card ul { margin: 0; padding-left: 18px; }
+  .scenario-card li { font-size: 13px; margin: 4px 0; }
+</style>
+""", unsafe_allow_html=True)
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
     st.markdown("""
-    <style>
-      .scn-3grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; }
-      @media (max-width: 1100px) { .scn-3grid { grid-template-columns:repeat(2, 1fr); } }
-      @media (max-width: 780px)  { .scn-3grid { grid-template-columns:1fr; } }
-      .scenario-card { background: var(--card); border:1px solid var(--border);
-                       border-radius:14px; padding:16px 18px; }
-      .scenario-card h4 { margin:0 0 6px 0; font-size:16px; }
-      .scenario-card .desc { color:var(--muted); font-size:13px; margin:0 0 8px 0; }
-      .scenario-card ul { margin:0; padding-left:18px; }
-      .scenario-card li { font-size:13px; margin:4px 0; }
-    </style>
+    <div class="scenario-card">
+      <h4>Baseline</h4>
+      <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
+      <ul>
+        <li>Single-name cap: <b>5.0%</b></li>
+        <li>No extra exclusions</li>
+      </ul>
+    </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="scn-3grid">', unsafe_allow_html=True)
+with c2:
     st.markdown("""
-      <div class="scenario-card">
-        <h4>Baseline</h4>
-        <div class="desc">Today’s 2025 portfolio — unchanged holdings and weights.</div>
-        <ul>
-          <li>Single-name cap: <b>5.0%</b></li>
-          <li>No extra exclusions</li>
-        </ul>
-      </div>
+    <div class="scenario-card">
+      <h4>Pragmatic Tilt</h4>
+      <div class="desc">Gently tilts away from controversial exposure while staying inside a TE guardrail.</div>
+      <ul>
+        <li>Typical target: <b>~2pp cleaner</b> vs Baseline</li>
+        <li>Respects TE cap; keeps 5% single-name cap</li>
+      </ul>
+    </div>
     """, unsafe_allow_html=True)
-    st.markdown("""
-      <div class="scenario-card">
-        <h4>Pragmatic Tilt</h4>
-        <div class="desc">Gently tilts away from controversial exposure while staying inside a TE guardrail.</div>
-        <ul>
-          <li>Typical target: <b>~2pp cleaner</b> vs Baseline</li>
-          <li>Respects TE cap; keeps 5% single-name cap</li>
-        </ul>
-      </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-      <div class="scenario-card">
-        <h4>Strict Exclusion</h4>
-        <div class="desc">Hard screens for controversial names; sector-neutral reweighting; cap still applies.</div>
-        <ul>
-          <li><b>Hard screens</b> on controversial categories</li>
-          <li>Sector-neutral; 5% single-name cap</li>
-        </ul>
-      </div>
-    """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+with c3:
+    st.markdown("""
+    <div class="scenario-card">
+      <h4>Strict Exclusion</h4>
+      <div class="desc">Hard screens for controversial names; sector-neutral reweighting; cap still applies.</div>
+      <ul>
+        <li><b>Hard screens</b> on controversial categories</li>
+        <li>Sector-neutral; 5% single-name cap</li>
+      </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
 
     # ---------- (2) ETF filter ----------
     etf_list = sorted(M[etf_col].dropna().astype(str).unique().tolist())
