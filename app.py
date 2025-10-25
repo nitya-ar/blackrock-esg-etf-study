@@ -954,52 +954,64 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
-    # ---- scope CSS to this tab only (prevents leak to other tabs) ----
+    # ---------- SCOPE START (prevents leakage to other tabs) ----------
     TAB_ID = "t3"
     st.markdown(f'<div id="{TAB_ID}">', unsafe_allow_html=True)
 
+    # styles (ONLY for this tab) — use higher specificity + !important
     st.markdown(f"""
     <style>
-      /* Scenario cards — scoped so they stay as cards in this tab */
-      #{TAB_ID} .scn-card {{
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 12px 14px;
-        height: 168px;
-        display: flex; flex-direction: column; justify-content: space-between;
+      /* Scenario cards stay as-is in this tab */
+      #${{TAB_ID}} .scn-card {{
+        background: var(--card); border:1px solid var(--border); border-radius:14px;
+        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
       }}
-      #{TAB_ID} .scn-card h4 {{ margin: 0 0 8px 0; font-size: 14px; font-weight: 600; }}
-      #{TAB_ID} .scn-card .desc {{ color: var(--muted); font-size: 12px; line-height: 1.35; }}
+      #${{TAB_ID}} .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
+      #${{TAB_ID}} .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
 
-      /* KPI tiles — small size + tint only for Tab 3 */
-      #{TAB_ID} .kpi {{ padding:8px 10px; border-radius:10px; border:1px solid var(--border); background: var(--card); }}
-      #{TAB_ID} .kpi .label {{ font-size:10px; color: var(--muted); line-height:1.1; }}
-      #{TAB_ID} .kpi .value {{ font-size:18px; font-weight:700; line-height:1.0; }}
+      /* KPI sizing & look — apply ONLY inside Tab 3, override any global kpi */
+      #${{TAB_ID}} div .kpi {{
+        padding:8px 10px !important;
+        border-radius:10px !important;
+        border:1px solid var(--border) !important;
+        background: var(--card) !important;
+      }}
+      #${{TAB_ID}} div .kpi .label {{
+        font-size:10px !important; color: var(--muted) !important; line-height:1.1 !important;
+      }}
+      #${{TAB_ID}} div .kpi .value {{
+        font-size:18px !important; font-weight:700 !important; line-height:1.0 !important;
+      }}
 
-      /* Stronger but subtle tints so they’re visible on dark bg */
-      #{TAB_ID} .kpi-tint-green {{
-        background: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.10));
-        border-color: rgba(16,185,129,0.24);
+      /* Tint classes with stronger specificity so they stick */
+      #${{TAB_ID}} div .kpi.kpi-tint-green {{
+        background-image: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.10)) !important;
+        border-color: rgba(16,185,129,0.24) !important;
       }}
-      #{TAB_ID} .kpi-tint-red {{
-        background: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10));
-        border-color: rgba(239,68,68,0.24);
+      #${{TAB_ID}} div .kpi.kpi-tint-red {{
+        background-image: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10)) !important;
+        border-color: rgba(239,68,68,0.24) !important;
       }}
-      #{TAB_ID} .kpi-tint-green .value, #{TAB_ID} .kpi-tint-red .value {{ color: #fff; }}
+      #${{TAB_ID}} div .kpi.kpi-tint-green .value,
+      #${{TAB_ID}} div .kpi.kpi-tint-red .value {{ color:#ffffff !important; }}
 
-      /* Caption + tiny right-aligned download button (Streamlit button, re-skinned) */
-      #{TAB_ID} .dl-row {{ display:flex; align-items:center; gap:12px; margin-top:6px; }}
-      #{TAB_ID} .dl-row .cap {{ color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; }}
-      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button {{
-        width:22px; height:22px; padding:0; min-width:22px;
-        border-radius:6px; border:1px solid var(--border); background: var(--card); color: var(--muted);
+      /* Caption + tiny right-aligned download button (Streamlit) */
+      #${{TAB_ID}} .dl-row {{
+        display:flex; align-items:center; gap:12px; margin-top:6px;
       }}
-      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button:hover {{
-        border-color: rgba(255,255,255,0.22); color: var(--text);
+      #${{TAB_ID}} .dl-row .cap {{
+        color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto;
       }}
-      /* replace button label with a small arrow icon */
-      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button::before {{
+      /* target JUST this button by its data-key */
+      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button {{
+        width:22px !important; height:22px !important; min-width:22px !important; padding:0 !important;
+        border-radius:6px !important; border:1px solid var(--border) !important;
+        background: var(--card) !important; color: var(--muted) !important;
+      }}
+      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button:hover {{
+        border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
+      }}
+      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button::before {{
         content:""; display:inline-block; width:14px; height:14px; background-repeat:no-repeat;
         background-position:center; background-size:14px 14px;
         background-image: url("data:image/svg+xml;utf8,\
@@ -1009,10 +1021,9 @@ def render_tradeoff_scenarios():
 <line x1='12' y1='15' x2='12' y2='3'/>\
 </svg>");
       }}
-      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button > div {{ display:none; }}
-      @media (max-width: 992px) {{ #{TAB_ID} .scn-card {{ height:auto; }} }}
+      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button > div {{ display:none; }}
     </style>
-    """, unsafe_allow_html=True)
+    """.replace("${TAB_ID}", TAB_ID), unsafe_allow_html=True)
 
     # =========================
     # scenario cards (unchanged content)
@@ -1108,7 +1119,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (smaller + shaded)
+    # KPI tiles (smaller + shaded) — markup unchanged
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
@@ -1141,7 +1152,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny icon on same line, right-aligned; reliable download)
+    # download (same row, right-aligned; tiny visible icon)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1159,24 +1170,19 @@ def render_tradeoff_scenarios():
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
 
-    st.markdown(f"""
-    <div class="dl-row">
-      <div class="cap">
-        CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Make a 2-column row so the button sits at the far-right of the caption line
-    _dl_left, _dl_right = st.columns([1.0, 0.06])
-    with _dl_right:
+    # Caption + button in the same row using columns
+    left, right = st.columns([0.94, 0.06])
+    with left:
+        st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
+    with right:
         st.download_button(
             label="", data=csv_bytes, file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv", key="t3_dl_csv", help="Download CSV"
         )
 
-    # close scope wrapper
+    # ---------- SCOPE END ----------
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
