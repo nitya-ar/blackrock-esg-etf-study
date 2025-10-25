@@ -920,44 +920,28 @@ def render_tradeoff_scenarios():
     # =========================
     st.markdown("""
     <style>
-      /* scenario description cards */
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
                    padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
       .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
-
-      /* smaller scenario row titles (Baseline / Pragmatic Tilt / Strict Exclusion) */
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
-
-      /* KPI size tweak ONLY for this tab.
-         We reuse global .kpi + tint classes so tint matches other tabs. */
       .kpi.t3{
-        padding:10px 14px !important;
-        border-radius:16px !important;
-        min-height:78px !important;
+        padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
         display:flex;flex-direction:column;justify-content:center;
       }
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
-
-      /* ultra-compact inline download (right aligned) */
       .t3-dl-inline-wrap{ text-align:right; margin-top:8px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
-      .t3-dl-inline-link{
-        display:inline-block; width:12px; height:12px; margin-left:6px;
-        color:var(--muted); text-decoration:none; vertical-align:baseline;
-        transition: transform .12s ease, color .12s ease;
-      }
+      .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
+                          text-decoration:none; vertical-align:baseline; transition: transform .12s ease, color .12s ease; }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
-
-      /* keep the tiny anchor from default link blue/purple */
       .t3-dl-inline-wrap a,
       .t3-dl-inline-wrap a:link,
       .t3-dl-inline-wrap a:visited,
       .t3-dl-inline-wrap a:active { color: var(--muted) !important; text-decoration: none !important; }
       .t3-dl-inline-wrap a:hover  { color: var(--text)  !important; }
-
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
@@ -1162,7 +1146,6 @@ def render_tradeoff_scenarios():
             unsafe_allow_html=True,
         )
 
-        # Prep per-ETF baseline metrics so we can compute uplift for each scenario
         if not M.empty:
             base = M[M["Scenario"]=="Baseline"][[etf_col, clean_col]].rename(columns={clean_col:"clean_base"})
             scen = M[M["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])][[etf_col, "Scenario", clean_col, te_col]].rename(
@@ -1176,16 +1159,14 @@ def render_tradeoff_scenarios():
             bub["te_pct"]    = pd.to_numeric(bub["te_frac"], errors="coerce") * 100.0
             bub["AUM_B"]     = pd.to_numeric(bub.get("ETF_AUM_USD"), errors="coerce") / 1e9
 
-            # Filter to selection if needed
             if sel_etf != "All":
                 bub = bub[bub[etf_col].astype(str) == sel_etf]
 
-            # Colors: Baseline not plotted; PT and SE distinct (similar yet different)
             te_domain = ["Pragmatic Tilt","Strict Exclusion"]
-            te_range  = ["#C77DBB", "#A47ADC"]  # PT, SE
+            te_range  = ["#C77DBB", "#A47ADC"]
 
             if not bub.empty and bub["uplift_pp"].notna().any() and bub["te_pct"].notna().any():
-                size = alt.Size("AUM_B:Q", title="ETF AUM ($B)", scale=alt.Scale(range=[40, 220]))  # smaller bubbles
+                size = alt.Size("AUM_B:Q", title="ETF AUM ($B)", scale=alt.Scale(range=[40, 220]))
                 chart = (
                     alt.Chart(bub)
                     .mark_circle(opacity=0.85, stroke="#0A0B0D", strokeWidth=0.6)
@@ -1215,7 +1196,7 @@ def render_tradeoff_scenarios():
     st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # Turnover & Cost  (from scenario_position_deltas.csv)
+    # Turnover & Cost  (from scenario_position_deltas.csv)  — ROBUST w-avg
     # =========================
     st.markdown(
         '<div class="chart-head"><div class="chart-title">Turnover & Cost</div>'
@@ -1225,29 +1206,43 @@ def render_tradeoff_scenarios():
     )
 
     if {"ETF_Ticker","scenario","delta"}.issubset(set(DELTAS.columns)):
-        # per-ETF per-scenario turnover
         D = DELTAS.copy()
         D["abs_delta"] = pd.to_numeric(D["delta"], errors="coerce").abs()
         t = D.groupby(["ETF_Ticker","scenario"], as_index=False)["abs_delta"].sum()
         t["turnover_pct"] = 0.5 * t["abs_delta"] * 100.0
         t = t[t["scenario"].str.lower().isin(["pragmatic tilt","strict exclusion"])]
 
-        # Restrict to selection
         if sel_etf != "All":
             t = t[t["ETF_Ticker"].astype(str) == sel_etf]
 
-        # AUM weights (optional)
         if not AUM.empty and sel_etf == "All":
             t = t.merge(AUM[["ETF_Ticker","ETF_AUM_USD"]], on="ETF_Ticker", how="left")
-            t["w"] = pd.to_numeric(t["ETF_AUM_USD"], errors="coerce").clip(lower=0)
+            t["w"] = pd.to_numeric(t["ETF_AUM_USD"], errors="coerce").clip(lower=0.0)
         else:
             t["w"] = 1.0
 
-        t_sum = t.groupby("scenario").apply(lambda d: np.average(d["turnover_pct"], weights=d["w"]) if d["w"].sum()>0 else np.nan).reset_index(name="Turnover %")
+        def wavg_group(df):
+            m = df["turnover_pct"].notna() & df["w"].notna()
+            if not m.any():
+                return np.nan
+            x = df.loc[m, "turnover_pct"].astype(float)
+            w = df.loc[m, "w"].astype(float)
+            s = w.sum()
+            if s <= 0:
+                return np.nan
+            return float((x * w).sum() / s)
+
+        # robust weighted mean per scenario
+        t_sum = (
+            t.groupby("scenario", as_index=False)
+             .apply(lambda d: pd.Series({"Turnover %": wavg_group(d)}))
+        )
+
         t_sum["Scenario"] = t_sum["scenario"].str.title()
         t_sum = t_sum[["Scenario","Turnover %"]]
 
-        cost_bps = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1, help="Applied to turnover to estimate one-off implementation cost.")
+        cost_bps = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1,
+                             help="Applied to turnover to estimate one-off implementation cost.")
         t_sum["Cost (bps)"] = (t_sum["Turnover %"] * cost_bps) / 100.0
 
         if t_sum["Turnover %"].notna().any():
@@ -1263,11 +1258,7 @@ def render_tradeoff_scenarios():
                     y=alt.Y("Value:Q", title="Value", axis=alt.Axis(format=".2f")),
                     color=alt.Color("Scenario:N", title=None, scale=color_scale),
                     column=alt.Column("Metric:N", title=None, header=alt.Header(labelOrient="bottom")),
-                    tooltip=[
-                        alt.Tooltip("Scenario:N"),
-                        alt.Tooltip("Metric:N"),
-                        alt.Tooltip("Value:Q", format=".2f")
-                    ],
+                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
                 )
                 .properties(height=220)
                 .configure_view(stroke=None)
@@ -1334,6 +1325,7 @@ def render_tradeoff_scenarios():
             st.info("Active Share not available for the current selection.")
     else:
         st.info("Active Share not available in scenario_position_deltas.csv")
+
 
 
 
