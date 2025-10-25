@@ -1175,7 +1175,7 @@ def render_tradeoff_scenarios():
         if te_df["TE %"].notna().any():
             # Palette: Baseline distinct (aqua), PT/SE close (mauve/plum)
             te_domain = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
-            te_range  = ["#5EB1BF", "#C77DBB", "#B66BB2"]  # aqua, mauve, plum
+            te_range  = ["#5EB1BF", "#C77DBB", "#D08FD8"]  # aqua, mauve, plum
 
             te_opacity = alt.condition(
                 alt.datum.Scenario == "Baseline",
