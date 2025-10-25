@@ -997,6 +997,7 @@ def render_tradeoff_scenarios():
     """, unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
+    
     with c1:
         st.markdown("""
         <div class="scenario-card">
@@ -1009,6 +1010,7 @@ def render_tradeoff_scenarios():
           </ul>
         </div>
         """, unsafe_allow_html=True)
+            
     with c2:
         st.markdown("""
         <div class="scenario-card">
