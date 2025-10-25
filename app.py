@@ -884,11 +884,11 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
     import streamlit as st
-    import base64
 
     # =========================
     # helpers (strict + formatting)
@@ -919,7 +919,6 @@ def render_tradeoff_scenarios():
         except:
             return "–"
 
-    # treat as "display zero" if it would render as 0.0% at 1dp
     def _is_zero_display(v) -> bool:
         try:
             return abs(float(v)) < 0.05
@@ -932,9 +931,9 @@ def render_tradeoff_scenarios():
     M = load_scenario_metrics().copy()
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
-    clean_col = _need(M, "%Clean")          # already in %
-    ctr_col   = _need(M, "%Controversial")  # already in %
-    te_col    = _need(M, "TE_annual")       # fraction (0.0123 -> 1.23%)
+    clean_col = _need(M, "%Clean")
+    ctr_col   = _need(M, "%Controversial")
+    te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -956,8 +955,7 @@ def render_tradeoff_scenarios():
     )
 
     # =========================
-    # styles (tiny KPIs + strong tints for THIS TAB ONLY via a unique class;
-    #         nicer small download icon beside right-aligned caption)
+    # styles (scoped to this tab only)
     # =========================
     st.markdown("""
     <style>
@@ -969,64 +967,73 @@ def render_tradeoff_scenarios():
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* ──────────────────────────────────────────────────────────────
-         KPI tiles — tiny size; label top-left; VALUE vertically centered
-         Scoped by .t3-kpi class so nothing leaks to other tabs.
-         ────────────────────────────────────────────────────────────── */
+      /* KPI tiles — small card; label top-left; value vertically centered */
       .t3-kpi {
         position: relative;
         height: 74px !important;
-        padding: 6px 10px !important;
-        border-radius: 10px !important;
+        padding: 6px 12px !important;
+        border-radius: 14px !important;
         border: 1px solid var(--border) !important;
-        background: var(--card) !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.10)) !important;
         overflow: hidden;
       }
       .t3-kpi .label {
-        position: absolute; top: 6px; left: 10px;
+        position: absolute; top: 8px; left: 12px;
         font-size: 10px !important; color: var(--muted) !important; line-height: 1.1 !important;
       }
       .t3-kpi .value {
-        position: absolute; left: 10px;
-        top: 50%; transform: translateY(-35%);
-        font-size: 18px !important; font-weight: 700 !important; line-height: 1.0 !important;
+        position: absolute; left: 12px;
+        top: 50%; transform: translateY(-40%);
+        font-size: 18px !important; font-weight: 800 !important; letter-spacing:0.2px;
       }
 
-      /* Enhanced tints (like your screenshot): soft fill + subtle colored rims */
+      /* SS#2-like green/red tint (strong rim + soft inner glow) */
       .t3-kpi.t3-green {
-        background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05)) !important;
-        border-color: rgba(16,185,129,0.22) !important;
+        background:
+          radial-gradient(120% 180% at 0% 0%, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.05) 60%, transparent 100%),
+          linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.18)) !important;
+        border-color: rgba(16,185,129,0.35) !important;
         box-shadow:
           inset 0 0 0 1px rgba(16,185,129,0.28),
-          0 0 0 1px rgba(16,185,129,0.14) !important;
+          0 0 0 1px rgba(16,185,129,0.18),
+          0 10px 28px rgba(16,185,129,0.10) !important;
       }
       .t3-kpi.t3-red {
-        background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05)) !important;
-        border-color: rgba(239,68,68,0.22) !important;
+        background:
+          radial-gradient(120% 180% at 0% 0%, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.05) 60%, transparent 100%),
+          linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.18)) !important;
+        border-color: rgba(239,68,68,0.35) !important;
         box-shadow:
           inset 0 0 0 1px rgba(239,68,68,0.28),
-          0 0 0 1px rgba(239,68,68,0.14) !important;
+          0 0 0 1px rgba(239,68,68,0.18),
+          0 10px 28px rgba(239,68,68,0.10) !important;
       }
       .t3-kpi.t3-green .value,
       .t3-kpi.t3-red .value { color:#ffffff !important; }
 
-      /* caption + tiny download button row (right aligned) */
-      .dl-row { display:flex; align-items:center; gap:10px; margin-top:8px; justify-content:flex-end; }
-      .dl-row .cap { color: var(--muted); font-size:13px; line-height:1.4; text-align:right; }
+      /* caption + small icon aligned right */
+      .dl-row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
+      .dl-row .cap { color: var(--muted); font-size:13px; line-height:1.35; text-align:right; }
 
-      /* prettier, smaller download button to match caption weight */
-      [data-testid="stDownloadButton"] > button {
+      /* prettier tiny download button with SVG icon background */
+      #dl-wrap [data-testid="stDownloadButton"] > button {
         width:18px !important; height:18px !important; min-width:18px !important;
-        padding:0 !important; border-radius:50% !important;
+        padding:0 !important; border-radius:6px !important;
         border:1px solid var(--border) !important; background: var(--card) !important;
-        color: var(--muted) !important; display:flex !important; align-items:center !important; justify-content:center !important;
-        line-height:1 !important; font-size:12px !important; font-weight:700 !important;
+        color: transparent !important; font-size:0 !important; line-height:0 !important;
+        background-repeat:no-repeat !important; background-position:center !important; background-size:12px !important;
+        transition: transform 120ms ease;
+        /* inbox-arrow icon */
+        background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
+<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/>\
+<polyline points='7 10 12 15 17 10'/>\
+<line x1='12' y1='15' x2='12' y2='3'/>\
+</svg>");
       }
-      [data-testid="stDownloadButton"] > button:hover {
-        border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
-        transform: translateY(-1px);
+      #dl-wrap [data-testid="stDownloadButton"] > button:hover {
+        border-color: rgba(255,255,255,0.24) !important; transform: translateY(-1px);
       }
-      [data-testid="stDownloadButton"] > button p { margin:0 !important; }
 
       @media (max-width: 992px) { .scn-card { height:auto; } }
     </style>
@@ -1147,7 +1154,7 @@ def render_tradeoff_scenarios():
             )
         with c3:
             st.markdown(
-                f"<div class='t3-kpi'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
+                f"<div class='t3-kpi'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
                 unsafe_allow_html=True
             )
         with c4:
@@ -1159,7 +1166,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (right-aligned caption + tiny round icon)
+    # download (right-aligned caption + tiny icon)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1174,7 +1181,6 @@ def render_tradeoff_scenarios():
     )
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
-
     csv_bytes = show.to_csv(index=False).encode("utf-8")
 
     cap_col, btn_col = st.columns([0.94, 0.06])
@@ -1187,13 +1193,15 @@ def render_tradeoff_scenarios():
             unsafe_allow_html=True
         )
     with btn_col:
+        st.markdown("<div id='dl-wrap'>", unsafe_allow_html=True)
         st.download_button(
-            label="⭳",  # styled small & circular by CSS above
+            label="download",
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
             key="tradeoff_csv_dl"
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 
