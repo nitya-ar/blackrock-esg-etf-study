@@ -884,15 +884,13 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
     import streamlit as st
     import base64
 
-    # =========================
-    # helpers
-    # =========================
     def _need(df: pd.DataFrame, name: str) -> str:
         if name in df.columns: return name
         low = {c.lower(): c for c in df.columns}
@@ -911,20 +909,17 @@ def render_tradeoff_scenarios():
         try: return f"{int(round(float(v))):,}"
         except: return "–"
 
-    # “display zero” if it would round to 0.0% at 1dp
     def _is_zero_display(v) -> bool:
         try: return abs(float(v)) < 0.05
         except: return False
 
-    # =========================
-    # load data
-    # =========================
+    # ----- load -----
     M = load_scenario_metrics().copy()
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
     clean_col = _need(M, "%Clean")
     ctr_col   = _need(M, "%Controversial")
-    te_col    = _need(M, "TE_annual")   # fraction (0.0123 -> 1.23%)
+    te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -933,9 +928,7 @@ def render_tradeoff_scenarios():
     scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
 
-    # =========================
-    # header
-    # =========================
+    # ----- header -----
     st.subheader("Tradeoff Scenarios")
     st.write(
         "This section analyzes three portfolio versions for each fund: the current 2025 portfolio and two cleaner alternatives "
@@ -945,48 +938,29 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
-    # =========================
-    # styles (SCOPED to this tab only)
-    # =========================
+    # ----- scoped styles -----
     st.markdown("""
     <style>
-      /* scenario description cards */
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
                    padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
       .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
-
-      /* smaller scenario row titles (Baseline / Pragmatic Tilt / Strict Exclusion) */
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
-
-      /* KPI size tweak ONLY for this tab. */
-      .kpi.t3{
-        padding:10px 14px !important;
-        border-radius:16px !important;
-        min-height:78px !important;
-        display:flex;flex-direction:column;justify-content:center;
-      }
+      .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
+              display:flex;flex-direction:column;justify-content:center;}
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
-
-      /* ultra-compact inline download (right aligned) */
-      .t3-dl-inline-wrap{ text-align:right; margin-top:12px; margin-bottom:12px; }
+      .t3-dl-inline-wrap{ text-align:right; margin-top:10px; margin-bottom:14px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
-      .t3-dl-inline-link{
-        display:inline-block; width:12px; height:12px; margin-left:6px;
-        color:var(--muted); text-decoration:none; vertical-align:baseline;
-        transition: transform .12s ease, color .12s ease;
-      }
+      .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
+                          text-decoration:none; vertical-align:baseline; transition: transform .12s ease, color .12s ease; }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
-
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
 
-    # =========================
-    # scenario cards
-    # =========================
+    # ----- scenario cards -----
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
         st.markdown("""
@@ -1018,13 +992,10 @@ def render_tradeoff_scenarios():
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # =========================
-    # KPI summary (AUM-weighted when "All")
-    # =========================
+    # ----- KPI summary -----
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
 
-    # AUM map
     aum_map = {}
     try:
         A = load_etf_aum_2025()
@@ -1066,9 +1037,7 @@ def render_tradeoff_scenarios():
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
-    # =========================
-    # KPI tiles (IDENTICAL tint to other tabs, just smaller here)
-    # =========================
+    # ----- KPI tiles -----
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
@@ -1078,16 +1047,13 @@ def render_tradeoff_scenarios():
             tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c2:
             tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c3:
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c4:
             lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
@@ -1095,9 +1061,7 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
-    # =========================
-    # Download notice placed BEFORE visuals (requested)
-    # =========================
+    # ===== Download notice BEFORE visuals =====
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
         .rename(columns={etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial", te_col:"TE_annual", n_col:"Holdings"})
@@ -1130,15 +1094,12 @@ def render_tradeoff_scenarios():
         unsafe_allow_html=True
     )
 
-    # a little breathing room before charts
-    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+    # small breathing room after the notice
+    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
-    # =========================
-    # Visuals — Scenario composition + Tracking Error
-    # =========================
+    # ===== Visuals: Composition + TE =====
     import altair as alt
 
-    # Build composition DF from KP (respects ETF filter + AUM logic)
     comp_rows = []
     for _, r in KP.iterrows():
         clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
@@ -1151,16 +1112,13 @@ def render_tradeoff_scenarios():
         ]
     comp_df = pd.DataFrame(comp_rows)
 
-    # clearer spacing and layout
-    st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+    # Better spacing between the two visuals
+    st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
     ch_left, ch_right = st.columns([0.56, 0.44], gap="large")
 
-    # 1) Composition: Clean / Controversial / Other (stacked, side-by-side by Scenario)
+    # --- Composition
     with ch_left:
-        st.markdown(
-            '<div class="chart-head"><div class="chart-title">Scenario composition — Clean / Controversial / Other</div><div></div></div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div><div></div></div>', unsafe_allow_html=True)
         if not comp_df.empty and comp_df["Value"].notna().any():
             comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
@@ -1170,7 +1128,6 @@ def render_tradeoff_scenarios():
                 range=[COLORS["clean"], COLORS["contro"], COLORS["other"]]
             )
 
-            # Subtle Baseline emphasis via opacity
             opacity_enc = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.88))
 
             comp_chart = (
@@ -1193,7 +1150,7 @@ def render_tradeoff_scenarios():
         else:
             st.info("Composition not available for the current selection.")
 
-    # 2) Tracking Error (annualized, %) — Baseline distinct color; PT & SE similar family
+    # --- Tracking Error
     with ch_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Tracking Error (annualized)</div>'
@@ -1201,14 +1158,15 @@ def render_tradeoff_scenarios():
             '</div>',
             unsafe_allow_html=True,
         )
+
         te_df = KP.copy()
         te_df["TE %"] = pd.to_numeric(te_df["te"], errors="coerce") * 100.0
         te_df["Scenario"] = pd.Categorical(te_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
 
         if te_df["TE %"].notna().any():
-            # color scheme: Baseline = bright primary; PT & SE = related slate tones
+            # three distinct hues (no grey, no shade variants)
             te_domain = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
-            te_range  = [COLORS["primary"], "#8A93A6", "#B0B6C6"]  # PT & SE similar, Baseline distinct
+            te_range  = [COLORS["primary"], "#9A6AFF", "#35C0A1"]  # blue, violet, teal
 
             te_opacity = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.92))
 
