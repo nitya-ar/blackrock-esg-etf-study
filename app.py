@@ -881,8 +881,6 @@ def render_change_since_2017():
 
 
 
-
-
 # render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
@@ -955,6 +953,14 @@ def render_tradeoff_scenarios():
                           text-decoration:none; vertical-align:baseline; transition: transform .12s ease, color .12s ease; }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
+
+      /* FIX: keep the tiny download anchor from turning default blue/purple */
+      .t3-dl-inline-wrap a,
+      .t3-dl-inline-wrap a:link,
+      .t3-dl-inline-wrap a:visited,
+      .t3-dl-inline-wrap a:active { color: var(--muted) !important; text-decoration: none !important; }
+      .t3-dl-inline-wrap a:hover  { color: var(--text)  !important; }
+
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
@@ -1149,7 +1155,7 @@ def render_tradeoff_scenarios():
         else:
             st.info("Composition not available for the current selection.")
 
-    # --- Tracking Error  (FIX: correctly indented under the function and sibling to ch_left)
+    # --- Tracking Error
     with ch_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Tracking Error (annualized)</div>'
@@ -1196,6 +1202,11 @@ def render_tradeoff_scenarios():
             st.altair_chart(te_chart, use_container_width=True)
         else:
             st.info("Tracking Error not available for the current selection.")
+
+
+
+
+
 
 
 # =========================
