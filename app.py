@@ -883,7 +883,6 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -897,16 +896,29 @@ def render_tradeoff_scenarios():
         raise KeyError(f"Missing required column: '{name}' in scenario_portfolio_metrics.csv")
 
     def _fmt_pct_value(v):
-        try: return f"{float(v):.1f}%"
-        except: return "–"
+        try:
+            return f"{float(v):.1f}%"
+        except:
+            return "–"
 
     def _fmt_te_from_fraction(v):
-        try: return f"{100.0 * float(v):.2f}%"
-        except: return "–"
+        try:
+            return f"{100.0 * float(v):.2f}%"
+        except:
+            return "–"
 
     def _fmt_int(v):
-        try: return f"{int(round(float(v))):,}"
-        except: return "–"
+        try:
+            return f"{int(round(float(v))):,}"
+        except:
+            return "–"
+
+    # Treat as "zero for display" if it would render as 0.0%
+    def _is_zero_display(v) -> bool:
+        try:
+            return abs(float(v)) < 0.05  # rounds to 0.0% at one decimal
+        except:
+            return False
 
     # ---------- load authoritative source ----------
     M = load_scenario_metrics().copy()
@@ -920,7 +932,7 @@ def render_tradeoff_scenarios():
     for c in [clean_col, ctr_col, te_col, n_col]:
         M[c] = pd.to_numeric(M[c], errors="coerce")
 
-    scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
+    scen_map = {"baseline":"Baseline", "pragmatic tilt":"Pragmatic Tilt", "strict exclusion":"Strict Exclusion"}
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
 
     # ---------- header ----------
@@ -933,44 +945,47 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
-    # ---------- styles ----------
+    # ---------- styles (strong specificity + !important) ----------
     st.markdown("""
     <style>
-      /* Scenario cards: side-by-side, equal size, very small text */
+      /* Scenario cards: side-by-side, same size, small text */
       .scenario-wrap { display:flex; gap:16px; }
-      .scenario-card {
-        background: var(--card);
-        border:1px solid var(--border);
-        border-radius:14px;
-        padding:12px 14px;
-        flex:1 1 0;
-        min-height:150px;
-        display:flex; flex-direction:column; justify-content:space-between;
+      .scenario-wrap .scenario-card {
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+        padding: 12px 14px !important;
+        flex: 1 1 0 !important;
+        min-height: 150px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
       }
-      .scenario-card h4 { margin:0 0 6px 0; font-size:14px; font-weight:600; }
-      .scenario-card .desc { color:var(--muted); font-size:12px; margin:0 2px 8px 0; }
-      .scenario-card ul { margin:0; padding-left:16px; }
-      .scenario-card li { font-size:12px; margin:3px 0; }
+      .scenario-wrap .scenario-card h4 { margin:0 0 6px 0; font-size:14px; font-weight:600; }
+      .scenario-wrap .scenario-card .desc { color: var(--muted); font-size:12px; margin:0 2px 8px 0; }
+      .scenario-wrap .scenario-card ul { margin:0; padding-left:16px; }
+      .scenario-wrap .scenario-card li { font-size:12px; margin:3px 0; }
 
       /* KPI tiles */
       .kpi.kpi-sm { padding:14px 16px; border-radius:12px; border:1px solid var(--border); }
       .kpi .label { font-size:11px; color: var(--muted); }
       .kpi .value { font-size:24px; font-weight:700; line-height:1.05; }
 
-      /* Card tint only; numbers white on tinted cards */
-      .kpi-green { background: rgba(22,163,74,0.18); border-color: rgba(22,163,74,0.35); }
-      .kpi-red   { background: rgba(220,38,38,0.18); border-color: rgba(220,38,38,0.35); }
-      .kpi-green .value, .kpi-red .value { color:#ffffff; }
-      .kpi-neutral { background: var(--card); }
+      /* Tints (force precedence) */
+      .kpi-green { background: rgba(22,163,74,0.18) !important; border-color: rgba(22,163,74,0.35) !important; }
+      .kpi-red   { background: rgba(220,38,38,0.18) !important; border-color: rgba(220,38,38,0.35) !important; }
+      .kpi-green .value, .kpi-red .value { color:#ffffff !important; }
+      .kpi-neutral { background: var(--card) !important; border-color: var(--border) !important; }
 
-      /* Make the download button very, very small */
-      #tradeoff-dl div[data-testid="stDownloadButton"] > button {
-        transform: scale(0.40);
-        transform-origin: left center;
-        width: 18%;
-        min-width: 84px;
-        padding: 1px 4px;
-        opacity: 0.7;
+      /* Make the download button very small and unobtrusive */
+      #tradeoff-dl div[data-testid="stDownloadButton"] > button,
+      #tradeoff-dl button[kind="secondary"] {
+        transform: scale(0.35) !important;
+        transform-origin: left center !important;
+        width: 18% !important;
+        min-width: 80px !important;
+        padding: 1px 4px !important;
+        opacity: 0.7 !important;
       }
 
       @media (max-width: 900px) {
@@ -979,7 +994,7 @@ def render_tradeoff_scenarios():
     </style>
     """, unsafe_allow_html=True)
 
-    # ---------- scenario cards (copy EXACTLY as requested) ----------
+    # ---------- scenario cards (exact text you asked) ----------
     st.markdown('<div class="scenario-wrap">', unsafe_allow_html=True)
 
     st.markdown("""
@@ -1077,45 +1092,24 @@ def render_tradeoff_scenarios():
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
-    # ---------- KPI tiles (neutral if exactly 0.0; tinted otherwise) ----------
+    # ---------- KPI tiles (neutral if displays as 0.0%) ----------
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
         st.markdown(f"**{r['Scenario']}**")
 
-        def _klass_for_clean(v):
-            try: return "kpi-neutral" if float(v) == 0.0 else "kpi-green"
-            except: return "kpi-neutral"
-
-        def _klass_for_contro(v):
-            try: return "kpi-neutral" if float(v) == 0.0 else "kpi-red"
-            except: return "kpi-neutral"
-
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            st.markdown(
-                f"<div class='kpi kpi-sm {_klass_for_clean(r['clean'])}'>"
-                f"<div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            klass = "kpi-neutral" if _is_zero_display(r["clean"]) else "kpi-green"
+            st.markdown(f"<div class='kpi kpi-sm {klass}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct_value(r['clean'])}</div></div>", unsafe_allow_html=True)
         with c2:
-            st.markdown(
-                f"<div class='kpi kpi-sm {_klass_for_contro(r['contro'])}'>"
-                f"<div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            klass = "kpi-neutral" if _is_zero_display(r["contro"]) else "kpi-red"
+            st.markdown(f"<div class='kpi kpi-sm {klass}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct_value(r['contro'])}</div></div>", unsafe_allow_html=True)
         with c3:
-            st.markdown(
-                f"<div class='kpi kpi-sm kpi-neutral'>"
-                f"<div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='kpi kpi-sm kpi-neutral'><div class='label'>Tracking Error (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
         with c4:
             label_txt = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            st.markdown(
-                f"<div class='kpi kpi-sm kpi-neutral'>"
-                f"<div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"<div class='kpi kpi-sm kpi-neutral'><div class='label'>{label_txt}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
+
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # ---------- tiny download button only ----------
@@ -1138,8 +1132,6 @@ def render_tradeoff_scenarios():
         key="dl_tradeoff_metrics"
     )
     st.markdown('</div>', unsafe_allow_html=True)
-
-
 
 
 
