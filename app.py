@@ -883,7 +883,6 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -996,7 +995,7 @@ def render_tradeoff_scenarios():
       #tradeoff-dl .dl-card:hover { color: var(--foreground); border-color: rgba(255,255,255,0.22); }
       #tradeoff-dl { margin-top: 4px; }
 
-      /* hide any Streamlit download button if present */
+      /* hide the actual Streamlit button; we will click it via JS */
       #tradeoff-dl [data-testid="stDownloadButton"] > button {
         opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }
@@ -1166,6 +1165,7 @@ def render_tradeoff_scenarios():
         unsafe_allow_html=True
     )
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 
