@@ -884,6 +884,7 @@ def render_change_since_2017():
 
 
 # render tab 3
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -960,13 +961,15 @@ def render_tradeoff_scenarios():
     st.markdown(f'<div id="{TAB_ID}">', unsafe_allow_html=True)
 
     # =========================
-    # styles (KPI tiny + shading for this tab only; tiny download icon row)
+    # styles (KPI tiny + tints for this tab only; tiny download button row)
     # =========================
     st.markdown(f"""
     <style>
       /* scenario description cards (unchanged) */
-      .scn-card {{ background: var(--card); border:1px solid var(--border); border-radius:14px;
-                   padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between; }}
+      .scn-card {{
+        background: var(--card); border:1px solid var(--border); border-radius:14px;
+        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
+      }}
       .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
       .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
 
@@ -991,17 +994,23 @@ def render_tradeoff_scenarios():
       #{TAB_ID} .kpi.kpi-tint-green .value,
       #{TAB_ID} .kpi.kpi-tint-red .value {{ color:#ffffff !important; }}
 
-      /* caption + tiny download icon in the same row, right side */
+      /* caption + tiny download button in the same row, right aligned */
       #{TAB_ID} .dl-row {{ display:flex; align-items:center; gap:12px; margin-top:6px; }}
       #{TAB_ID} .dl-row .cap {{ color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto; }}
-      #{TAB_ID} .dl-row .dl-icon {{
-        display:inline-flex; align-items:center; justify-content:center;
-        width:22px; height:22px; min-width:22px;
-        border-radius:6px; border:1px solid var(--border);
-        background: var(--card); color: var(--muted); text-decoration:none;
+
+      /* style streamlit download button to look like your 22x22 icon box */
+      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button {{
+        width:22px !important; height:22px !important; min-width:22px !important;
+        padding:0 !important; border-radius:6px !important;
+        border:1px solid var(--border) !important; background: var(--card) !important;
+        color: var(--muted) !important; display:flex !important; align-items:center !important; justify-content:center !important;
+        line-height:1 !important; font-size:14px !important; font-weight:600 !important;
       }}
-      #{TAB_ID} .dl-row .dl-icon:hover {{ border-color: rgba(255,255,255,0.22); color: var(--text); }}
-      #{TAB_ID} .dl-row .dl-icon svg {{ width:14px; height:14px; }}
+      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button:hover {{
+        border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
+      }}
+      /* hide default label spacing */
+      #{TAB_ID} .dl-row [data-testid="stDownloadButton"] > button p {{ margin:0 !important; }}
 
       @media (max-width: 992px) {{ .scn-card {{ height:auto; }} }}
     </style>
@@ -1134,7 +1143,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (tiny icon next to caption, same row)
+    # download (caption + tiny button on same row, right side; true download)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1151,27 +1160,29 @@ def render_tradeoff_scenarios():
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
-    b64 = base64.b64encode(csv_bytes).decode("utf-8")
 
-    st.markdown(f"""
-    <div class="dl-row">
-      <div class="cap">
-        CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.
-      </div>
-      <a class="dl-icon" href="data:text/csv;base64,{b64}"
-         download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-      </a>
-    </div>
-    """, unsafe_allow_html=True)
+    # render caption + tiny download button in one row
+    left, right = st.columns([1, 0.06])
+    with left:
+        st.markdown(
+            "<div class='dl-row'>"
+            "<div class='cap'>CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.</div>"
+            "</div>",
+            unsafe_allow_html=True
+        )
+    with right:
+        # Use a real download control and style it to a tiny icon box
+        st.download_button(
+            label="↓",  # will appear as the small arrow; styled by CSS to 22x22 box
+            data=csv_bytes,
+            file_name="per_etf_metrics_all_scenarios.csv",
+            mime="text/csv",
+            key="tradeoff_csv_dl"
+        )
 
     # ==== close scope wrapper ====
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
