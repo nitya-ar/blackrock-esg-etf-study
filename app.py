@@ -1132,40 +1132,53 @@ def render_tradeoff_scenarios():
             )
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # =========================
-    # download (only a tiny text link; no visible button)
-    # =========================
-    show = (
-        M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
-        .rename(columns={
-            etf_col: "ETF",
-            clean_col: "% Clean",
-            ctr_col: "% Controversial",
-            te_col: "TE_annual",   # fraction in file
-            n_col: "Holdings",
-        })
-        .copy()
-    )
-    show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
-    show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
+   # ------- build CSV exactly as before -------
+show = (
+    M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
+    .rename(columns={
+        etf_col: "ETF",
+        clean_col: "% Clean",
+        ctr_col: "% Controversial",
+        te_col: "TE_annual",   # fraction in file
+        n_col: "Holdings",
+    })
+    .copy()
+)
+show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
+show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
-    st.caption("Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion.")
-    st.markdown('<div id="tradeoff-dl">', unsafe_allow_html=True)
+# ------- tiny text download (no Streamlit button) -------
+import base64
+csv_bytes = show.to_csv(index=False).encode("utf-8")
+b64 = base64.b64encode(csv_bytes).decode()
 
-    # hidden real downloader (kept for functionality, fully hidden by CSS)
-    st.download_button(
-        "Download per-ETF metrics (CSV)",
-        data=show.to_csv(index=False).encode("utf-8"),
-        file_name="per_etf_metrics_all_scenarios.csv",
-        mime="text/csv",
-        key="dl_tradeoff_metrics_hidden"
-    )
-    # visible tiny text link
-    st.markdown(
-        "<a class='dl-card' onclick=\"document.querySelector('#tradeoff-dl button').click()\">Download per-ETF metrics (CSV)</a>",
-        unsafe_allow_html=True
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+st.caption(
+    "Download the per-ETF table showing: % Clean, % Controversial, Tracking Error (annualized, as fraction in file), "
+    "and # Holdings for Baseline / Pragmatic Tilt / Strict Exclusion."
+)
+
+st.markdown("""
+<style>
+.dl-mini {
+  font-size: 10px;             /* really small */
+  color: var(--muted);
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 2px 0 0 0;
+  display: inline-block;
+  opacity: 0.8;
+}
+.dl-mini:hover { color: var(--foreground); opacity: 1.0; }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown(
+    f'<a class="dl-mini" download="per_etf_metrics_all_scenarios.csv" '
+    f'href="data:text/csv;base64,{b64}">Download per-ETF metrics (CSV)</a>',
+    unsafe_allow_html=True
+)
 
 
 
