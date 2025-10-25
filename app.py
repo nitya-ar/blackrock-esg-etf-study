@@ -954,76 +954,53 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
-    # ---------- SCOPE START (prevents leakage to other tabs) ----------
+    # ==== scope wrapper so KPI styles don't affect other tabs ====
     TAB_ID = "t3"
     st.markdown(f'<div id="{TAB_ID}">', unsafe_allow_html=True)
 
-    # styles (ONLY for this tab) — use higher specificity + !important
+    # =========================
+    # styles (KPI smaller + tiny icon-only downloader)
+    # =========================
     st.markdown(f"""
     <style>
-      /* Scenario cards stay as-is in this tab */
-      #${{TAB_ID}} .scn-card {{
-        background: var(--card); border:1px solid var(--border); border-radius:14px;
-        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
-      }}
-      #${{TAB_ID}} .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
-      #${{TAB_ID}} .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
+      .scn-card {{ background: var(--card); border:1px solid var(--border); border-radius:14px;
+                  padding:12px 14px; height: 168px; display:flex; flex-direction:column; justify-content:space-between; }}
+      .scn-card h4 {{ margin:0 0 8px 0; font-size:14px; font-weight:600; }}
+      .scn-card .desc {{ color: var(--muted); font-size:12px; line-height:1.35; }}
 
-      /* KPI sizing & look — apply ONLY inside Tab 3, override any global kpi */
-      #${{TAB_ID}} div .kpi {{
-        padding:8px 10px !important;
-        border-radius:10px !important;
-        border:1px solid var(--border) !important;
-        background: var(--card) !important;
+      /* KPI styling — scoped to this tab ONLY, with !important to win cascade */
+      #{TAB_ID} .kpi {{ padding:8px 10px !important; border-radius:10px !important;
+                        border:1px solid var(--border) !important; background: var(--card) !important; }}
+      #{TAB_ID} .kpi .label {{ font-size:10px !important; color: var(--muted) !important; line-height:1.1 !important; }}
+      #{TAB_ID} .kpi .value {{ font-size:18px !important; font-weight:700 !important; line-height:1.0 !important; }}
+
+      #{TAB_ID} .kpi-tint-green {{
+        background: linear-gradient(180deg, rgba(16,185,129,0.10), rgba(16,185,129,0.05)) !important;
+        border-color: rgba(16,185,129,0.16) !important;
       }}
-      #${{TAB_ID}} div .kpi .label {{
-        font-size:10px !important; color: var(--muted) !important; line-height:1.1 !important;
+      #{TAB_ID} .kpi-tint-red {{
+        background: linear-gradient(180deg, rgba(239,68,68,0.10), rgba(239,68,68,0.05)) !important;
+        border-color: rgba(239,68,68,0.16) !important;
       }}
-      #${{TAB_ID}} div .kpi .value {{
-        font-size:18px !important; font-weight:700 !important; line-height:1.0 !important;
+      #{TAB_ID} .kpi-tint-green .value, #{TAB_ID} .kpi-tint-red .value {{ color: #ffffff !important; }}
+
+      #tradeoff-dl {{ margin-top: 2px; display:flex; align-items:center; gap:8px; }}
+      #tradeoff-dl .dl-icon {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:6px;
+        border:1px solid var(--border); background: var(--card); cursor:pointer;
+        text-decoration:none; user-select:none; color: var(--muted);
+      }}
+      #tradeoff-dl .dl-icon:hover {{ border-color: rgba(255,255,255,0.22); color: var(--text); }}
+      #tradeoff-dl .dl-icon svg {{ width:14px; height:14px; }}
+
+      #tradeoff-dl [data-testid="stDownloadButton"] > button {{
+        opacity: 0; width: 1px; height: 1px; padding: 0; margin: 0; position: absolute; left: -9999px;
       }}
 
-      /* Tint classes with stronger specificity so they stick */
-      #${{TAB_ID}} div .kpi.kpi-tint-green {{
-        background-image: linear-gradient(180deg, rgba(16,185,129,0.18), rgba(16,185,129,0.10)) !important;
-        border-color: rgba(16,185,129,0.24) !important;
-      }}
-      #${{TAB_ID}} div .kpi.kpi-tint-red {{
-        background-image: linear-gradient(180deg, rgba(239,68,68,0.18), rgba(239,68,68,0.10)) !important;
-        border-color: rgba(239,68,68,0.24) !important;
-      }}
-      #${{TAB_ID}} div .kpi.kpi-tint-green .value,
-      #${{TAB_ID}} div .kpi.kpi-tint-red .value {{ color:#ffffff !important; }}
-
-      /* Caption + tiny right-aligned download button (Streamlit) */
-      #${{TAB_ID}} .dl-row {{
-        display:flex; align-items:center; gap:12px; margin-top:6px;
-      }}
-      #${{TAB_ID}} .dl-row .cap {{
-        color: var(--muted); font-size:13px; line-height:1.4; flex:1 1 auto;
-      }}
-      /* target JUST this button by its data-key */
-      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button {{
-        width:22px !important; height:22px !important; min-width:22px !important; padding:0 !important;
-        border-radius:6px !important; border:1px solid var(--border) !important;
-        background: var(--card) !important; color: var(--muted) !important;
-      }}
-      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button:hover {{
-        border-color: rgba(255,255,255,0.22) !important; color: var(--text) !important;
-      }}
-      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button::before {{
-        content:""; display:inline-block; width:14px; height:14px; background-repeat:no-repeat;
-        background-position:center; background-size:14px 14px;
-        background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
-<path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/>\
-<polyline points='7 10 12 15 17 10'/>\
-<line x1='12' y1='15' x2='12' y2='3'/>\
-</svg>");
-      }}
-      #${{TAB_ID}} [data-testid="stDownloadButton"][data-key="t3_dl_csv"] > button > div {{ display:none; }}
+      @media (max-width: 992px) {{ .scn-card {{ height: auto; }} }}
     </style>
-    """.replace("${TAB_ID}", TAB_ID), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     # =========================
     # scenario cards (unchanged content)
@@ -1119,7 +1096,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (smaller + shaded) — markup unchanged
+    # KPI tiles (smaller)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
@@ -1152,7 +1129,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (same row, right-aligned; tiny visible icon)
+    # download (tiny icon only; no Streamlit button)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1169,18 +1146,41 @@ def render_tradeoff_scenarios():
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
 
     csv_bytes = show.to_csv(index=False).encode("utf-8")
+    b64 = base64.b64encode(csv_bytes).decode("utf-8")
 
-    # Caption + button in the same row using columns
-    left, right = st.columns([0.94, 0.06])
-    with left:
-        st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
-    with right:
-        st.download_button(
-            label="", data=csv_bytes, file_name="per_etf_metrics_all_scenarios.csv",
-            mime="text/csv", key="t3_dl_csv", help="Download CSV"
-        )
+    st.caption("CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial, annualized TE (fraction), and #Holdings.")
+    st.markdown("""
+    <style>
+      #tradeoff-dl { margin-top: 2px; }
+      #tradeoff-dl .dl-icon{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:6px;
+        border:1px solid var(--border); background: var(--card); cursor:pointer;
+        text-decoration:none; color: var(--muted);
+      }
+      #tradeoff-dl .dl-icon:hover{ border-color: rgba(255,255,255,0.22); color: var(--text); }
+      #tradeoff-dl .dl-icon svg{ width:14px; height:14px; }
+    </style>
+    """, unsafe_allow_html=True)
 
-    # ---------- SCOPE END ----------
+    st.markdown(
+        f"""
+        <div id="tradeoff-dl">
+          <a class="dl-icon" href="data:text/csv;base64,{b64}"
+             download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==== close scope wrapper ====
     st.markdown("</div>", unsafe_allow_html=True)
 
 
