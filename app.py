@@ -910,7 +910,6 @@ def render_tradeoff_scenarios():
         try: return f"{int(round(float(v))):,}"
         except: return "–"
 
-    # “display zero” if it would round to 0.0% at 1dp
     def _is_zero_display(v) -> bool:
         try: return abs(float(v)) < 0.05
         except: return False
@@ -923,7 +922,7 @@ def render_tradeoff_scenarios():
     etf_col   = _need(M, "ETF_Ticker")
     clean_col = _need(M, "%Clean")
     ctr_col   = _need(M, "%Controversial")
-    te_col    = _need(M, "TE_annual")   # fraction (0.0123 -> 1.23%)
+    te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -949,17 +948,13 @@ def render_tradeoff_scenarios():
     # =========================
     st.markdown("""
     <style>
-      /* scenario description cards */
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
                    padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
       .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
 
-      /* smaller scenario row titles (Baseline / Pragmatic Tilt / Strict Exclusion) */
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
 
-      /* KPI size tweak ONLY for this tab.
-         We reuse global .kpi + tint classes so tint matches other tabs. */
       .kpi.t3{
         padding:10px 14px !important;
         border-radius:16px !important;
@@ -969,19 +964,20 @@ def render_tradeoff_scenarios():
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
 
-      /* download row (right aligned) + smaller iconified button */
       .t3-dl-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:10px;}
       .t3-dl-row .cap{color:var(--muted);font-size:13px;text-align:right;}
 
-      /* make the Streamlit download button look like a small icon */
+      /* FIXED: small icon-only download button (uses currentColor for SVG stroke) */
       #t3-dl [data-testid="stDownloadButton"] > button{
-        width:14px !important;height:14px !important;min-width:14px !important;
+        width:16px !important;height:16px !important;min-width:16px !important;
         padding:0 !important;border-radius:6px !important;
         border:1px solid var(--border) !important;background:var(--card) !important;
-        color:transparent !important;font-size:0 !important;line-height:0 !important;
-        vertical-align:baseline;background-repeat:no-repeat !important;
-        background-position:center !important;background-size:10px !important;
-        transition:transform .12s ease,border-color .12s ease;
+        color:var(--text) !important;   /* <-- allow SVG stroke to show */
+        font-size:0 !important;line-height:0 !important;
+        vertical-align:baseline;cursor:pointer;
+        background-repeat:no-repeat !important;
+        background-position:center !important;background-size:13px !important;
+        transition:transform .12s ease,border-color .12s ease, background-color .12s ease;
         background-image:url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
 <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/>\
@@ -991,7 +987,9 @@ def render_tradeoff_scenarios():
       }
       #t3-dl [data-testid="stDownloadButton"] > button *{display:none !important;}
       #t3-dl [data-testid="stDownloadButton"] > button:hover{
-        border-color:rgba(255,255,255,.24) !important;transform:translateY(-1px);
+        border-color:rgba(255,255,255,.24) !important;
+        background-color:#12151C !important;
+        transform:translateY(-1px);
       }
 
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
@@ -1038,7 +1036,6 @@ def render_tradeoff_scenarios():
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
 
-    # AUM map
     aum_map = {}
     try:
         A = load_etf_aum_2025()
@@ -1081,7 +1078,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (IDENTICAL tint to other tabs, just smaller here)
+    # KPI tiles
     # =========================
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
@@ -1092,16 +1089,13 @@ def render_tradeoff_scenarios():
             tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c2:
             tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c3:
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
                         unsafe_allow_html=True)
-
         with c4:
             lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
@@ -1133,13 +1127,12 @@ def render_tradeoff_scenarios():
     with right:
         st.markdown("<div id='t3-dl'>", unsafe_allow_html=True)
         st.download_button(
-            label="",
+            label="",  # icon-only
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
             key="t3_dl_icon",
-            help="Download CSV",
-            use_container_width=False
+            help="Download CSV"
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
