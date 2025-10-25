@@ -407,7 +407,7 @@ st.markdown(
         BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
       </h2>
       <div class="blx-muted" style="max-width:1400px; text-align:justify; text-justify:inter-word;">
-        This project analyzes 20 BlackRock ESG-labelled ETFs to examine how their holdings align with key ESG themes from 2017 to 2025. Using a unified 2025 ESG classification map that combines the Clean200 and five controversial screens covering fossil fuels, weapons, tobacco, prisons, and deforestation, each fund’s holdings were classified and compared over time. The dashboard presents three perspectives: a 2025 Overview of current exposures, Change since 2017 showing how those exposures evolved, and Tradeoff Scenarios that simulate cleaner portfolio versions to explore the balance between ESG alignment and performance.
+        This project examines 20 BlackRock ETFs positioned as sustainable to assess how their holdings align with key sustainability themes between 2017 and 2025. It applies a unified 2025 classification framework that integrates the Clean200 universe with five controversial categories focused on fossil fuels, weapons, tobacco, prisons, and deforestation. Each fund’s holdings were classified and analyzed over time to evaluate their alignment with these themes. The dashboard presents three perspectives: the 2025 Overview, which summarizes each fund’s current exposure to clean and controversial holdings; Change since 2017, which tracks how these exposures have evolved; and Tradeoff Scenarios, which test cleaner portfolio versions to illustrate the balance between sustainability alignment and investment performance.
       </div>
     </div>
     """,
@@ -949,9 +949,7 @@ def render_tradeoff_scenarios():
     # Description (clear, brief)
     # -------------------------
     st.write(
-        "This section evaluates how much cleaner BlackRock ESG ETFs can become when stricter exclusions are applied and "
-        "what level of tracking error or loss of diversification that change would require. "
-        "Each scenario represents a different balance between ESG alignment and investment realism so readers can see the tradeoff behind portfolio design."
+        "This section explores how portfolio composition would change if greater weight were placed on Clean200 holdings and stricter limits were applied to controversial categories such as fossil fuels, weapons, tobacco, prisons, and deforestation. It compares three portfolio versions to show how cleaner allocations affect controversial exposure, tracking error, and diversification."
     )
 
     # =========================
