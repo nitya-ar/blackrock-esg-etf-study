@@ -884,7 +884,6 @@ def render_change_since_2017():
 
 
 # render tab 3
-# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -919,6 +918,7 @@ def render_tradeoff_scenarios():
         except:
             return "–"
 
+    # treat as "display zero" if it would render as 0.0% at 1dp
     def _is_zero_display(v) -> bool:
         try:
             return abs(float(v)) < 0.05
@@ -931,9 +931,9 @@ def render_tradeoff_scenarios():
     M = load_scenario_metrics().copy()
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
-    clean_col = _need(M, "%Clean")
-    ctr_col   = _need(M, "%Controversial")
-    te_col    = _need(M, "TE_annual")
+    clean_col = _need(M, "%Clean")          # already in %
+    ctr_col   = _need(M, "%Controversial")  # already in %
+    te_col    = _need(M, "TE_annual")       # fraction (0.0123 -> 1.23%)
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
@@ -955,75 +955,66 @@ def render_tradeoff_scenarios():
     )
 
     # =========================
-    # styles (scoped to this tab only)
+    # styles (SCOPED to this tab only)
     # =========================
     st.markdown("""
     <style>
-      /* scenario description cards (unchanged) */
-      .scn-card {
-        background: var(--card); border:1px solid var(--border); border-radius:14px;
-        padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between;
-      }
+      /* --- scenario description cards --- */
+      .scn-card { background: var(--card); border:1px solid var(--border); border-radius:14px;
+                  padding:12px 14px; height:168px; display:flex; flex-direction:column; justify-content:space-between; }
       .scn-card h4 { margin:0 0 8px 0; font-size:14px; font-weight:600; }
       .scn-card .desc { color: var(--muted); font-size:12px; line-height:1.35; }
 
-      /* KPI tiles — small card; label top-left; value vertically centered */
-      .t3-kpi {
-        position: relative;
-        height: 74px !important;
-        padding: 6px 12px !important;
-        border-radius: 14px !important;
-        border: 1px solid var(--border) !important;
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.10)) !important;
-        overflow: hidden;
+      /* --- KPI tiles (SS#2-style tint + centered values, tiny height) --- */
+      .t3-kpi{
+        position:relative; height:78px !important; padding:6px 12px !important;
+        border-radius:16px !important; border:1px solid var(--border) !important;
+        background: linear-gradient(180deg, rgba(8,8,8,0.20), rgba(0,0,0,0.28)) !important;
+        overflow:hidden;
       }
-      .t3-kpi .label {
-        position: absolute; top: 8px; left: 12px;
-        font-size: 10px !important; color: var(--muted) !important; line-height: 1.1 !important;
+      .t3-kpi .label{
+        position:absolute; top:8px; left:12px; font-size:10px !important; color:var(--muted) !important; line-height:1.1 !important;
       }
-      .t3-kpi .value {
-        position: absolute; left: 12px;
-        top: 50%; transform: translateY(-40%);
-        font-size: 18px !important; font-weight: 800 !important; letter-spacing:0.2px;
+      .t3-kpi .value{
+        position:absolute; left:12px; top:50%; transform:translateY(-50%);
+        font-size:18px !important; font-weight:800 !important; letter-spacing:0.2px;
       }
 
-      /* SS#2-like green/red tint (strong rim + soft inner glow) */
-      .t3-kpi.t3-green {
-        background:
-          radial-gradient(120% 180% at 0% 0%, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.05) 60%, transparent 100%),
-          linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.18)) !important;
-        border-color: rgba(16,185,129,0.35) !important;
+      /* green & red variants with stronger rim + soft inner glow (like your SS2) */
+      .t3-kpi.t3-green{
+        border-color: rgba(16,185,129,0.55) !important;
         box-shadow:
-          inset 0 0 0 1px rgba(16,185,129,0.28),
-          0 0 0 1px rgba(16,185,129,0.18),
-          0 10px 28px rgba(16,185,129,0.10) !important;
-      }
-      .t3-kpi.t3-red {
+          inset 0 0 0 1.2px rgba(16,185,129,0.55),
+          0 0 0 1px rgba(16,185,129,0.35),
+          0 8px 30px rgba(16,185,129,0.10) !important;
         background:
-          radial-gradient(120% 180% at 0% 0%, rgba(239,68,68,0.10) 0%, rgba(239,68,68,0.05) 60%, transparent 100%),
-          linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.18)) !important;
-        border-color: rgba(239,68,68,0.35) !important;
-        box-shadow:
-          inset 0 0 0 1px rgba(239,68,68,0.28),
-          0 0 0 1px rgba(239,68,68,0.18),
-          0 10px 28px rgba(239,68,68,0.10) !important;
+          radial-gradient(140% 200% at -10% -20%, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.08) 55%, rgba(0,0,0,0) 100%),
+          linear-gradient(180deg, rgba(0,0,0,0.20), rgba(0,0,0,0.28)) !important;
       }
-      .t3-kpi.t3-green .value,
-      .t3-kpi.t3-red .value { color:#ffffff !important; }
+      .t3-kpi.t3-red{
+        border-color: rgba(239,68,68,0.55) !important;
+        box-shadow:
+          inset 0 0 0 1.2px rgba(239,68,68,0.55),
+          0 0 0 1px rgba(239,68,68,0.35),
+          0 8px 30px rgba(239,68,68,0.10) !important;
+        background:
+          radial-gradient(140% 200% at -10% -20%, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.08) 55%, rgba(0,0,0,0) 100%),
+          linear-gradient(180deg, rgba(0,0,0,0.20), rgba(0,0,0,0.28)) !important;
+      }
+      .t3-kpi.t3-green .value, .t3-kpi.t3-red .value { color:#ffffff !important; }
 
-      /* caption + small icon aligned right */
-      .dl-row { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:10px; }
-      .dl-row .cap { color: var(--muted); font-size:13px; line-height:1.35; text-align:right; }
+      /* --- right-aligned caption + tiny icon-only download --- */
+      .dl-row{ display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-top:8px; }
+      .dl-row .cap{ color:var(--muted); font-size:13px; text-align:right; }
 
-      /* prettier tiny download button with SVG icon background */
-      #dl-wrap [data-testid="stDownloadButton"] > button {
+      /* iconified st.download_button */
+      #dl-wrap [data-testid="stDownloadButton"] > button{
         width:18px !important; height:18px !important; min-width:18px !important;
         padding:0 !important; border-radius:6px !important;
         border:1px solid var(--border) !important; background: var(--card) !important;
         color: transparent !important; font-size:0 !important; line-height:0 !important;
         background-repeat:no-repeat !important; background-position:center !important; background-size:12px !important;
         transition: transform 120ms ease;
-        /* inbox-arrow icon */
         background-image: url("data:image/svg+xml;utf8,\
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>\
 <path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/>\
@@ -1031,7 +1022,8 @@ def render_tradeoff_scenarios():
 <line x1='12' y1='15' x2='12' y2='3'/>\
 </svg>");
       }
-      #dl-wrap [data-testid="stDownloadButton"] > button:hover {
+      #dl-wrap [data-testid="stDownloadButton"] > button *{ display:none !important; }
+      #dl-wrap [data-testid="stDownloadButton"] > button:hover{
         border-color: rgba(255,255,255,0.24) !important; transform: translateY(-1px);
       }
 
@@ -1133,7 +1125,7 @@ def render_tradeoff_scenarios():
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
     # =========================
-    # KPI tiles (tiny + shaded for this tab only)
+    # KPI tiles (tiny + shaded; scoped)
     # =========================
     st.markdown("**Key metrics**")
     for _, r in KP.iterrows():
@@ -1166,7 +1158,7 @@ def render_tradeoff_scenarios():
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # download (right-aligned caption + tiny icon)
+    # download (right-aligned caption + small icon button)
     # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
@@ -1195,13 +1187,15 @@ def render_tradeoff_scenarios():
     with btn_col:
         st.markdown("<div id='dl-wrap'>", unsafe_allow_html=True)
         st.download_button(
-            label="download",
+            label="",
             data=csv_bytes,
             file_name="per_etf_metrics_all_scenarios.csv",
             mime="text/csv",
-            key="tradeoff_csv_dl"
+            key="tradeoff_csv_dl_icon_only",
+            help="Download CSV"
         )
         st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
