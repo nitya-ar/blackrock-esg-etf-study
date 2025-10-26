@@ -872,8 +872,8 @@ def render_tradeoff_scenarios():
     except Exception:
         globals()["COLORS"] = {"clean":"#24A27B","contro":"#D35E5E","other":"#9AA3B2"}
 
-    COLOR_PT = "#C77DBB"  # Pragmatic Tilt
-    COLOR_SE = "#A47ADC"  # Strict Exclusion
+    COLOR_PT = "#C77DBB"   # Pragmatic Tilt
+    COLOR_SE = "#A47ADC"   # Strict Exclusion
 
     # ---------- load: metrics ----------
     M = load_scenario_metrics().copy()
@@ -918,6 +918,7 @@ def render_tradeoff_scenarios():
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
 
+      /* right-aligned CSV line */
       .t3-dl-inline-wrap{ display:flex; justify-content:flex-end; align-items:center; margin:6px 0 12px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
       .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
@@ -927,14 +928,16 @@ def render_tradeoff_scenarios():
 
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
-      .info-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;min-width:20px;
+
+      /* cleaner info badge with horizontal tooltip */
+      .info-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;min-width:18px;
                   border-radius:50%;background:var(--primary);color:#fff;font-weight:700;font-size:11px;margin-left:8px;}
       .has-tip{position:relative;}
-      .has-tip::after{content:attr(data-tip);position:absolute;right:0;top:calc(100% + 8px);
+      .has-tip::after{content:attr(data-tip);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
                       background:#0B0D12;color:var(--text);border:1px solid var(--border);
-                      padding:6px 10px;border-radius:8px;white-space:pre-wrap;max-width:360px;opacity:0;pointer-events:none;
-                      transform:translateY(-4px);transition:opacity .12s ease, transform .12s ease;}
-      .has-tip:hover::after{opacity:1;transform:translateY(0);}
+                      padding:6px 8px;border-radius:8px;white-space:normal;line-height:1.25;
+                      max-width:360px;opacity:0;pointer-events:none;transition:opacity .12s ease;}
+      .has-tip:hover::after{opacity:1;}
     </style>
     """, unsafe_allow_html=True)
 
@@ -944,22 +947,19 @@ def render_tradeoff_scenarios():
         st.markdown("""
         <div class="t3-scn-card">
           <div><h4>Baseline</h4>
-          <div class="desc">Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
-            Serves as the reference point for all comparisons, with no adjustments to weights or constraints.</div></div>
+          <div class="desc">Actual 2025 portfolio with current policies; the reference point.</div></div>
         </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown("""
         <div class="t3-scn-card">
           <div><h4>Pragmatic Tilt</h4>
-          <div class="desc">Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
-            Maintains diversification limits, sector balance within ±2%, and a 5% single-name cap to keep tracking error within a realistic range.</div></div>
+          <div class="desc">Moderately increases clean exposure, limits sector drift (±2%) and single-name to 5% to contain TE.</div></div>
         </div>""", unsafe_allow_html=True)
     with c3:
         st.markdown("""
         <div class="t3-scn-card">
           <div><h4>Strict Exclusion</h4>
-          <div class="desc">Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
-            Applies the same 5% single-name cap and refills weights to achieve full allocation with minimum deviation from the baseline.</div></div>
+          <div class="desc">Excludes all controversial names, rebalances to sector neutrality with a 5% single-name cap.</div></div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -1035,8 +1035,7 @@ def render_tradeoff_scenarios():
         .rename(columns={
             etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial",
             te_col:"TE_annual", n_col:"Holdings", **({"ActiveShare_%":"ActiveShare %"} if as_col else {})
-        })
-        .copy()
+        }).copy()
     )
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
@@ -1067,16 +1066,15 @@ def render_tradeoff_scenarios():
 
     # =========================
     # CHART GRID
-    # Left column: 2 bar charts (taller)
-    # Right column: 3 charts stacked (heights sum to left)
+    # Make columns visually equal (2 left ≈ 3 right)
     # =========================
-    left_col, right_col = st.columns([0.55, 0.45], gap="large")
+    left_col, right_col = st.columns([0.5, 0.5], gap="large")
 
-    # target heights so totals match (left 360+360 = 720; right 240*3 = 720)
-    H_LEFT = 360
-    H_RIGHT = 240
+    # tuned heights (legends/padding make right charts feel shorter)
+    H_LEFT  = 340
+    H_RIGHT = 250
 
-    # ---------- LEFT-1: Scenario Composition (stacked bars, taller)
+    # ---------- LEFT-1: Scenario Composition ----------
     with left_col:
         st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div></div>', unsafe_allow_html=True)
 
@@ -1113,13 +1111,13 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-1: Cleanliness Uplift vs TE (bubble)
+    # ---------- RIGHT-1: Cleanliness Uplift vs TE (bubble) ----------
     with right_col:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
-            '<div class="info-badge has-tip" data-tip="Each point is a scenario for the selected ETF(s). '
-            'X-axis shows change in % Clean vs baseline (percentage points); Y-axis shows annualized tracking error. '
-            'Bubble size reflects ETF AUM.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Each point is a scenario. '
+            'X: change in % Clean vs baseline (pp). Y: annualized tracking error. '
+            'Bubble size: ETF AUM.">i</div></div>',
             unsafe_allow_html=True
         )
 
@@ -1176,12 +1174,12 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- LEFT-2: Turnover & Cost (grouped bars, taller)
+    # ---------- LEFT-2: Turnover & Cost ----------
     with left_col:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Turnover & Cost</div>'
-            '<div class="info-badge has-tip" data-tip="Turnover is 0.5 × sum of absolute weight changes. '
-            'Cost (bps) = Turnover (%) × the slider value. This is a simple what-if cost model.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Turnover = 0.5 × sum of absolute weight changes. '
+            'Cost (bps) = Turnover (%) × slider. A simple what-if cost model.">i</div></div>',
             unsafe_allow_html=True
         )
         rtc = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1, key="t3_rtc")
@@ -1189,8 +1187,7 @@ def render_tradeoff_scenarios():
         deltas = None
         for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
             try:
-                deltas = globals()[fn]().copy()
-                break
+                deltas = globals()[fn]().copy(); break
             except Exception:
                 continue
         if deltas is None:
@@ -1242,12 +1239,12 @@ def render_tradeoff_scenarios():
         else:
             st.info("Turnover data not available (no position-deltas file detected).")
 
-    # ---------- RIGHT-2: Sector Drift Heatmap (single light→dark; sectors on Y)
+    # ---------- RIGHT-2: Sector Drift Heatmap (light→dark oranges, dynamic height, sectors on Y) ----------
     with right_col:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Sector drift vs Baseline</div>'
-            '<div class="info-badge has-tip" data-tip="Shows magnitude of sector weight drift vs baseline for each scenario. '
-            'Darker = larger absolute drift (in percentage points). Tooltip shows signed drift.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Magnitude of sector weight drift vs baseline (pp). '
+            'Darker = larger |drift|. Tooltip shows signed drift.">i</div></div>',
             unsafe_allow_html=True
         )
         sector_cols = [c for c in M.columns if c.startswith("sector_dev__")]
@@ -1279,19 +1276,22 @@ def render_tradeoff_scenarios():
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
 
             if heat_df["|Drift|"].notna().any():
-                # single light→dark scheme; sectors on Y, scenarios on X; no truncation for labels
+                # dynamic height: ~24px per sector, min H_RIGHT
+                n_sec = heat_df["Sector"].nunique()
+                heat_h = max(H_RIGHT, 24 * n_sec + 20)
+
                 heat = (
                     alt.Chart(heat_df)
                     .mark_rect()
                     .encode(
                         x=alt.X("Scenario:N", title=None, sort=["Pragmatic Tilt","Strict Exclusion"]),
-                        y=alt.Y("Sector:N", title=None, axis=alt.Axis(labelAngle=0, labelLimit=0)),
-                        color=alt.Color("|Drift|:Q", title="Drift (|pp|)", scale=alt.Scale(scheme="blues")),
+                        y=alt.Y("Sector:N", title=None, axis=alt.Axis(labelAngle=0, labelLimit=1000)),
+                        color=alt.Color("|Drift|:Q", title="Drift (|pp|)", scale=alt.Scale(scheme="oranges")),
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("Sector:N"),
                                  alt.Tooltip("Drift_pp:Q", title="Signed drift (pp)", format=".2f"),
                                  alt.Tooltip("|Drift|:Q", title="Magnitude (|pp|)", format=".2f")],
-                    ).properties(height=H_RIGHT, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
+                    ).properties(height=heat_h, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
                 st.altair_chart(heat, use_container_width=True)
             else:
@@ -1301,12 +1301,12 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-3: Active Share vs % Clean (scatter)
+    # ---------- RIGHT-3: Active Share vs % Clean ----------
     with right_col:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Active Share vs % Clean</div>'
-            '<div class="info-badge has-tip" data-tip="Active Share measures how different a portfolio is from its benchmark. '
-            'Here we compare Active Share of each scenario with its resulting % Clean.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Active Share shows how different a portfolio is from its benchmark. '
+            'Here we relate it to resulting % Clean for each scenario.">i</div></div>',
             unsafe_allow_html=True
         )
         if as_col:
@@ -1356,14 +1356,22 @@ def render_tradeoff_scenarios():
     # TABLES (below the chart grid)
     # =========================
     st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
+
+    # heading row: title left, scenario radio right (inline)
+    col_h1, col_h2 = st.columns([0.65, 0.35])
+    with col_h1:
+        st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
+    with col_h2:
+        st.markdown('<div style="text-align:right;">', unsafe_allow_html=True)
+        sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
+                                   horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Load position deltas again for tables
     deltas2 = None
     for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
         try:
-            deltas2 = globals()[fn]().copy()
-            break
+            deltas2 = globals()[fn]().copy(); break
         except Exception:
             continue
     if deltas2 is None:
@@ -1385,9 +1393,6 @@ def render_tradeoff_scenarios():
             st.info(f"Missing column in deltas: {err}")
 
     if deltas2 is not None:
-        sel_scn_changes = st.radio("Scenario", options=["Pragmatic Tilt", "Strict Exclusion"],
-                                   horizontal=True, key="t3_changes_scn")
-
         use = deltas2.copy()
         use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
         use = use[use["Scenario"] == sel_scn_changes]
@@ -1436,6 +1441,7 @@ def render_tradeoff_scenarios():
                 st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
+
 
 
 
