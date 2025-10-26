@@ -940,7 +940,8 @@ def render_tradeoff_scenarios():
         <div class="t3-scn-card">
           <div>
             <h4>Baseline</h4>
-            <div class="desc">Reflects each fund’s actual 2025 portfolio and serves as the reference point.</div>
+            <div class="desc">Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
+            Serves as the reference point for all comparisons, with no adjustments to weights or constraints.</div>
           </div>
         </div>""", unsafe_allow_html=True)
     with c2:
@@ -948,7 +949,8 @@ def render_tradeoff_scenarios():
         <div class="t3-scn-card">
           <div>
             <h4>Pragmatic Tilt</h4>
-            <div class="desc">Moderate tilt toward clean holdings while controlling sector neutrality and name caps to limit risk.</div>
+            <div class="desc">Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
+            Maintains diversification limits, sector balance within ±2%, and a 5% single-name cap to keep tracking error within a realistic range.</div>
           </div>
         </div>""", unsafe_allow_html=True)
     with c3:
@@ -956,7 +958,8 @@ def render_tradeoff_scenarios():
         <div class="t3-scn-card">
           <div>
             <h4>Strict Exclusion</h4>
-            <div class="desc">Removes all holdings linked to controversial screens, then rebalances to stay close to the baseline profile.</div>
+            <div class="desc">Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
+            Applies the same 5% single-name cap and refills weights to achieve full allocation with minimum deviation from the baseline.</div>
           </div>
         </div>""", unsafe_allow_html=True)
 
