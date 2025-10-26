@@ -833,6 +833,7 @@ def render_change_since_2017():
 
 
 
+# render tab 3
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -840,21 +841,21 @@ def render_tradeoff_scenarios():
     import base64
     import altair as alt
 
-    # ---------- small helpers ----------
+    # =========================
+    # helpers
+    # =========================
     def _need(df: pd.DataFrame, name: str) -> str:
         if name in df.columns: return name
         low = {c.lower(): c for c in df.columns}
         if name.lower() in low: return low[name.lower()]
         raise KeyError(f"Missing required column: '{name}' in scenario_portfolio_metrics.csv")
 
-    def _pick(df: pd.DataFrame, *cands):
+    def _need_any(df: pd.DataFrame, candidates, *, err: str) -> str:
         low = {c.lower(): c for c in df.columns}
-        for c in cands:
-            if c in df.columns: return c
-            if c.lower() in low: return low[c.lower()]
-        return None
-
-    def _to_num(x): return pd.to_numeric(x, errors="coerce")
+        for n in candidates:
+            if n in df.columns: return n
+            if n.lower() in low: return low[n.lower()]
+        raise KeyError(err)
 
     def _fmt_pct(v):
         try: return f"{float(v):.1f}%"
@@ -872,34 +873,32 @@ def render_tradeoff_scenarios():
         try: return abs(float(v)) < 0.05
         except: return False
 
-    def _load_position_deltas():
-        # Preferred project loader if you have one
-        try:
-            return load_scenario_position_deltas()
-        except Exception:
-            pass
-        # Fallback to file path
-        try:
-            return pd.read_csv("/mnt/data/scenario_position_deltas.csv")
-        except Exception:
-            return None
+    def _guess_is_fraction(series: pd.Series) -> bool:
+        s = pd.to_numeric(series, errors="coerce").dropna()
+        if s.empty:
+            return True
+        return s.abs().quantile(0.99) <= 0.5  # looks like 0–1 weights
 
-    # ---------- load metrics ----------
+    # =========================
+    # load data (metrics)
+    # =========================
     M = load_scenario_metrics().copy()
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
     clean_col = _need(M, "%Clean")
     ctr_col   = _need(M, "%Controversial")
-    te_col    = _need(M, "TE_annual")
+    te_col    = _need(M, "TE_annual")   # fraction (0.0123 -> 1.23%)
     n_col     = _need(M, "#names")
 
     for c in [clean_col, ctr_col, te_col, n_col]:
-        M[c] = _to_num(M[c])
+        M[c] = pd.to_numeric(M[c], errors="coerce")
 
     scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
 
-    # ---------- header ----------
+    # =========================
+    # header
+    # =========================
     st.subheader("Tradeoff Scenarios")
     st.write(
         "This section analyzes three portfolio versions for each fund: the current 2025 portfolio and two cleaner alternatives "
@@ -909,55 +908,93 @@ def render_tradeoff_scenarios():
         "and portfolio stability."
     )
 
-    # ---------- scoped styles ----------
+    # =========================
+    # styles (SCOPED to this tab only)
+    # =========================
     st.markdown("""
     <style>
+      /* scenario description cards */
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
                    padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
       .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
+
+      /* smaller scenario row titles (Baseline / Pragmatic Tilt / Strict Exclusion) */
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
-      .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
-              display:flex;flex-direction:column;justify-content:center;}
+
+      /* KPI tiles (smaller in this tab) */
+      .kpi.t3{
+        padding:10px 14px !important;
+        border-radius:16px !important;
+        min-height:78px !important;
+        display:flex;flex-direction:column;justify-content:center;
+      }
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
-      .t3-dl-inline-wrap{ text-align:center; margin-top:10px; margin-bottom:14px; }
+
+      /* ultra-compact inline download (right aligned) */
+      .t3-dl-inline-wrap{ text-align:right; margin-top:10px; margin-bottom:14px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
-      .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
-                          text-decoration:none; vertical-align:baseline; transition: transform .12s ease, color .12s ease; }
+      .t3-dl-inline-link{
+        display:inline-block; width:12px; height:12px; margin-left:6px;
+        color:var(--muted); text-decoration:none; vertical-align:baseline;
+        transition: transform .12s ease, color .12s ease;
+      }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
+
+      /* keep the tiny download anchor from turning default blue/purple */
+      .t3-dl-inline-wrap a,
+      .t3-dl-inline-wrap a:link,
+      .t3-dl-inline-wrap a:visited,
+      .t3-dl-inline-wrap a:active { color: var(--muted) !important; text-decoration: none !important; }
+      .t3-dl-inline-wrap a:hover  { color: var(--text)  !important; }
+
       @media (max-width: 992px){ .t3-scn-card{height:auto;} }
     </style>
     """, unsafe_allow_html=True)
 
-    # ---------- scenario cards ----------
+    # =========================
+    # scenario cards
+    # =========================
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
         st.markdown("""
-        <div class="t3-scn-card"><div>
+        <div class="t3-scn-card">
+          <div>
             <h4>Baseline</h4>
-            <div class="desc">Each fund’s actual 2025 portfolio. Reference point for all comparisons.</div>
-        </div></div>""", unsafe_allow_html=True)
+            <div class="desc">Reflects each fund’s actual 2025 portfolio based on its current holdings and existing exclusion policies.
+            Serves as the reference point for all comparisons, with no adjustments to weights or constraints.</div>
+          </div>
+        </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown("""
-        <div class="t3-scn-card"><div>
+        <div class="t3-scn-card">
+          <div>
             <h4>Pragmatic Tilt</h4>
-            <div class="desc">Moderately increases clean exposure while constraining sector drift (±2%) and single-name to 5%.</div>
-        </div></div>""", unsafe_allow_html=True)
+            <div class="desc">Reallocates weights to moderately increase exposure to clean holdings while reducing controversial exposure.
+            Maintains diversification limits, sector balance within ±2%, and a 5% single-name cap to keep tracking error within a realistic range.</div>
+          </div>
+        </div>""", unsafe_allow_html=True)
     with c3:
         st.markdown("""
-        <div class="t3-scn-card"><div>
+        <div class="t3-scn-card">
+          <div>
             <h4>Strict Exclusion</h4>
-            <div class="desc">Fully removes controversial names and refills within neutrality and 5% single-name limits.</div>
-        </div></div>""", unsafe_allow_html=True)
+            <div class="desc">Removes all holdings linked to the defined controversial categories and rebalances the portfolio to maintain sector neutrality.
+            Applies the same 5% single-name cap and refills weights to achieve full allocation with minimum deviation from the baseline.</div>
+          </div>
+        </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # ---------- ETF filter + AUM map ----------
+    # =========================
+    # KPI summary (AUM-weighted when "All")
+    # =========================
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
 
+    # AUM map
     aum_map = {}
     try:
         A = load_etf_aum_2025()
@@ -992,32 +1029,45 @@ def render_tradeoff_scenarios():
         w = d["__aum__"].clip(lower=0).values if (sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0) else np.ones(len(d))
         rows.append({
             "Scenario": s,
-            "clean":  np.average(_to_num(d[clean_col]), weights=w),
-            "contro": np.average(_to_num(d[ctr_col]),   weights=w),
-            "te":     np.average(_to_num(d[te_col]),    weights=w),
-            "n":      float(_to_num(d[n_col]).mean()),
+            "clean":  np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w),
+            "contro": np.average(pd.to_numeric(d[ctr_col],   errors="coerce"), weights=w),
+            "te":     np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w),
+            "n":      float(pd.to_numeric(d[n_col], errors="coerce").mean()),
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
-    # ---------- KPI tiles ----------
+    # =========================
+    # KPI tiles (IDENTICAL tint to other tabs, just smaller here)
+    # =========================
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
-        k1, k2, k3, k4 = st.columns(4)
-        with k1:
+        c1, c2, c3, c4 = st.columns(4)
+
+        with c1:
             tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
-            st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>", unsafe_allow_html=True)
-        with k2:
+            st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>",
+                        unsafe_allow_html=True)
+
+        with c2:
             tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
-            st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>", unsafe_allow_html=True)
-        with k3:
-            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
-        with k4:
+            st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>",
+                        unsafe_allow_html=True)
+
+        with c3:
+            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>",
+                        unsafe_allow_html=True)
+
+        with c4:
             lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
-            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>",
+                        unsafe_allow_html=True)
+
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
-    # ---------- CSV mini download ----------
+    # =========================
+    # ultra-compact inline Download (right-aligned, 12px icon)
+    # =========================
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col]]
         .rename(columns={etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial", te_col:"TE_annual", n_col:"Holdings"})
@@ -1027,6 +1077,7 @@ def render_tradeoff_scenarios():
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
     csv_b64 = base64.b64encode(show.to_csv(index=False).encode("utf-8")).decode("ascii")
     csv_href = f"data:text/csv;base64,{csv_b64}"
+
     st.markdown(
         f"""
         <div class="t3-dl-inline-wrap">
@@ -1034,7 +1085,9 @@ def render_tradeoff_scenarios():
             Download CSV of per-ETF metrics across all three scenarios: % Clean, % Controversial,
             annualized Tracking Error (fraction), and Number of Holdings.
           </span>
-          <a class="t3-dl-inline-link" href="{csv_href}" download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
+          <a class="t3-dl-inline-link" href="{csv_href}"
+             download="per_etf_metrics_all_scenarios.csv"
+             title="Download CSV" aria-label="Download CSV">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1047,7 +1100,12 @@ def render_tradeoff_scenarios():
         unsafe_allow_html=True
     )
 
-    # ---------- charts row: Composition + Bubble ----------
+    # small breathing room after the notice
+    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
+
+    # =========================
+    # Visuals Row 1: Composition (left) + Cleanliness Uplift vs TE (right)
+    # =========================
     comp_rows = []
     for _, r in KP.iterrows():
         clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
@@ -1060,17 +1118,16 @@ def render_tradeoff_scenarios():
         ]
     comp_df = pd.DataFrame(comp_rows)
 
-    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    top_l, top_r = st.columns([0.56, 0.44], gap="large")
+    ch_left, ch_right = st.columns([0.56, 0.44], gap="large")
 
-    # Composition
-    with top_l:
+    # --- Composition (stacked)
+    with ch_left:
         st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div><div></div></div>', unsafe_allow_html=True)
         if not comp_df.empty and comp_df["Value"].notna().any():
             comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
-            color_scale = alt.Scale(domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
-            opacity_enc = alt.condition(alt.datum.Scenario == "Baseline", alt.value(1.0), alt.value(0.88))
+            color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
             comp_chart = (
                 alt.Chart(comp_df)
                 .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
@@ -1078,8 +1135,9 @@ def render_tradeoff_scenarios():
                     x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
                     y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
                     color=alt.Color("Category:N", title=None, scale=color_scale),
-                    opacity=opacity_enc,
-                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
+                    tooltip=[alt.Tooltip("Scenario:N"),
+                             alt.Tooltip("Category:N"),
+                             alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
                 )
                 .properties(height=300, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
             )
@@ -1087,215 +1145,241 @@ def render_tradeoff_scenarios():
         else:
             st.info("Composition not available for the current selection.")
 
-    # Bubble: Cleanliness Uplift vs Tracking Error (AUM-weighted, 2 points)
-    with top_r:
+    # --- Cleanliness Uplift vs Tracking Error (bubble)
+    with ch_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
-            '<div class="info-badge has-tip" data-tip="Each bubble is AUM-weighted across ETFs for the scenario. X: Δ% Clean vs Baseline (percentage points). Y: annualized tracking error. Size: total AUM represented.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Δ% Clean vs Baseline (x-axis) against annualized TE% (y-axis). '
+            'Bubbles sized by ETF AUM. When All ETFs are selected, points are AUM-weighted per scenario.">i</div></div>',
             unsafe_allow_html=True,
         )
+        # Build per-ETF baseline and scenario rows
+        B = M[M["Scenario"] == "Baseline"][[etf_col, clean_col]].rename(columns={clean_col:"clean_base"})
+        S = M[M["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])][[etf_col, "Scenario", clean_col, te_col]].copy()
+        if sel_etf != "All":
+            B = B[B[etf_col].astype(str) == sel_etf]
+            S = S[S[etf_col].astype(str) == sel_etf]
+        J = S.merge(B, on=etf_col, how="left")
+        J = J.dropna(subset=["clean_base", clean_col, te_col])
+        if not J.empty:
+            J["Δ % Clean (pp)"] = pd.to_numeric(J[clean_col], errors="coerce") - pd.to_numeric(J["clean_base"], errors="coerce")
+            J["TE %"] = pd.to_numeric(J[te_col], errors="coerce") * 100.0
+            J["AUM"] = J[etf_col].astype(str).map(_aum)
 
-        base = (
-            X[X["Scenario"] == "Baseline"]
-            [[etf_col, clean_col, te_col, "__aum__"]]
-            .rename(columns={clean_col: "clean_base", te_col: "te_base", "__aum__": "aum_base"})
-        )
-
-        pts = []
-        for scn in ["Pragmatic Tilt", "Strict Exclusion"]:
-            scn_df = (
-                X[X["Scenario"] == scn]
-                [[etf_col, clean_col, te_col, "__aum__"]]
-                .rename(columns={clean_col: "clean_scn", te_col: "te_scn", "__aum__": "aum_scn"})
-            )
-            J = pd.merge(scn_df, base, on=etf_col, how="left")
-            if J.empty:
-                continue
-            w = J["aum_scn"].values
-            if not np.isfinite(w).any() or np.nansum(w) <= 0:
-                w = np.ones(len(J))
-            d_clean_pp = np.average(J["clean_scn"] - J["clean_base"], weights=w)      # pp
-            te_ann_pct = 100.0 * np.average(J["te_scn"], weights=w)                   # %
-            aum_total  = float(np.nansum(J["aum_scn"]))
-            pts.append({"Scenario": scn, "Δ%Clean_pp": d_clean_pp, "TE_ann_pct": te_ann_pct, "AUM_USD": aum_total})
-
-        BUB = pd.DataFrame(pts)
-        if not BUB.empty:
-            color_scale = alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])
-            size_scale  = alt.Scale(range=[80, 800])
-            bubble = (
-                alt.Chart(BUB)
-                .mark_circle(stroke='#0A0B0D', strokeWidth=0.6)
-                .encode(
-                    x=alt.X("Δ%Clean_pp:Q", title="Δ % Clean vs Baseline (pp)", axis=alt.Axis(format=".1f")),
-                    y=alt.Y("TE_ann_pct:Q",  title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
-                    size=alt.Size("AUM_USD:Q", title="ETF AUM (USD)", scale=size_scale, legend=alt.Legend(format="~s")),
-                    color=alt.Color("Scenario:N", title=None, scale=color_scale),
-                    tooltip=[
-                        alt.Tooltip("Scenario:N"),
-                        alt.Tooltip("Δ%Clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
-                        alt.Tooltip("TE_ann_pct:Q", title="TE (ann. %)",  format=".2f"),
-                        alt.Tooltip("AUM_USD:Q",   title="AUM (USD)",     format="~s"),
-                    ],
+            if sel_etf == "All":
+                # one bubble per scenario, AUM-weighted
+                dots = (
+                    J.groupby("Scenario").apply(
+                        lambda d: pd.Series({
+                            "Δ % Clean (pp)": np.average(d["Δ % Clean (pp)"], weights=d["AUM"]) if d["AUM"].notna().any() else d["Δ % Clean (pp)"].mean(),
+                            "TE %":           np.average(d["TE %"],           weights=d["AUM"]) if d["AUM"].notna().any() else d["TE %"].mean(),
+                            "AUM":            d["AUM"].sum(skipna=True)
+                        })
+                    ).reset_index()
                 )
-                .properties(height=300, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
+            else:
+                # the selected ETF: one point per scenario
+                dots = J[["Scenario","Δ % Clean (pp)","TE %","AUM"]].copy()
+
+            dots["Scenario"] = dots["Scenario"].map(lambda s: {"pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}.get(str(s).lower(), s))
+            palette = {"Pragmatic Tilt":"#C77DBB", "Strict Exclusion":"#A47ADC"}
+            bubble = (
+                alt.Chart(dots)
+                   .mark_circle(opacity=0.9, stroke='#0A0B0D', strokeWidth=0.6)
+                   .encode(
+                       x=alt.X("Δ % Clean (pp):Q", title="Δ % Clean vs Baseline (pp)", axis=alt.Axis(format=".1f")),
+                       y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
+                       size=alt.Size("AUM:Q", title="ETF AUM ($)", scale=alt.Scale(range=[40, 600])),
+                       color=alt.Color("Scenario:N", title=None,
+                                       scale=alt.Scale(domain=list(palette), range=list(palette.values()))),
+                       tooltip=[alt.Tooltip("Scenario:N"),
+                                alt.Tooltip("Δ % Clean (pp):Q", format=".2f"),
+                                alt.Tooltip("TE %:Q", format=".2f"),
+                                alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f")],
+                   )
+                   .properties(height=300)
             )
             st.altair_chart(bubble, use_container_width=True)
         else:
-            st.info("Not enough data to compute AUM-weighted scenario bubbles.")
+            st.info("Not enough data to compute Δ% Clean vs TE (check Baseline and scenario rows for the current selection).")
 
-    # ---------- Turnover & Cost (from deltas if available) ----------
-    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
-    bot_l, bot_r = st.columns([0.56, 0.44], gap="large")
+    # =========================
+    # Visuals Row 2: Turnover & Cost (left) + Active Share vs % Clean (right)
+    # =========================
+    t_left, t_right = st.columns([0.56, 0.44], gap="large")
 
-    with bot_l:
+    # ----- Turnover & Cost (bars)
+    with t_left:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Turnover & Cost</div>'
-            '<div class="info-badge has-tip" data-tip="Turnover = 0.5 × Σ|Δw| vs Baseline (AUM-weighted across ETFs). Cost = Turnover × the slider bps.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Turnover = 0.5 × Σ|Δw| vs Baseline. Cost (bps) = Turnover (%) × your assumed round-trip bps.">i</div></div>',
             unsafe_allow_html=True,
         )
+        cost_bps = st.slider("Assumed round-trip cost (bps)", 5, 50, 20, 1, key="t_cost_bps")
 
-        deltas = _load_position_deltas()
-        assume_bps = st.slider("Assumed round-trip cost (bps)", 0, 100, 20, help="Used only for the cost bars below.")
+        try:
+            D = load_position_deltas().copy()
+            etf_c = _need_any(D, ["ETF_Ticker","etf_ticker","ETF"], err="No ETF column in scenario_position_deltas.csv")
+            scn_c = _need_any(D, ["scenario","Scenario"], err="No scenario column in scenario_position_deltas.csv")
+            dwt_c = _need_any(D, ["delta_w","w_delta","weight_delta","dw","w_diff","weight_diff"],
+                              err="No Δw (weight change) column in scenario_position_deltas.csv")
 
-        if isinstance(deltas, pd.DataFrame) and not deltas.empty:
-            sc_c   = _pick(deltas, "scenario")
-            etf_c  = _pick(deltas, "ETF_Ticker", "etf_ticker", "etf")
-            w0_c   = _pick(deltas, "w_base", "weight_base", "base_weight")
-            w1_c   = _pick(deltas, "w_scn", "weight_scenario", "scenario_weight")
-            abs_c  = _pick(deltas, "abs_delta", "abs_w_delta", "|dw|")
+            D[dwt_c] = pd.to_numeric(D[dwt_c], errors="coerce")
+            D = D.dropna(subset=[dwt_c, etf_c, scn_c])
+            if sel_etf != "All":
+                D = D[D[etf_c].astype(str) == sel_etf]
 
-            D = deltas.copy()
-            if abs_c is None and (w0_c is None or w1_c is None):
-                st.info("Position deltas found but do not include weights or abs deltas to compute turnover.")
-            else:
-                if abs_c is None:
-                    D["__absdw__"] = (_to_num(D[w1_c]) - _to_num(D[w0_c])).abs()
+            if D.empty:
+                raise ValueError("No usable position deltas.")
+
+            is_frac = _guess_is_fraction(D[dwt_c])
+            scale = 100.0 if is_frac else 1.0
+
+            T = (
+                D.groupby([etf_c, scn_c], as_index=False)[dwt_c]
+                  .apply(lambda s: 0.5 * (s.abs().sum()) * scale)
+                  .rename(columns={dwt_c: "Turnover %"})
+            )
+            T[scn_c] = T[scn_c].map(lambda s: scen_map.get(str(s).lower(), s))
+            T = T[T[scn_c].isin(["Pragmatic Tilt","Strict Exclusion"])]
+
+            if T.empty:
+                raise ValueError("No non-baseline scenarios in deltas.")
+
+            if sel_etf == "All":
+                T["__aum__"] = T[etf_c].astype(str).map(_aum)
+                T = T.dropna(subset=["__aum__"])
+                if not T.empty and T["__aum__"].sum() > 0:
+                    t_sum = (
+                        T.groupby(scn_c).apply(lambda d: np.average(d["Turnover %"], weights=d["__aum__"]))
+                         .reset_index(name="Turnover %")
+                    )
                 else:
-                    D["__absdw__"] = _to_num(D[abs_c])
+                    t_sum = T.groupby(scn_c, as_index=False)["Turnover %"].mean()
+            else:
+                t_sum = T.groupby(scn_c, as_index=False)["Turnover %"].mean()
 
-                D = D.rename(columns={sc_c:"Scenario", etf_c:"ETF"})
-                if sel_etf != "All":
-                    D = D[D["ETF"].astype(str) == sel_etf]
+            if t_sum.empty:
+                st.info("Turnover data not available in your files (looked for a Δw column in deltas).")
+            else:
+                t_sum["Cost (bps)"] = t_sum["Turnover %"] * float(cost_bps)
+                ord_scn = ["Pragmatic Tilt","Strict Exclusion"]
+                t_sum[scn_c] = pd.Categorical(t_sum[scn_c], categories=ord_scn, ordered=True)
+                t_sum = t_sum.sort_values(scn_c)
 
-                # ETF x Scenario turnover (%): 0.5*sum|dw|*100  -> 50 * sum|dw|
-                t_etf = (
-                    D.groupby(["ETF","Scenario"], as_index=False)["__absdw__"].sum()
-                      .assign(Turnover=lambda x: 50.0 * _to_num(x["__absdw__"]))
-                )
-                t_etf["__aum__"] = t_etf["ETF"].astype(str).map(_aum)
-
-                # AUM-weighted scenario aggregation
-                agg = []
-                for scn in ["Pragmatic Tilt","Strict Exclusion"]:
-                    d = t_etf[t_etf["Scenario"] == scn].copy()
-                    if d.empty: 
-                        agg.append((scn, np.nan))
-                        continue
-                    w = d["__aum__"].values
-                    if not np.isfinite(w).any() or np.nansum(w) <= 0:
-                        w = np.ones(len(d))
-                    agg.append((scn, float(np.average(d["Turnover"].values, weights=w))))
-                t_sum = pd.DataFrame(agg, columns=["Scenario","Turnover %"])
-                t_sum["Cost (bps)"] = t_sum["Turnover %"] * (assume_bps / 100.0)
-
-                col_scale = alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])
                 bars = (
                     alt.Chart(t_sum)
-                    .mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6)
-                    .encode(
-                        x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
-                        y=alt.Y("Cost (bps):Q", title="Cost (bps)", axis=alt.Axis(format=".1f")),
-                        color=alt.Color("Scenario:N", legend=None, scale=col_scale),
-                        tooltip=[
-                            alt.Tooltip("Scenario:N"),
-                            alt.Tooltip("Turnover %:Q", title="Turnover (%)", format=".2f"),
-                            alt.Tooltip("Cost (bps):Q", title="Cost (bps)", format=".2f"),
-                        ],
-                    )
-                    .properties(height=220)
+                       .mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6)
+                       .encode(
+                           x=alt.X(f"{scn_c}:N", title=None, axis=alt.Axis(labelAngle=0)),
+                           y=alt.Y("Cost (bps):Q", title="Cost (bps)"),
+                           color=alt.Color(f"{scn_c}:N", title=None,
+                                           scale=alt.Scale(domain=ord_scn, range=["#C77DBB","#A47ADC"])),
+                           tooltip=[
+                               alt.Tooltip(f"{scn_c}:N", title="Scenario"),
+                               alt.Tooltip("Turnover %:Q", format=".2f"),
+                               alt.Tooltip("Cost (bps):Q", format=".1f"),
+                           ],
+                       )
+                       .properties(height=240)
                 )
                 st.altair_chart(bars, use_container_width=True)
-        else:
+
+        except Exception:
             st.info("Turnover data not available in your files (looked for a turnover column in metrics or computed from position deltas).")
 
-    # ---------- Active Share vs % Clean ----------
-    with bot_r:
+    # ----- Active Share vs % Clean (scatter)
+    with t_right:
         st.markdown(
             '<div class="chart-head"><div class="chart-title">Active Share vs % Clean</div>'
-            '<div class="info-badge has-tip" data-tip="Active Share = 0.5 × Σ|Δw| vs Baseline. Each dot is AUM-weighted across ETFs for the scenario; Y shows the scenario’s % Clean.">i</div></div>',
+            '<div class="info-badge has-tip" data-tip="Active Share = 0.5 × Σ|Δw| vs Baseline (per ETF). '
+            '% Clean from scenario metrics. Bubbles are AUM-weighted when All ETFs are selected.">i</div></div>',
             unsafe_allow_html=True,
         )
+        try:
+            # metrics (% Clean)
+            M2 = load_scenario_metrics().copy()
+            etf_m  = _need_any(M2, ["ETF_Ticker","etf_ticker","ETF"], err="No ETF column in scenario_portfolio_metrics.csv")
+            scn_m  = _need_any(M2, ["scenario","Scenario"], err="No scenario column in scenario_portfolio_metrics.csv")
+            clean_m = _need_any(M2, ["%Clean","% Clean","clean_pct"], err="No %Clean column in scenario_portfolio_metrics.csv")
+            if sel_etf != "All":
+                M2 = M2[M2[etf_m].astype(str) == sel_etf]
 
-        deltas = _load_position_deltas()
-        if isinstance(deltas, pd.DataFrame) and not deltas.empty:
-            sc_c   = _pick(deltas, "scenario")
-            etf_c  = _pick(deltas, "ETF_Ticker", "etf_ticker", "etf")
-            w0_c   = _pick(deltas, "w_base", "weight_base", "base_weight")
-            w1_c   = _pick(deltas, "w_scn", "weight_scenario", "scenario_weight")
-            abs_c  = _pick(deltas, "abs_delta", "abs_w_delta", "|dw|")
+            # deltas (for Active Share)
+            D2 = load_position_deltas().copy()
+            etf_d = _need_any(D2, ["ETF_Ticker","etf_ticker","ETF"], err="No ETF column in scenario_position_deltas.csv")
+            scn_d = _need_any(D2, ["scenario","Scenario"], err="No scenario column in scenario_position_deltas.csv")
+            dwt_d = _need_any(D2, ["delta_w","w_delta","weight_delta","dw","w_diff","weight_diff"],
+                              err="No Δw (weight change) column in scenario_position_deltas.csv")
+            if sel_etf != "All":
+                D2 = D2[D2[etf_d].astype(str) == sel_etf]
+            D2[dwt_d] = pd.to_numeric(D2[dwt_d], errors="coerce")
+            D2 = D2.dropna(subset=[dwt_d, etf_d, scn_d])
+            if D2.empty:
+                raise ValueError("No position deltas found to compute Active Share")
 
-            D = deltas.copy()
-            if abs_c is None and (w0_c is None or w1_c is None):
-                st.info("Active Share not available (no weights or abs deltas to derive from).")
-            else:
-                if abs_c is None:
-                    D["__absdw__"] = (_to_num(D[w1_c]) - _to_num(D[w0_c])).abs()
-                else:
-                    D["__absdw__"] = _to_num(D[abs_c])
+            is_frac2 = _guess_is_fraction(D2[dwt_d])
+            scale2 = 100.0 if is_frac2 else 1.0
 
-                D = D.rename(columns={sc_c:"Scenario", etf_c:"ETF"})
-                if sel_etf != "All":
-                    D = D[D["ETF"].astype(str) == sel_etf]
+            A = (
+                D2.groupby([etf_d, scn_d], as_index=False)[dwt_d]
+                  .apply(lambda s: 0.5 * (s.abs().sum()) * scale2)
+                  .rename(columns={dwt_d: "Active Share %"})
+            )
+            A[scn_d] = A[scn_d].map(lambda s: scen_map.get(str(s).lower(), s))
+            A = A[A[scn_d].isin(["Pragmatic Tilt","Strict Exclusion"])]
+            if A.empty:
+                raise ValueError("No non-baseline scenarios in deltas.")
 
-                a_etf = (
-                    D.groupby(["ETF","Scenario"], as_index=False)["__absdw__"].sum()
-                      .assign(Active=lambda x: 50.0 * _to_num(x["__absdw__"]))   # %
+            M2 = M2[[etf_m, scn_m, clean_m]].copy()
+            M2[scn_m] = M2[scn_m].map(lambda s: scen_map.get(str(s).lower(), s))
+            M2 = M2.rename(columns={clean_m:"% Clean"})
+
+            J2 = A.merge(M2, left_on=[etf_d, scn_d], right_on=[etf_m, scn_m], how="left")
+            J2 = J2.dropna(subset=["% Clean"])
+            J2["AUM"] = J2[etf_d].astype(str).map(_aum)
+
+            if J2.empty:
+                raise ValueError("Join produced no rows.")
+
+            if sel_etf == "All":
+                dots2 = (
+                    J2.groupby(scn_d).apply(
+                        lambda d: pd.Series({
+                            "Active Share %": np.average(d["Active Share %"], weights=d["AUM"]) if d["AUM"].notna().any() else d["Active Share %"].mean(),
+                            "% Clean":       np.average(d["% Clean"],       weights=d["AUM"]) if d["AUM"].notna().any() else d["% Clean"].mean(),
+                            "AUM":           d["AUM"].sum(skipna=True)
+                        })
+                    ).reset_index()
                 )
-                a_etf["__aum__"] = a_etf["ETF"].astype(str).map(_aum)
+            else:
+                dots2 = J2[[scn_d, "Active Share %", "% Clean", "AUM"]].copy()
 
-                pts = []
-                for scn in ["Pragmatic Tilt","Strict Exclusion"]:
-                    d = a_etf[a_etf["Scenario"] == scn].copy()
-                    if d.empty: 
-                        continue
-                    w = d["__aum__"].values
-                    if not np.isfinite(w).any() or np.nansum(w) <= 0:
-                        w = np.ones(len(d))
-                    active = float(np.average(d["Active"].values, weights=w))
+            dots2["Scenario"] = dots2[scn_d]
+            palette = {"Pragmatic Tilt":"#C77DBB", "Strict Exclusion":"#A47ADC"}
+            bubble2 = (
+                alt.Chart(dots2)
+                   .mark_circle(opacity=0.9, stroke='#0A0B0D', strokeWidth=0.6)
+                   .encode(
+                       x=alt.X("Active Share %:Q", title="Active Share (%)", axis=alt.Axis(format=".1f")),
+                       y=alt.Y("% Clean:Q", title="% Clean", axis=alt.Axis(format=".1f")),
+                       color=alt.Color("Scenario:N", title=None,
+                                       scale=alt.Scale(domain=list(palette), range=list(palette.values()))),
+                       size=alt.Size("AUM:Q", title="ETF AUM ($)", scale=alt.Scale(range=[40, 600])),
+                       tooltip=[
+                           alt.Tooltip("Scenario:N"),
+                           alt.Tooltip("Active Share %:Q", format=".2f"),
+                           alt.Tooltip("% Clean:Q", format=".2f"),
+                           alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f"),
+                       ],
+                   )
+                   .properties(height=260)
+            )
+            st.altair_chart(bubble2, use_container_width=True)
 
-                    xm = X[X["Scenario"] == scn][[etf_col, clean_col, "__aum__"]].rename(columns={etf_col:"ETF"})
-                    xm["__aum__"] = xm["ETF"].astype(str).map(_aum)
-                    xm = xm[xm["ETF"].isin(d["ETF"].astype(str))]
-                    w2 = xm["__aum__"].values
-                    if not np.isfinite(w2).any() or np.nansum(w2) <= 0:
-                        w2 = np.ones(len(xm))
-                    y_clean = float(np.average(_to_num(xm[clean_col]).values, weights=w2))
-                    pts.append({"Scenario": scn, "Active %": active, "% Clean": y_clean})
+        except Exception:
+            st.info("Active Share not available (no position deltas found, or missing Δw column).")
 
-                SCAT = pd.DataFrame(pts)
-                if not SCAT.empty:
-                    color_scale = alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])
-                    dot = (
-                        alt.Chart(SCAT)
-                        .mark_circle(size=160, stroke='#0A0B0D', strokeWidth=0.6)
-                        .encode(
-                            x=alt.X("Active %:Q", title="Active Share (%)", axis=alt.Axis(format=".1f")),
-                            y=alt.Y("% Clean:Q",   title="% Clean",        axis=alt.Axis(format=".1f")),
-                            color=alt.Color("Scenario:N", title=None, scale=color_scale),
-                            tooltip=[
-                                alt.Tooltip("Scenario:N"),
-                                alt.Tooltip("Active %:Q", title="Active Share (%)", format=".2f"),
-                                alt.Tooltip("% Clean:Q",  title="% Clean",          format=".2f"),
-                            ],
-                        )
-                        .properties(height=220)
-                    )
-                    st.altair_chart(dot, use_container_width=True)
-                else:
-                    st.info("Active Share cannot be computed for the current selection.")
-        else:
-            st.info("Active Share not available (no position deltas found).")
 
 
 
