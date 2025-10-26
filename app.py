@@ -833,6 +833,8 @@ def render_change_since_2017():
 
 
 
+
+
 # ---------------------------
 # TAB 3: Tradeoff Scenarios
 # ---------------------------
@@ -1283,6 +1285,174 @@ def render_tradeoff_scenarios():
                 st.info("No rows for alternative scenarios to plot Active Share.")
         else:
             st.info("Column 'ActiveShare_%' not found in scenario_portfolio_metrics; cannot draw this chart.")
+
+
+                # ---- Row 3: Sector Drift Heatmap | Top Added / Removed
+    st.markdown('<div style="height:18px;"></div>', unsafe_allow_html=True)
+    r3_left, r3_right = st.columns([0.56, 0.44], gap="large")
+
+    # (5) Sector Drift Heatmap (vs Baseline)
+    with r3_left:
+        st.markdown('<div class="chart-head"><div class="chart-title">Sector drift vs Baseline</div><div></div></div>', unsafe_allow_html=True)
+
+        # sector drift columns already in metrics (pp vs baseline)
+        sector_cols = [c for c in M.columns if c.startswith("sector_dev__")]
+        if sector_cols:
+            # only the two alternatives
+            mm = X[X["Scenario"].isin(["Pragmatic Tilt", "Strict Exclusion"])].copy()
+
+            def _pretty_sector(s: str) -> str:
+                return (s.replace("sector_dev__", "")
+                         .replace("_and/or_", " & ")
+                         .replace("_", " ")
+                         .title())
+
+            if sel_etf == "All" and mm["__aum__"].notna().any() and mm["__aum__"].sum() > 0:
+                # AUM-weighted average sector drift by scenario
+                w = pd.to_numeric(mm["__aum__"], errors="coerce").clip(lower=0).fillna(0.0)
+                num = (mm[sector_cols].apply(pd.to_numeric, errors="coerce").mul(w, axis=0)
+                       .groupby(mm["Scenario"]).sum())
+                den = mm.groupby("Scenario")["__aum__"].apply(lambda s: pd.to_numeric(s, errors="coerce").clip(lower=0).sum())
+                avg = (num.div(den, axis=0)).reset_index()
+                heat_df = avg.melt(id_vars="Scenario", value_vars=sector_cols,
+                                   var_name="Sector", value_name="Drift_pp")
+            else:
+                # Selected ETF: take per-scenario values for that ETF
+                # (if multiple rows per scenario exist, take the first)
+                take = (mm.groupby("Scenario", as_index=False)[sector_cols].first())
+                heat_df = take.melt(id_vars="Scenario", value_vars=sector_cols,
+                                    var_name="Sector", value_name="Drift_pp")
+
+            heat_df["Sector"] = heat_df["Sector"].map(_pretty_sector)
+            heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
+
+            if heat_df["Drift_pp"].notna().any():
+                # Diverging scale centered at 0 (reds = underweight vs baseline; greens = overweight)
+                domain_max = float(np.nanmax(np.abs(heat_df["Drift_pp"].values)))
+                domain_max = 0.1 if not np.isfinite(domain_max) or domain_max == 0 else domain_max
+
+                heat = (
+                    alt.Chart(heat_df)
+                    .mark_rect()
+                    .encode(
+                        x=alt.X("Sector:N", title=None, axis=alt.Axis(labelAngle=-25)),
+                        y=alt.Y("Scenario:N", title=None, sort=["Pragmatic Tilt","Strict Exclusion"]),
+                        color=alt.Color(
+                            "Drift_pp:Q",
+                            title="Drift (pp)",
+                            scale=alt.Scale(scheme="redblue", domain=[-domain_max, 0, domain_max]),
+                            legend=alt.Legend(orient="right"),
+                        ),
+                        tooltip=[
+                            alt.Tooltip("Scenario:N"),
+                            alt.Tooltip("Sector:N"),
+                            alt.Tooltip("Drift_pp:Q", title="Drift (pp)", format=".2f"),
+                        ],
+                    )
+                    .properties(height=220, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
+                )
+                st.altair_chart(heat, use_container_width=True)
+            else:
+                st.info("No sector drift values available for the current selection.")
+        else:
+            st.info("Sector drift columns not found in metrics (expected columns starting with 'sector_dev__').")
+
+    # (6) Top Added / Top Removed (tables)
+    with r3_right:
+        st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div><div></div></div>', unsafe_allow_html=True)
+
+        # choose scenario to inspect
+        sel_scn_changes = st.radio(
+            "Scenario",
+            options=["Pragmatic Tilt", "Strict Exclusion"],
+            horizontal=True,
+            key="t3_changes_scn"
+        )
+
+        # load position deltas (reuse logic from Turnover section)
+        deltas2 = None
+        for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
+            try:
+                deltas2 = globals()[fn]().copy()
+                break
+            except Exception:
+                continue
+        if deltas2 is None:
+            try:
+                deltas2 = load_data_file("scenario_position_deltas.csv").copy()  # type: ignore
+            except Exception:
+                deltas2 = None
+
+        if deltas2 is None:
+            st.info("Position deltas file not found; cannot compute changes.")
+        else:
+            try:
+                s_col = _need(deltas2, "scenario")
+                e_col = _need(deltas2, "ETF_Ticker")
+                nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
+                tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
+                sec_col = "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
+                d_col = _need(deltas2, "delta")
+            except KeyError as err:
+                st.info(f"Missing column in deltas: {err}")
+                deltas2 = None
+
+        if deltas2 is not None:
+            use = deltas2.copy()
+            use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}.get(s.lower(), s))
+            use = use[use["Scenario"] == sel_scn_changes]
+
+            if sel_etf != "All":
+                use = use[use[e_col].astype(str) == sel_etf]
+
+            if use.empty:
+                st.info("No position changes for the current selection.")
+            else:
+                # Build AUM weights for "All" aggregation (optional, but consistent)
+                if sel_etf == "All":
+                    try:
+                        AUM = load_etf_aum_2025()
+                        f = "ETF_Ticker" if "ETF_Ticker" in AUM.columns else "etf_ticker"
+                        v = "ETF_AUM_USD" if "ETF_AUM_USD" in AUM.columns else ("AUM_USD" if "AUM_USD" in AUM.columns else None)
+                        AUM = AUM[[f, v]].rename(columns={f: "ETF_Ticker", v: "ETF_AUM_USD"})
+                        use = use.merge(AUM, on="ETF_Ticker", how="left")
+                        w = pd.to_numeric(use["ETF_AUM_USD"], errors="coerce").fillna(1.0).clip(lower=0)
+                    except Exception:
+                        w = pd.Series(1.0, index=use.index)
+                else:
+                    w = pd.Series(1.0, index=use.index)
+
+                # Aggregate by name (AUM-weighted average delta if “All”; otherwise simple sum is fine)
+                use["delta_num"] = pd.to_numeric(use[d_col], errors="coerce").fillna(0.0) * w
+                grp = use.groupby([tk_col, nm_col, sec_col], as_index=False).agg(
+                    delta_num=("delta_num", "sum"),
+                    w=("ETF_Ticker", "size")  # dummy, we will divide by sum of weights below
+                )
+                # For “All”, we used actual w; for single ETF, w is just count but we'll divide by 1.
+                wsum = use.groupby([use[tk_col], use[nm_col], use[sec_col]])[w.index].apply(lambda idx: w.loc[idx].sum()).values \
+                       if sel_etf == "All" else np.ones(len(grp))
+                grp["delta"] = grp["delta_num"] / wsum
+                grp["Δ weight (pp)"] = grp["delta"] * 100.0
+
+                # Sort for top/bottom
+                grp = grp.rename(columns={tk_col: "Ticker", nm_col: "Company", sec_col: "Sector"})
+                top_added   = grp.sort_values("Δ weight (pp)", ascending=False).head(10)
+                top_removed = grp.sort_values("Δ weight (pp)", ascending=True).head(10)
+
+                # Clean presentation frames
+                def _fmt_table(df):
+                    out = df[["Company", "Ticker", "Sector", "Δ weight (pp)"]].copy()
+                    out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
+                    return out.reset_index(drop=True)
+
+                ca, cr = st.columns(2)
+                with ca:
+                    st.caption("Top Added (Δ weight, pp)")
+                    st.dataframe(_fmt_table(top_added), use_container_width=True, hide_index=True)
+                with cr:
+                    st.caption("Top Removed (Δ weight, pp)")
+                    st.dataframe(_fmt_table(top_removed), use_container_width=True, hide_index=True)
+
 
 
 
