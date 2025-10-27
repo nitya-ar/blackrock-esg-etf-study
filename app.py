@@ -451,7 +451,7 @@ divider()
 # -------------------------
 def render_change_since_2017():
     st.subheader("Change since 2017")
-    st.caption("All years are evaluated using the 2025 classification.")
+    st.caption("See how Clean and Controversial exposures change from your chosen start year. Toggle weighting to view the impact of asset flows. All years use the 2025 classification.")
 
     # ---- Load data
     try:
