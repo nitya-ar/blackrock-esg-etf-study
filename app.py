@@ -36,6 +36,14 @@ COLORS = {
     "other": "#768397",
 }
 
+# --- App assets (logo) ---
+# Set this to the EXACT path of your file in the repo (root or an /assets folder).
+LOGO_PATH_REPO = "Blackrock esg study logo.png"   # or e.g. "assets/Blackrock esg study logo.png"
+
+# raw GitHub URL that handles spaces in the filename
+ASSET_LOGO = f"https://raw.githubusercontent.com/{GITHUB_USER_REPO}/{GITHUB_BRANCH}/" + urllib.parse.quote(LOGO_PATH_REPO, safe="/")
+
+
 # ---- Altair dark theme to soften axes/grid/labels/legend ----
 def _alt_dark():
     return {
@@ -80,6 +88,13 @@ st.markdown(
         --other: {COLORS.get('other','#4062FF')};
         --accent:#C63C41;                              /* red for active & slider */
       }}
+
+      /* Header logo */
+      .blx-header {{ display:flex; flex-direction:column; gap:8px; }}
+.blx-brand  {{ display:flex; align-items:center; gap:10px; }}
+.blx-brand img {{ width:34px; height:34px; border-radius:6px; display:block; }}
+@media (max-width: 900px) {{ .blx-brand img {{ width:28px; height:28px; }} }}
+
 
       /* ---------- Base ---------- */
       html, body, [data-testid="stAppViewContainer"] {{
@@ -401,11 +416,14 @@ def load_etf_aum_2025():
 # HEADER
 # =========================
 st.markdown(
-    """
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
-        BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
-      </h2>
+    f"""
+    <div class="blx-header">
+      <div class="blx-brand">
+        <img src="{ASSET_LOGO}" alt="logo"/>
+        <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
+          BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
+        </h2>
+      </div>
       <div class="blx-muted" style="max-width:1400px; text-align:justify; text-justify:inter-word;">
         This project analyzes 20 BlackRock ETFs positioned as sustainable to evaluate how their holdings align with core sustainability themes from 2017 to 2025. It applies a consistent classification framework for 2025 that distinguishes companies considered clean from those associated with five controversial categories: fossil fuels, weapons, tobacco, prisons, and deforestation. The dashboard brings this analysis to life through three views: the 2025 Overview, which outlines current exposure to clean and controversial holdings; Change since 2017, which traces how these exposures have evolved; and Tradeoff Scenarios, which model cleaner portfolio versions to illustrate the relationship between sustainability alignment and investment performance.
       </div>
