@@ -366,19 +366,49 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
+
+# -----------------------------
 # Analysis 2 loaders (Change since 2017)
+# -----------------------------
 @st.cache_data(show_spinner=False)
-def load_exposures_by_fund_year():   return load_csv(2, "exposures_by_fund_year.csv")
+def load_exposures_by_fund_year():
+    return load_csv(2, "exposures_by_fund_year.csv")
+
 @st.cache_data(show_spinner=False)
-def load_aggregate_trends():         return load_csv(2, "aggregate_exposure_trends.csv")
+def load_aggregate_trends():
+    return load_csv(2, "aggregate_exposure_trends.csv")
+
 @st.cache_data(show_spinner=False)
-def load_dispersion_stats():         return load_csv(2, "exposure_dispersion_stats.csv")
+def load_dispersion_stats():
+    return load_csv(2, "exposure_dispersion_stats.csv")
+
 @st.cache_data(show_spinner=False)
-def load_screen_trends():            return load_csv(2, "aggregate_screen_trends.csv")
+def load_screen_trends():
+    return load_csv(2, "aggregate_screen_trends.csv")
+
 @st.cache_data(show_spinner=False)
-def load_year_compare():             return load_csv(2, "year_compare_summary.csv")
+def load_year_compare():
+    return load_csv(2, "year_compare_summary.csv")
+
 @st.cache_data(show_spinner=False)
-def load_top_movers_with_names():    return load_csv(2, "top_movers_with_names.csv")
+def load_movers_by_yearpair():
+    return load_csv(2, "movers_by_yearpair.csv")
+
+@st.cache_data(show_spinner=False)
+def load_movers_by_yearpair_aum():
+    return load_csv(2, "movers_by_yearpair_AUM.csv")
+
+@st.cache_data(show_spinner=False)
+def load_movers_by_yearpair_ew():
+    return load_csv(2, "movers_by_yearpair_EW.csv")
+
+@st.cache_data(show_spinner=False)
+def load_movers_by_yearpair_per_etf():
+    return load_csv(2, "movers_by_yearpair_perETF.csv")
+
+@st.cache_data(show_spinner=False)
+def load_top_movers_with_names():
+    return load_csv(2, "top_movers_with_names.csv")
 
 # -------------------------
 # Analysis 3 loaders
@@ -468,6 +498,7 @@ mode = "Dashboard"
 divider()
 
 
+
 # -------------------------
 # RENDERER FOR TAB 2
 # -------------------------
@@ -483,7 +514,6 @@ def render_change_since_2017():
         "All years apply the 2025 classification."
     )
 
-    # ========= utilities =========
     def _pick(df, *keys):
         keys = [k.lower() for k in keys]
         for c in df.columns:
@@ -508,7 +538,6 @@ def render_change_since_2017():
             st.error(f"{label}: missing required column '{col}'. Columns present: {list(df.columns)}")
             st.stop()
 
-    # Dynamic domain that ALWAYS includes 0 (0..Y | -Y..0 | symmetric when crossing)
     def _dyn_domain_zero(values, pad=0.08, min_span=0.8):
         vals = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
         if vals.empty:
@@ -525,24 +554,23 @@ def render_change_since_2017():
         m = max(abs(lo), abs(hi), min_span) * (1 + pad)
         return [-m, m]
 
-    # Horizontal zero rule (to layer with charts)
     def _zero_rule(height):
         return alt.Chart(pd.DataFrame({'y': [0]})).mark_rule(opacity=0.35).encode(y='y:Q').properties(height=height)
 
-    # ========= load data =========
     try:
         by_fund   = load_exposures_by_fund_year()
         scr_tr    = load_screen_trends()
-        movers_df = load_top_movers_with_names()
+        movers_a  = load_movers_by_yearpair_aum()
+        movers_e  = load_movers_by_yearpair_ew()
     except Exception as e:
         st.error(f"Could not load Analysis 2 CSVs: {e}")
         st.stop()
 
     _exists(by_fund, "Exposures by fund/year")
     _exists(scr_tr,   "Screen trends")
-    _exists(movers_df,"Top movers")
+    _exists(movers_a, "Movers (AUM)")
+    _exists(movers_e, "Movers (EW)")
 
-    # ========= canonicalize columns (by_fund) =========
     year_col  = _pick(by_fund, "year")
     etf_col   = _pick(by_fund, "etf_ticker", "etf ticker", "etf")
     clean_col = _pick(by_fund, "pct_clean", "clean")
@@ -556,19 +584,15 @@ def render_change_since_2017():
     _need_col(by_fund, ctr_col,   "Exposures by fund/year")
 
     by_fund[year_col] = pd.to_numeric(by_fund[year_col], errors="coerce").astype("Int64")
-
     years    = sorted([int(y) for y in by_fund[year_col].dropna().unique().tolist()])
     end_year = 2025 if 2025 in years else (max(years) if years else 2025)
     min_year = min(years) if years else 2017
-
     df_all = by_fund.copy()
 
-    # ========= controls =========
     topA, topB, topC = st.columns([0.44, 0.28, 0.28])
     with topB:
         start_year = st.slider("Start Year", min_value=min_year, max_value=max(end_year-1, min_year), value=min_year)
 
-    # ETFs present in both chosen years
     setA = set(df_all.loc[df_all[year_col] == start_year, etf_col].astype(str))
     setZ = set(df_all.loc[df_all[year_col] == end_year,   etf_col].astype(str))
     overlap = sorted(list(setA & setZ))
@@ -587,13 +611,11 @@ def render_change_since_2017():
             default="AUM-weighted", label_visibility="collapsed"
         )
 
-    # Active cohort
     cohort = overlap if not sel_etfs else sel_etfs
     df = df_all[df_all[etf_col].astype(str).isin(cohort)].copy()
     df = df[(df[year_col] >= start_year) & (df[year_col] <= end_year)]
     covI = len(cohort)
 
-    # ========= series builders =========
     def _series_from_funds(col_name: str) -> pd.DataFrame:
         if col_name not in df.columns or df.empty:
             return pd.DataFrame(columns=[year_col, "value"])
@@ -621,7 +643,6 @@ def render_change_since_2017():
     cA, cZ = _val(s_clean, start_year),  _val(s_clean, end_year)
     kA, kZ = _val(s_contro, start_year), _val(s_contro, end_year)
 
-    # Net = %Clean − %Controversial
     s_net = None
     if not s_clean.empty and not s_contro.empty:
         s_net = pd.merge(s_clean, s_contro, on=year_col, how="inner", suffixes=("_clean", "_contro"))
@@ -632,7 +653,6 @@ def render_change_since_2017():
     net_end   = _val(s_net, end_year)   if s_net is not None else float("nan")
     net_delta = (net_end - net_start) if (pd.notna(net_end) and pd.notna(net_start)) else None
 
-    # ========= KPI slope helper (explicit line+points; flat layering) =========
     def slope_chart(two_point_df: pd.DataFrame, color, height=160):
         two = two_point_df.copy()
         two["Year"] = two[year_col].astype(str)
@@ -646,7 +666,6 @@ def render_change_since_2017():
         pts  = base.mark_point(color=color, size=110)
         return alt.layer(_zero_rule(height), line, pts).resolve_scale(y='shared').properties(height=height)
 
-    # ========= KPIs =========
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
     with k1:
@@ -695,7 +714,6 @@ def render_change_since_2017():
 
     gap(8)
 
-    # ========= Combined trend (band + line + points), zero-anchored dynamic axis =========
     st.markdown(
         '<div class="chart-head">'
         '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
@@ -778,7 +796,6 @@ def render_change_since_2017():
 
     gap(8)
 
-    # ========= Screen trends & Composition =========
     h_left, h_right = st.columns([0.5, 0.5])
     with h_left:
         st.markdown('<div class="chart-title" style="margin-bottom:6px;">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
@@ -787,49 +804,34 @@ def render_change_since_2017():
 
     left, right = st.columns([0.5, 0.5])
 
-    # ----- Screen trends (ETF / Year / Weighting reactive)
     with left:
         d = scr_tr.copy()
-
-        # Value column normalization
-        if "value" not in d.columns and "exposure_pct" in d.columns:
+        if "exposure_pct" in d.columns and "value" not in d.columns:
             d = d.rename(columns={"exposure_pct": "value"})
         if "value" not in d.columns:
             st.error("Screen trends: need a 'value' or 'exposure_pct' column.")
             st.stop()
-
-        # Weighting filter
+        mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
         if "weighting_mode" in d.columns:
-            mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
             d = d[d["weighting_mode"].astype(str) == mode_name]
-
-        # Year window
         year_col_scr = _pick_exact(d, "year")
         if year_col_scr:
             d = d[(d[year_col_scr] >= start_year) & (d[year_col_scr] <= end_year)]
-
-        # ETF filter if per-ETF rows exist
         etf_col_scr = _pick_exact(d, "ETF_Ticker", "etf", "etf_ticker")
         if etf_col_scr:
             d = d[d[etf_col_scr].astype(str).isin(set(cohort))]
             if sel_etfs:
                 d = d[d[etf_col_scr].astype(str).isin(set(sel_etfs))]
-        else:
-            st.caption("Note: Screen trends source is pre-aggregated; ETF filter applies only if the file includes per-ETF rows.")
-
-        # Category mapping
         if "screen_category" not in d.columns:
             st.error("Screen trends: missing 'screen_category' column.")
             st.stop()
-
         keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
         d["Category"] = (
-            d["screen_category"].astype(str).str.strip().str.title()
-              .replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
+            d["screen_category"].astype(str).str.strip()
+            .replace({"prison":"Prisons","Prison":"Prisons","Fossil_fuel":"Fossil Fuel","fossil_fuel":"Fossil Fuel"})
+            .str.replace("_"," ").str.title()
         )
         d = d[d["Category"].isin(keep)]
-
-        # Aggregate to year × category if per-ETF rows present
         if etf_col_scr and year_col_scr:
             if weighting == "AUM-weighted" and "aum_usd" in d.columns:
                 dd = d.copy()
@@ -842,28 +844,24 @@ def render_change_since_2017():
             else:
                 d["value"] = pd.to_numeric(d["value"], errors="coerce")
                 d = d.groupby([year_col_scr, "Category"], as_index=False)["value"].mean()
-
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
             SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
             SCREEN_COLORS = [
-                COLORS["clean"],  # green for Clean200
-                "#FF6B3D",        # Prisons — vivid orange-red
-                "#FF4D6D",        # Deforestation — raspberry
-                "#D7263D",        # Fossil Fuel — strong crimson
-                "#9B2226",        # Weapons — dark brick red
-                "#F77F00",        # Tobacco — warm orange
+                COLORS["clean"],
+                "#FF6B3D",
+                "#FF4D6D",
+                "#D7263D",
+                "#9B2226",
+                "#F77F00",
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
-
-            # Build as base + line + points (no mark_line(point=...))
             x_enc = alt.X(f"{(year_col_scr or 'Year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
             if not year_col_scr:
                 d["__year__"] = start_year
                 x_enc = alt.X("__year__:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
-
             base = alt.Chart(d).encode(
                 x=x_enc,
                 y=alt.Y("value:Q", title="Exposure (%)",
@@ -879,16 +877,13 @@ def render_change_since_2017():
             )
             line = base.mark_line(strokeWidth=2, opacity=0.95)
             pts  = base.mark_point(size=36, opacity=0.95)
-
             st.altair_chart(
                 alt.layer(_zero_rule(H), line, pts).resolve_scale(y='shared'),
                 use_container_width=True
             )
 
-    # ----- Composition bars (start vs end)
     with right:
         comp_rows = []
-
         def _val_series(col):
             if col is None: return None, None
             s = _series_from_funds(col)
@@ -897,12 +892,10 @@ def render_change_since_2017():
             vZ = s.loc[s[year_col] == end_year,   "value"]
             return (float(vA.iloc[0]) if len(vA) else None,
                     float(vZ.iloc[0]) if len(vZ) else None)
-
         for label, col in [("Clean", clean_col), ("Controversial", ctr_col), ("Other", oth_col)]:
             vA, vZ = _val_series(col)
             if vA is not None: comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
             if vZ is not None: comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
-
         comp_df = pd.DataFrame(comp_rows)
         if not comp_df.empty:
             comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
@@ -922,78 +915,51 @@ def render_change_since_2017():
 
     gap(10)
 
-    # ========= Top movers table =========
     st.markdown(
         f'''<div class="chart-head">
                <div class="chart-title">Top movers — holdings ({start_year} → {end_year})</div>
                <div class="info-badge has-tip"
-                    data-tip="Holding-level exposure changes from the selected start year to {end_year}. AUM toggle affects ETF aggregation.">i</div>
+                    data-tip="Holding-level exposure changes from the selected start year to {end_year}. Source switches with Weighting (AUM/EW) and respects your ETF filter.">i</div>
              </div>''',
         unsafe_allow_html=True,
     )
 
-    tm = movers_df.copy()
+    tm_src = movers_a if weighting == "AUM-weighted" else movers_e
+    tm = tm_src.copy()
 
-    col_etf   = _pick_exact(tm, "ETF_Ticker","etf","etf_ticker")
-    col_start = _pick_exact(tm, "start_year","year_a","year0","year_start")
-    col_end   = _pick_exact(tm, "end_year","year_b","year1","year_end")
-    col_name  = _pick_exact(tm, "company_name","holding","name")
-    col_tick  = _pick_exact(tm, "company_ticker","ticker")
-    col_sec   = _pick_exact(tm, "sector","gics_sector")
-    col_delta = _pick_exact(tm, "delta","delta_pp","pp","pp_change","delta_weight_pp","delta_weight_pct_points")
-    col_wb    = _pick_exact(tm, "w_base","weight_base","weight_start","w_start")
-    col_wn    = _pick_exact(tm, "w_new","weight_end","weight_2025","w_end")
+    col_start = _pick_exact(tm, "year_a","start_year","year0","year_start")
+    col_end   = _pick_exact(tm, "year_b","end_year","year1","year_end")
+    col_name  = _pick_exact(tm, "holding_name","company_name","name")
+    col_tick  = _pick_exact(tm, "ticker","company_ticker","symbol")
+    col_delta = _pick_exact(tm, "delta_contrib_pct_agg","delta","pp","pp_change","delta_weight_pct_points","delta_weight_pp")
+    col_etf   = _pick_exact(tm, "ETF_TICKER","etf","etf_ticker")
+    col_sector= _pick_exact(tm, "sector","gics_sector")
 
-    # year filtering if available
     if col_start and col_end:
         tm = tm[(tm[col_start] == start_year) & (tm[col_end] == end_year)].copy()
 
-    # need delta or derivable weights
-    base_ok = (col_delta is not None) or (col_wb is not None and col_wn is not None)
-    if not base_ok:
-        cols_have = ", ".join(tm.columns)
-        st.error("Top movers: need a 'delta' column (delta / delta_pp / pp_change / ...) "
-                 "OR both 'w_base' and 'w_new' (any common alias). "
-                 f"Current columns: {cols_have}")
-        st.stop()
+    if col_etf and cohort:
+        tm = tm[tm[col_etf].astype(str).isin(set(cohort))]
 
     if col_delta is None:
-        tm["__delta__"] = pd.to_numeric(tm[col_wn], errors="coerce") - pd.to_numeric(tm[col_wb], errors="coerce")
-        col_delta = "__delta__"
+        st.error("Top movers: missing change column (e.g., delta_contrib_pct_agg / delta).")
+        st.stop()
 
-    # ETF filter + weights
-    if col_etf:
-        tm = tm[tm[col_etf].astype(str).isin(set(cohort))]
-        if sel_etfs:
-            tm = tm[tm[col_etf].astype(str).isin(set(sel_etfs))]
+    tm[col_delta] = pd.to_numeric(tm[col_delta], errors="coerce")
 
-    tm["__w__"] = 1.0
-    if weighting == "AUM-weighted" and col_etf:
-        try:
-            A = load_etf_aum_2025()
-            f = "ETF_Ticker" if "ETF_Ticker" in A.columns else "etf_ticker"
-            v = "ETF_AUM_USD" if "ETF_AUM_USD" in A.columns else ("AUM_USD" if "AUM_USD" in A.columns else None)
-            if f and v:
-                aum_map = A[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
-                tm["__w__"] = pd.to_numeric(tm[col_etf].map(aum_map), errors="coerce").fillna(0.0).clip(lower=0)
-        except Exception:
-            pass
-
-    tm[col_delta] = pd.to_numeric(tm[col_delta], errors="coerce").fillna(0.0)
-
-    grp_cols = [c for c in [col_tick, col_name, col_sec] if c]
+    grp_cols = [c for c in [col_tick, col_name, col_sector] if c]
     if not grp_cols:
         st.error("Top movers: need company identifier columns (ticker and/or name).")
         st.stop()
 
-    agg = (tm.groupby(grp_cols)
-             .apply(lambda d: pd.Series({"Δ_raw": (d[col_delta]*d["__w__"]).sum() / max(d["__w__"].sum(), 1e-9)}))
-             .reset_index())
+    agg = (tm.groupby(grp_cols, dropna=False)[col_delta]
+             .sum(min_count=1)
+             .reset_index()
+             .rename(columns={col_delta: "Δ raw"}))
 
-    # decide units (fractions → pp)
-    vals = agg["Δ_raw"].abs()
-    scale = 100.0 if (vals.median() < 0.5 and vals.max() <= 1.5) else 1.0
-    agg["Δ weight (pp)"] = agg["Δ_raw"] * scale
+    vals = agg["Δ raw"].abs()
+    scale = 100.0 if (vals.median(skipna=True) < 0.5 and vals.max(skipna=True) <= 1.5) else 1.0
+    agg["Δ weight (pp)"] = agg["Δ raw"] * scale
 
     top_added   = agg.sort_values("Δ weight (pp)", ascending=False).head(10)
     top_removed = agg.sort_values("Δ weight (pp)", ascending=True).head(10)
@@ -1002,10 +968,10 @@ def render_change_since_2017():
         out = df.rename(columns={
             (col_name or "company_name"): "Company",
             (col_tick or "ticker"):       "Ticker",
-            (col_sec  or "sector"):       "Sector"
-        })
+            (col_sector or "sector"):     "Sector"
+        }).copy()
         cols = [c for c in ["Company","Ticker","Sector","Δ weight (pp)"] if c in out.columns]
-        out = out[cols].copy()
+        out = out[cols]
         out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
         return out
 
