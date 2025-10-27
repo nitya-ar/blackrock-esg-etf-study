@@ -933,17 +933,17 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      /* info badge with wide horizontal tooltip under the title */
+      /* info badge (stays on the RIGHT). Tooltip opens LEFT back over the chart */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
         width:18px;height:18px;min-width:18px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:11px;
-        margin-left:0;position:relative;z-index:3;
+        margin-left:8px;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
-      .has-tip::after{
+      .has-tip.tip-left::after{
         content:attr(data-tip);
-        position:absolute;left:0;top:calc(100% + 8px);
+        position:absolute;right:0;left:auto;top:calc(100% + 8px);  /* anchor to right edge, expand left */
         background:#0B0D12;color:var(--text);border:1px solid var(--border);
         padding:10px 12px;border-radius:10px;
         white-space:normal;line-height:1.35;
@@ -951,8 +951,9 @@ def render_tradeoff_scenarios():
         box-shadow:0 6px 16px rgba(0,0,0,.25);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;
+        text-align:left;
       }
-      .has-tip:hover::after{opacity:1;transform:translateY(0);}
+      .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
 
       /* smaller radio for Top Added/Removed */
       div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
@@ -1092,7 +1093,7 @@ def render_tradeoff_scenarios():
     H = max(230, 24 * n_sectors + 12)   # base for right charts so labels fit
     H_RIGHT = H                          # each right chart height
     H_LEFT_TOP = int(round(1.5 * H_RIGHT))   # so 2 left = 3 right
-    H_LEFT_BOTTOM = H_RIGHT + 60              # bump to offset slider so ends align
+    H_LEFT_BOTTOM = H_RIGHT + 120             # increased to align with Active Share bottom
 
     # ---------- LEFT-1: (A) Scenario Composition (stacked bars)
     with left_col:
@@ -1135,12 +1136,11 @@ def render_tradeoff_scenarios():
     with right_col:
         st.markdown(
             '<div class="chart-head">'
-            '<div style="display:flex;align-items:center;gap:8px;">'
-            '<div class="info-badge has-tip" data-tip="How much cleaner for how much risk. '
+            '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
+            '<div class="info-badge has-tip tip-left" data-tip="How much cleaner for how much risk. '
             'X = change in % Clean vs the 2025 baseline (pp). Y = annualized tracking error vs the original portfolio. '
             'Bubble size = ETF AUM. Hover for exact values.">i</div>'
-            '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
-            '</div></div>',
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -1201,12 +1201,11 @@ def render_tradeoff_scenarios():
     with left_col:
         st.markdown(
             '<div class="chart-head">'
-            '<div style="display:flex;align-items:center;gap:8px;">'
-            '<div class="info-badge has-tip" data-tip="Trading impact by scenario. '
+            '<div class="chart-title">Turnover & Cost</div>'
+            '<div class="info-badge has-tip tip-left" data-tip="Trading impact by scenario. '
             'Turnover = 0.5 × Σ |Δ weight|. Cost (bps) = Turnover (%) × the round-trip cost slider. '
             'This is a rough execution-cost proxy (excludes market impact).">i</div>'
-            '<div class="chart-title">Turnover & Cost</div>'
-            '</div></div>',
+            '</div>',
             unsafe_allow_html=True
         )
         rtc = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1, key="t3_rtc")
@@ -1267,15 +1266,14 @@ def render_tradeoff_scenarios():
         else:
             st.info("Turnover data not available (no position-deltas file detected).")
 
-    # ---------- RIGHT-2: (D) Sector Drift Heatmap (calm gradient, not ultra-pale)
+    # ---------- RIGHT-2: (D) Sector Drift Heatmap
     with right_col:
         st.markdown(
             '<div class="chart-head">'
-            '<div style="display:flex;align-items:center;gap:8px;">'
-            '<div class="info-badge has-tip" data-tip="Where the portfolio’s sector mix shifts relative to the 2025 baseline. '
-            'Cells encode |weight drift| in percentage points; the tooltip shows the signed drift. Darker = larger deviation.">i</div>'
             '<div class="chart-title">Sector drift vs Baseline</div>'
-            '</div></div>',
+            '<div class="info-badge has-tip tip-left" data-tip="Where the portfolio’s sector mix shifts relative to the 2025 baseline. '
+            'Cells encode |weight drift| in percentage points; the tooltip shows the signed drift. Darker = larger deviation.">i</div>'
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -1305,10 +1303,9 @@ def render_tradeoff_scenarios():
             heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
 
-            # color domain that starts slightly light (not white) to darker
             dom = np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
             if not np.isfinite(dom) or dom <= 0: dom = 0.1
-            lo  = max(dom * 0.15, 0.01)  # start a bit light, not ultra-pale
+            lo  = max(dom * 0.15, 0.01)
 
             heat = (
                 alt.Chart(heat_df)
@@ -1334,11 +1331,10 @@ def render_tradeoff_scenarios():
     with right_col:
         st.markdown(
             '<div class="chart-head">'
-            '<div style="display:flex;align-items:center;gap:8px;">'
-            '<div class="info-badge has-tip" data-tip="How off-benchmark the portfolio is versus how clean it gets. '
-            'X = Active Share (%). Y = resulting % Clean for the scenario. Bubble size = ETF AUM.">i</div>'
             '<div class="chart-title">Active Share vs % Clean</div>'
-            '</div></div>',
+            '<div class="info-badge has-tip tip-left" data-tip="How off-benchmark the portfolio is versus how clean it gets. '
+            'X = Active Share (%). Y = resulting % Clean for the scenario. Bubble size = ETF AUM.">i</div>'
+            '</div>',
             unsafe_allow_html=True
         )
         if as_col:
@@ -1470,7 +1466,6 @@ def render_tradeoff_scenarios():
                 st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
-
 
 
 
