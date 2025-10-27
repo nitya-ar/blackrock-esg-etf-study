@@ -1093,7 +1093,7 @@ def render_tradeoff_scenarios():
     H = max(230, 24 * n_sectors + 12)   # base for right charts so labels fit
     H_RIGHT = H                          # each right chart height
     H_LEFT_TOP = int(round(1.5 * H_RIGHT))   # so 2 left = 3 right
-    H_LEFT_BOTTOM = H_RIGHT + 129             # increased to align with Active Share bottom
+    H_LEFT_BOTTOM = H_RIGHT + 130             # increased to align with Active Share bottom
 
     # ---------- LEFT-1: (A) Scenario Composition (stacked bars)
     with left_col:
