@@ -938,7 +938,7 @@ def render_tradeoff_scenarios():
         display:inline-flex;align-items:center;justify-content:center;
         width:18px;height:18px;min-width:18px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:11px;
-        margin-left:8px;position:relative;z-index:3;
+        margin-left:0;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
       .has-tip::after{
@@ -1082,7 +1082,7 @@ def render_tradeoff_scenarios():
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # =========================
-    # CHART GRID — exact height balance: 2 left = 3 right
+    # CHART GRID — exact height balance
     # =========================
     left_col, right_col = st.columns([0.5, 0.5], gap="large")
 
@@ -1092,7 +1092,7 @@ def render_tradeoff_scenarios():
     H = max(230, 24 * n_sectors + 12)   # base for right charts so labels fit
     H_RIGHT = H                          # each right chart height
     H_LEFT_TOP = int(round(1.5 * H_RIGHT))   # so 2 left = 3 right
-    H_LEFT_BOTTOM = H_RIGHT                  # bottom-left equals bottom-right
+    H_LEFT_BOTTOM = H_RIGHT + 60              # bump to offset slider so ends align
 
     # ---------- LEFT-1: (A) Scenario Composition (stacked bars)
     with left_col:
@@ -1134,10 +1134,13 @@ def render_tradeoff_scenarios():
     # ---------- RIGHT-1: (B) Cleanliness Uplift vs TE (bubble)
     with right_col:
         st.markdown(
-            '<div class="chart-head"><div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
+            '<div class="chart-head">'
+            '<div style="display:flex;align-items:center;gap:8px;">'
             '<div class="info-badge has-tip" data-tip="How much cleaner for how much risk. '
             'X = change in % Clean vs the 2025 baseline (pp). Y = annualized tracking error vs the original portfolio. '
-            'Bubble size = ETF AUM. Hover for exact values.">i</div></div>',
+            'Bubble size = ETF AUM. Hover for exact values.">i</div>'
+            '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
+            '</div></div>',
             unsafe_allow_html=True
         )
 
@@ -1197,10 +1200,13 @@ def render_tradeoff_scenarios():
     # ---------- LEFT-2: (C) Turnover & Cost (grouped bars)
     with left_col:
         st.markdown(
-            '<div class="chart-head"><div class="chart-title">Turnover & Cost</div>'
+            '<div class="chart-head">'
+            '<div style="display:flex;align-items:center;gap:8px;">'
             '<div class="info-badge has-tip" data-tip="Trading impact by scenario. '
             'Turnover = 0.5 × Σ |Δ weight|. Cost (bps) = Turnover (%) × the round-trip cost slider. '
-            'This is a rough execution-cost proxy (excludes market impact).">i</div></div>',
+            'This is a rough execution-cost proxy (excludes market impact).">i</div>'
+            '<div class="chart-title">Turnover & Cost</div>'
+            '</div></div>',
             unsafe_allow_html=True
         )
         rtc = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1, key="t3_rtc")
@@ -1264,9 +1270,12 @@ def render_tradeoff_scenarios():
     # ---------- RIGHT-2: (D) Sector Drift Heatmap (calm gradient, not ultra-pale)
     with right_col:
         st.markdown(
-            '<div class="chart-head"><div class="chart-title">Sector drift vs Baseline</div>'
+            '<div class="chart-head">'
+            '<div style="display:flex;align-items:center;gap:8px;">'
             '<div class="info-badge has-tip" data-tip="Where the portfolio’s sector mix shifts relative to the 2025 baseline. '
-            'Cells encode |weight drift| in percentage points; the tooltip shows the signed drift. Darker = larger deviation.">i</div></div>',
+            'Cells encode |weight drift| in percentage points; the tooltip shows the signed drift. Darker = larger deviation.">i</div>'
+            '<div class="chart-title">Sector drift vs Baseline</div>'
+            '</div></div>',
             unsafe_allow_html=True
         )
 
@@ -1324,9 +1333,12 @@ def render_tradeoff_scenarios():
     # ---------- RIGHT-3: (E) Active Share vs % Clean (scatter)
     with right_col:
         st.markdown(
-            '<div class="chart-head"><div class="chart-title">Active Share vs % Clean</div>'
+            '<div class="chart-head">'
+            '<div style="display:flex;align-items:center;gap:8px;">'
             '<div class="info-badge has-tip" data-tip="How off-benchmark the portfolio is versus how clean it gets. '
-            'X = Active Share (%). Y = resulting % Clean for the scenario. Bubble size = ETF AUM.">i</div></div>',
+            'X = Active Share (%). Y = resulting % Clean for the scenario. Bubble size = ETF AUM.">i</div>'
+            '<div class="chart-title">Active Share vs % Clean</div>'
+            '</div></div>',
             unsafe_allow_html=True
         )
         if as_col:
