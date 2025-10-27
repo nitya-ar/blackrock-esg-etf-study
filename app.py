@@ -441,14 +441,8 @@ divider()
 # =========================
 # VIEW SWITCH
 # =========================
-mode = st.segmented_control(
-    "View",
-    options=["Dashboard", "Report"],
-    default="Dashboard",
-    label_visibility="collapsed",
-    help="Switch between the interactive dashboard and a short report",
-)
 
+mode = "Dashboard"
 divider()
 
 
@@ -1669,23 +1663,6 @@ if mode == "Dashboard":
         render_tradeoff_scenarios()
 
 
-else:
-    # ---------------- REPORT ----------------
-    st.subheader("Project Overview (Short Report)")
-    st.markdown(
-        """
-**Purpose**  
-Assess how BlackRock’s ESG-labelled ETFs align with a consistent 2025 ESG classification, how that alignment **changed from 2017 to 2025**, and what it **costs to push portfolios cleaner**.
-
-**Method (high level)**  
-1) Standardize 2025 holdings for 20 ETFs; tag Clean200 and controversial screens.  
-2) Apply the same map retroactively to 2017–2025 holdings to measure change.  
-3) Simulate cleaner portfolios (tilt and exclusion) and estimate tracking error with a covariance matrix.
-
-**How to read this app**  
-Use the three tabs on the **Dashboard**: *2025 Overview*, *Change since 2017*, and *Tradeoff Scenarios*.
-        """
-    )
 
 # =========================
 # FOOTER (replacement)
