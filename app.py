@@ -943,7 +943,7 @@ def render_tradeoff_scenarios():
       .has-tip{position:relative;}
       .has-tip.tip-left::after{
         content:attr(data-tip);
-        position:absolute;right:0;left:auto;top:calc(100% + 8px);  /* anchor to right edge, expand left */
+        position:absolute;right:0;left:auto;top:calc(100% + 8px);
         background:#0B0D12;color:var(--text);border:1px solid var(--border);
         padding:10px 12px;border-radius:10px;
         white-space:normal;line-height:1.35;
@@ -1139,7 +1139,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
             '<div class="info-badge has-tip tip-left" data-tip="How much cleaner for how much risk. '
             'X = change in % Clean vs the 2025 baseline (pp). Y = annualized tracking error vs the original portfolio. '
-            'Bubble size = ETF AUM. Hover for exact values.">i</div>'
+            'AUM is shown in the tooltip.">i</div>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1182,7 +1182,7 @@ def render_tradeoff_scenarios():
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
                                                         range=[COLOR_PT, COLOR_SE])),
-                        size=alt.Size("AUM:Q", title="ETF AUM ($)", scale=alt.Scale(range=[12, 90])),
+                        size=alt.SizeValue(60),  # constant size; no legend
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
                                  alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"),
@@ -1333,7 +1333,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Active Share vs % Clean</div>'
             '<div class="info-badge has-tip tip-left" data-tip="How off-benchmark the portfolio is versus how clean it gets. '
-            'X = Active Share (%). Y = resulting % Clean for the scenario. Bubble size = ETF AUM.">i</div>'
+            'X = Active Share (%). Y = resulting % Clean for the scenario. AUM is shown in the tooltip.">i</div>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1365,7 +1365,7 @@ def render_tradeoff_scenarios():
                             color=alt.Color("Scenario:N", title=None,
                                             scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
                                                             range=[COLOR_PT, COLOR_SE])),
-                            size=alt.Size("AUM:Q", title="ETF AUM ($)", scale=alt.Scale(range=[12, 80])),
+                            size=alt.SizeValue(60),  # constant size; no legend
                             tooltip=[alt.Tooltip("Scenario:N"),
                                      alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
                                      alt.Tooltip("%Clean:Q", title="% Clean", format=".2f"),
@@ -1466,7 +1466,6 @@ def render_tradeoff_scenarios():
                 st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
-
 
 
 
