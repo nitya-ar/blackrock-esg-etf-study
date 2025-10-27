@@ -486,7 +486,7 @@ def render_change_since_2017():
             st.error(f"{label}: missing required column '{col}'. Columns present: {list(df.columns)}")
             st.stop()
 
-    # Dynamic domain that ALWAYS includes 0 (0..Y | -Y..0 | symmetric)
+    # Dynamic domain that ALWAYS includes 0 (0..Y | -Y..0 | symmetric when crossing)
     def _dyn_domain_zero(values, pad=0.08, min_span=0.8):
         vals = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
         if vals.empty:
@@ -494,7 +494,6 @@ def render_change_since_2017():
         lo, hi = float(vals.min()), float(vals.max())
         if not np.isfinite(lo) or not np.isfinite(hi):
             return [0, 1]
-
         if lo >= 0:
             span = max(hi, min_span)
             return [0, hi + span * pad]
@@ -611,7 +610,7 @@ def render_change_since_2017():
     net_end   = _val(s_net, end_year)   if s_net is not None else float("nan")
     net_delta = (net_end - net_start) if (pd.notna(net_end) and pd.notna(net_start)) else None
 
-    # ========= KPI slope helper (layer zero line via alt.layer) =========
+    # ========= KPI slope helper (explicit line+points; flat layering) =========
     def slope_chart(two_point_df: pd.DataFrame, color, height=160):
         two = two_point_df.copy()
         two["Year"] = two[year_col].astype(str)
@@ -623,8 +622,7 @@ def render_change_since_2017():
         )
         line = base.mark_line(color=color, strokeWidth=3)
         pts  = base.mark_point(color=color, size=110)
-        chart = alt.layer(_zero_rule(height), line, pts).resolve_scale(y='shared').properties(height=height)
-        return chart
+        return alt.layer(_zero_rule(height), line, pts).resolve_scale(y='shared').properties(height=height)
 
     # ========= KPIs =========
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
@@ -675,7 +673,7 @@ def render_change_since_2017():
 
     gap(8)
 
-    # ========= Combined trend (band + line), zero-anchored dynamic axis =========
+    # ========= Combined trend (band + line + points), zero-anchored dynamic axis =========
     st.markdown(
         '<div class="chart-head">'
         '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
@@ -734,25 +732,25 @@ def render_change_since_2017():
             ).properties(height=H)
         )
 
-        line_layer = (
-            alt.Chart(comb)
-            .mark_line(point=True, clip=True)
-            .encode(
-                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
-                y=alt.Y("value:Q", title="Exposure (%)",
-                        scale=alt.Scale(domain=y_dom, zero=False, nice=True),
-                        axis=alt.Axis(format=".1f")),
-                color=alt.Color("category:N", title=None,
-                                scale=alt.Scale(domain=["Clean","Controversial"],
-                                                range=[COLORS["clean"], COLORS["contro"]])),
-                tooltip=[alt.Tooltip(f"{year_col}:O", title="Year"),
-                         alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
-                         alt.Tooltip("category:N", title="Category")],
-            ).properties(height=H)
+        base_comb = alt.Chart(comb).encode(
+            x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
+            y=alt.Y("value:Q", title="Exposure (%)",
+                    scale=alt.Scale(domain=y_dom, zero=False, nice=True),
+                    axis=alt.Axis(format=".1f")),
+            color=alt.Color(
+                "category:N", title=None,
+                scale=alt.Scale(domain=["Clean","Controversial"],
+                                range=[COLORS["clean"], COLORS["contro"]]),
+            ),
+            tooltip=[alt.Tooltip(f"{year_col}:O", title="Year"),
+                     alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
+                     alt.Tooltip("category:N",    title="Category")],
         )
+        line_comb = base_comb.mark_line(clip=True)
+        pts_comb  = base_comb.mark_point(clip=True)
 
         st.altair_chart(
-            alt.layer(_zero_rule(H), band_layer, line_layer).resolve_scale(y='shared'),
+            alt.layer(_zero_rule(H), band_layer, line_comb, pts_comb).resolve_scale(y='shared'),
             use_container_width=True,
         )
 
@@ -770,7 +768,8 @@ def render_change_since_2017():
     # ----- Screen trends (ETF / Year / Weighting reactive)
     with left:
         d = scr_tr.copy()
-        # Rename value col if needed
+
+        # Value column normalization
         if "value" not in d.columns and "exposure_pct" in d.columns:
             d = d.rename(columns={"exposure_pct": "value"})
         if "value" not in d.columns:
@@ -782,7 +781,7 @@ def render_change_since_2017():
             mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
             d = d[d["weighting_mode"].astype(str) == mode_name]
 
-        # Year window if present
+        # Year window
         year_col_scr = _pick_exact(d, "year")
         if year_col_scr:
             d = d[(d[year_col_scr] >= start_year) & (d[year_col_scr] <= end_year)]
@@ -827,7 +826,7 @@ def render_change_since_2017():
         else:
             SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
             SCREEN_COLORS = [
-                COLORS["clean"],  # Clean200
+                COLORS["clean"],  # green for Clean200
                 "#FF6B3D",        # Prisons — vivid orange-red
                 "#FF4D6D",        # Deforestation — raspberry
                 "#D7263D",        # Fossil Fuel — strong crimson
@@ -836,13 +835,14 @@ def render_change_since_2017():
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
+
+            # Build as base + line + points (no mark_line(point=...))
             x_enc = alt.X(f"{(year_col_scr or 'Year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
             if not year_col_scr:
-                # fabricate year order if missing
                 d["__year__"] = start_year
                 x_enc = alt.X("__year__:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
-            chart = alt.Chart(d).mark_line(strokeWidth=2, opacity=0.95,
-                                           point=alt.OverlayMarkDef(size=36, opacity=0.95)).encode(
+
+            base = alt.Chart(d).encode(
                 x=x_enc,
                 y=alt.Y("value:Q", title="Exposure (%)",
                         axis=alt.Axis(format=".1f"),
@@ -854,8 +854,14 @@ def render_change_since_2017():
                     alt.Tooltip((year_col_scr or "__year__")+":O", title="Year"),
                     alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
                 ],
-            ).properties(height=H, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
-            st.altair_chart(alt.layer(_zero_rule(H), chart).resolve_scale(y='shared'), use_container_width=True)
+            )
+            line = base.mark_line(strokeWidth=2, opacity=0.95)
+            pts  = base.mark_point(size=36, opacity=0.95)
+
+            st.altair_chart(
+                alt.layer(_zero_rule(H), line, pts).resolve_scale(y='shared'),
+                use_container_width=True
+            )
 
     # ----- Composition bars (start vs end)
     with right:
@@ -988,7 +994,6 @@ def render_change_since_2017():
     with b:
         st.caption(f"Top Removed (Δ weight, pp) — {start_year} → {end_year}")
         st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
-
 
 
 
