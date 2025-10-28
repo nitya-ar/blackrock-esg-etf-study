@@ -802,7 +802,7 @@ def render_change_since_2017():
             SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
             SCREEN_COLORS = [
                 COLORS["clean"],
-                "#D85A5A",  # Prisons (soft red)
+                "#C84B4B",  # Prisons (soft red)
                 "#B5651D",  # Deforestation (rose/pink)
                 "#800020",  # Fossil Fuel (orange)
                 "#F08BA6",  # Weapons (very dark red/brown)
