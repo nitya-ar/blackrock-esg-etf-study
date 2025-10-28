@@ -806,7 +806,7 @@ def render_change_since_2017():
                 "#B5651D",  # Deforestation (rose/pink)
                 "#800020",  # Fossil Fuel (orange)
                 "#F08BA6",  # Weapons (very dark red/brown)
-                "#D2681E",  # Tobacco (brown)
+                "#7C482B",  # Tobacco (brown)
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
