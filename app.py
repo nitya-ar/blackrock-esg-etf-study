@@ -782,8 +782,8 @@ def render_change_since_2017():
             d = d[d[etf_scr].astype(str).isin(set(cohort))]
         _need_col(d, "screen_category", "Screen trends")
 
-        d["Category"] = d["screen_category"].astype(str).str.strip().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
-        keep = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
+        d["Category"] = d["screen_category"].astype(str).str.strip().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel","Clean200":"Clean"})
+        keep = ["Clean","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
         d = d[d["Category"].isin(keep)]
 
         if etf_scr and yscr:
@@ -799,14 +799,14 @@ def render_change_since_2017():
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
-            SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
+            SCREEN_DOMAIN = ["Clean","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
             SCREEN_COLORS = [
                 COLORS["clean"],
-                "#C84B4B",  # Prisons (soft red)
-                "#B5651D",  # Deforestation (rose/pink)
-                "#800020",  # Fossil Fuel (orange)
-                "#F08BA6",  # Weapons (very dark red/brown)
-                "#4B2E05",  # Tobacco (brown)
+                "#C84B4B",
+                "#B5651D",
+                "#800020",
+                "#F08BA6",
+                "#4B2E05",
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
