@@ -1,787 +1,679 @@
-year,screen_category,classification,exposure_pct,weighting_mode,ETF_Ticker,aum_usd
-2017,Clean200,Clean,9.680235203277164,AUM_TRUE,,
-2017,Deforestation,Controversial,9.064335426189944,AUM_TRUE,,
-2017,Fossil Fuel,Controversial,1.8556371934980092,AUM_TRUE,,
-2017,Prisons,Controversial,6.710142745070034,AUM_TRUE,,
-2017,Tobacco,Controversial,1.6070149206951019,AUM_TRUE,,
-2017,Weapons,Controversial,1.0093801769853172,AUM_TRUE,,
-2018,Clean200,Clean,10.701733255333187,AUM_TRUE,,
-2018,Deforestation,Controversial,8.756932878793869,AUM_TRUE,,
-2018,Fossil Fuel,Controversial,2.7512621393487566,AUM_TRUE,,
-2018,Prisons,Controversial,7.575453069782206,AUM_TRUE,,
-2018,Tobacco,Controversial,1.0795455601802755,AUM_TRUE,,
-2018,Weapons,Controversial,1.151518748429587,AUM_TRUE,,
-2019,Clean200,Clean,8.992126611428494,AUM_TRUE,,
-2019,Deforestation,Controversial,10.151390812957246,AUM_TRUE,,
-2019,Fossil Fuel,Controversial,3.323768874232627,AUM_TRUE,,
-2019,Prisons,Controversial,10.793008817033817,AUM_TRUE,,
-2019,Tobacco,Controversial,1.2677439545292304,AUM_TRUE,,
-2019,Weapons,Controversial,0.9678219380172637,AUM_TRUE,,
-2020,Clean200,Clean,11.423449511480733,AUM_TRUE,,
-2020,Deforestation,Controversial,10.566776175903245,AUM_TRUE,,
-2020,Fossil Fuel,Controversial,3.590072960994486,AUM_TRUE,,
-2020,Prisons,Controversial,11.330417171321889,AUM_TRUE,,
-2020,Tobacco,Controversial,1.198655666291099,AUM_TRUE,,
-2020,Weapons,Controversial,1.1346129046073472,AUM_TRUE,,
-2021,Clean200,Clean,11.583980273089308,AUM_TRUE,,
-2021,Deforestation,Controversial,8.044659722514144,AUM_TRUE,,
-2021,Fossil Fuel,Controversial,3.48113781982008,AUM_TRUE,,
-2021,Prisons,Controversial,7.8145878935833775,AUM_TRUE,,
-2021,Tobacco,Controversial,0.6252081040333866,AUM_TRUE,,
-2021,Weapons,Controversial,1.1155607296172776,AUM_TRUE,,
-2022,Clean200,Clean,12.940831665853805,AUM_TRUE,,
-2022,Deforestation,Controversial,10.041265516757761,AUM_TRUE,,
-2022,Fossil Fuel,Controversial,4.787183218592849,AUM_TRUE,,
-2022,Prisons,Controversial,11.462909612219486,AUM_TRUE,,
-2022,Tobacco,Controversial,0.8699339373753177,AUM_TRUE,,
-2022,Weapons,Controversial,1.1696550160990087,AUM_TRUE,,
-2023,Clean200,Clean,12.594775132742026,AUM_TRUE,,
-2023,Deforestation,Controversial,9.072414960466851,AUM_TRUE,,
-2023,Fossil Fuel,Controversial,4.857356891369625,AUM_TRUE,,
-2023,Prisons,Controversial,10.652694341491863,AUM_TRUE,,
-2023,Tobacco,Controversial,0.7668078292753964,AUM_TRUE,,
-2023,Weapons,Controversial,1.4597736565923782,AUM_TRUE,,
-2024,Clean200,Clean,12.242626392664686,AUM_TRUE,,
-2024,Deforestation,Controversial,10.220348771292526,AUM_TRUE,,
-2024,Fossil Fuel,Controversial,4.739327461677388,AUM_TRUE,,
-2024,Prisons,Controversial,12.017086963769309,AUM_TRUE,,
-2024,Tobacco,Controversial,0.7547506432404618,AUM_TRUE,,
-2024,Weapons,Controversial,1.6394189778757169,AUM_TRUE,,
-2025,Clean200,Clean,12.60995146350766,AUM_TRUE,,
-2025,Deforestation,Controversial,9.699517420908924,AUM_TRUE,,
-2025,Fossil Fuel,Controversial,5.557572526858114,AUM_TRUE,,
-2025,Prisons,Controversial,12.245834131416338,AUM_TRUE,,
-2025,Tobacco,Controversial,0.6606619866290984,AUM_TRUE,,
-2025,Weapons,Controversial,2.630951202779954,AUM_TRUE,,
-2017,Deforestation,Controversial,9.433600428571427,EW,,
-2018,Deforestation,Controversial,8.619743625,EW,,
-2019,Deforestation,Controversial,9.470071444444445,EW,,
-2020,Deforestation,Controversial,8.53489376923077,EW,,
-2021,Deforestation,Controversial,7.1144506875,EW,,
-2022,Deforestation,Controversial,8.257068764705883,EW,,
-2023,Deforestation,Controversial,8.115389833333333,EW,,
-2024,Deforestation,Controversial,8.643410736842105,EW,,
-2025,Deforestation,Controversial,8.168421052631578,EW,,
-2017,Fossil Fuel,Controversial,2.6010556666666664,EW,,
-2018,Fossil Fuel,Controversial,3.520077125,EW,,
-2019,Fossil Fuel,Controversial,3.608354444444444,EW,,
-2020,Fossil Fuel,Controversial,2.5974759166666668,EW,,
-2021,Fossil Fuel,Controversial,2.5481830666666667,EW,,
-2022,Fossil Fuel,Controversial,3.571717235294118,EW,,
-2023,Fossil Fuel,Controversial,3.615198157894737,EW,,
-2024,Fossil Fuel,Controversial,3.5964864,EW,,
-2025,Fossil Fuel,Controversial,4.195,EW,,
-2017,Prisons,Controversial,6.4634675999999995,EW,,
-2018,Prisons,Controversial,7.783472,EW,,
-2019,Prisons,Controversial,9.967327285714285,EW,,
-2020,Prisons,Controversial,9.414722363636365,EW,,
-2021,Prisons,Controversial,7.511241692307692,EW,,
-2022,Prisons,Controversial,10.470639785714285,EW,,
-2023,Prisons,Controversial,11.435995600000002,EW,,
-2024,Prisons,Controversial,11.58006875,EW,,
-2025,Prisons,Controversial,11.554375,EW,,
-2017,Tobacco,Controversial,1.6893802,EW,,
-2018,Tobacco,Controversial,1.3238945999999998,EW,,
-2019,Tobacco,Controversial,1.6745828333333332,EW,,
-2020,Tobacco,Controversial,1.5841491428571428,EW,,
-2021,Tobacco,Controversial,1.246968,EW,,
-2022,Tobacco,Controversial,1.0995398,EW,,
-2023,Tobacco,Controversial,1.1546105454545454,EW,,
-2024,Tobacco,Controversial,1.0490910833333333,EW,,
-2025,Tobacco,Controversial,0.8753846153846153,EW,,
-2017,Weapons,Controversial,1.3383014,EW,,
-2018,Weapons,Controversial,1.6045995,EW,,
-2019,Weapons,Controversial,1.3782005714285714,EW,,
-2020,Weapons,Controversial,1.190871090909091,EW,,
-2021,Weapons,Controversial,1.0534936666666668,EW,,
-2022,Weapons,Controversial,1.158397625,EW,,
-2023,Weapons,Controversial,1.3767257058823528,EW,,
-2024,Weapons,Controversial,1.506641111111111,EW,,
-2025,Weapons,Controversial,2.3722222222222222,EW,,
-2017,Clean200,Clean,9.125369875,EW,,
-2018,Clean200,Clean,10.146705666666668,EW,,
-2019,Clean200,Clean,8.712059100000001,EW,,
-2020,Clean200,Clean,9.256314,EW,,
-2021,Clean200,Clean,8.930819764705882,EW,,
-2022,Clean200,Clean,10.383913944444444,EW,,
-2023,Clean200,Clean,10.833654210526316,EW,,
-2024,Clean200,Clean,10.82943515,EW,,
-2025,Clean200,Clean,12.3565,EW,,
-2017,Deforestation,Controversial,9.046972,,CRBN,434815251.0
-2017,Deforestation,Controversial,9.604343,,DSI,822945453.0
-2017,Deforestation,Controversial,12.594588,,ESGD,122123323.0
-2017,Deforestation,Controversial,2.462418,,ESGE,96812458.0
-2017,Deforestation,Controversial,13.845503,,ESGU,10829518.0
-2017,Deforestation,Controversial,7.9643310000000005,,SDG,25164057.0
-2017,Deforestation,Controversial,10.517048,,SUSA,528508524.0
-2018,Deforestation,Controversial,10.654379,,CRBN,534024244.0
-2018,Deforestation,Controversial,8.820777,,DSI,1035422953.0
-2018,Deforestation,Controversial,13.060284,,ESGD,360308692.0
-2018,Deforestation,Controversial,3.735048,,ESGE,329752699.0
-2018,Deforestation,Controversial,15.883193,,ESGU,98974020.0
-2018,Deforestation,Controversial,0.268892,,ESML,11505741.0
-2018,Deforestation,Controversial,7.923242,,SDG,37928461.0
-2018,Deforestation,Controversial,8.612134000000001,,SUSA,681606886.0
-2019,Deforestation,Controversial,11.458759,,CRBN,468999117.0
-2019,Deforestation,Controversial,10.937836,,DSI,1640657277.0
-2019,Deforestation,Controversial,12.714756,,ESGD,917779537.0
-2019,Deforestation,Controversial,2.701361,,ESGE,672543077.0
-2019,Deforestation,Controversial,16.115878,,ESGU,295904506.0
-2019,Deforestation,Controversial,0.215627,,ESML,57663750.0
-2019,Deforestation,Controversial,8.819291999999999,,SDG,54174461.0
-2019,Deforestation,Controversial,9.778232,,SUSA,1075898000.0
-2019,Deforestation,Controversial,12.488902,,SUSL,1579065100.0
-2020,Deforestation,Controversial,11.025598,,CRBN,432095233.0
-2020,Deforestation,Controversial,5.869973,,DMXF,11157682.0
-2020,Deforestation,Controversial,11.873126,,DSI,1793823683.0
-2020,Deforestation,Controversial,11.091134,,ESGD,3025518508.0
-2020,Deforestation,Controversial,1.7981829999999999,,ESGE,3654480091.0
-2020,Deforestation,Controversial,15.464074,,ESGU,8991145354.0
-2020,Deforestation,Controversial,0.36997599999999997,,ESML,366339046.0
-2020,Deforestation,Controversial,10.15503,,SDG,175603848.0
-2020,Deforestation,Controversial,10.139037,,SUSA,1289055430.0
-2020,Deforestation,Controversial,12.379852,,SUSL,2564227647.0
-2020,Deforestation,Controversial,4.181338,,USXF,5807543.0
-2020,Deforestation,Controversial,0.382991,,XJH,5125191.0
-2020,Deforestation,Controversial,16.223307,,XVV,5139636.0
-2021,Deforestation,Controversial,9.872171,,CRBN,861219103.0
-2021,Deforestation,Controversial,4.879573,,DMXF,245845684.0
-2021,Deforestation,Controversial,11.064297,,DSI,3109465386.0
-2021,Deforestation,Controversial,2.614276,,EMXF,13549906.0
-2021,Deforestation,Controversial,11.128205,,ESGD,6694668587.0
-2021,Deforestation,Controversial,2.0839410000000003,,ESGE,7105443464.0
-2021,Deforestation,Controversial,10.501461,,ESGU,22262630403.0
-2021,Deforestation,Controversial,0.155119,,ESML,1099038297.0
-2021,Deforestation,Controversial,7.085149,,LCTD,605599462.0
-2021,Deforestation,Controversial,8.027791,,LCTU,1423888880.0
-2021,Deforestation,Controversial,12.556269,,SDG,565145405.0
-2021,Deforestation,Controversial,7.861567,,SUSA,3057930957.0
-2021,Deforestation,Controversial,11.226399,,SUSL,4077962404.0
-2021,Deforestation,Controversial,3.9400049999999998,,USXF,419105368.0
-2021,Deforestation,Controversial,0.432506,,XJH,39689358.0
-2021,Deforestation,Controversial,10.402482,,XVV,146941913.0
-2022,Deforestation,Controversial,10.612106,,CRBN,907313054.0
-2022,Deforestation,Controversial,5.922081,,DMXF,354432464.0
-2022,Deforestation,Controversial,11.636701,,DSI,3613714403.0
-2022,Deforestation,Controversial,3.269532,,EMXF,35467841.0
-2022,Deforestation,Controversial,13.196083,,ESGD,6376261704.0
-2022,Deforestation,Controversial,2.904442,,ESGE,4251524672.0
-2022,Deforestation,Controversial,13.157187,,ESGU,22194428203.0
-2022,Deforestation,Controversial,0.533345,,ESML,1479097137.0
-2022,Deforestation,Controversial,7.924595,,LCTD,442314960.0
-2022,Deforestation,Controversial,10.430572,,LCTU,1409350423.0
-2022,Deforestation,Controversial,7.331351,,PABU,756881657.0
-2022,Deforestation,Controversial,12.317451,,SDG,415790649.0
-2022,Deforestation,Controversial,9.858706999999999,,SUSA,3662646233.0
-2022,Deforestation,Controversial,11.990603,,SUSL,3116650243.0
-2022,Deforestation,Controversial,4.338526,,USXF,589182424.0
-2022,Deforestation,Controversial,0.845413,,XJH,84725034.0
-2022,Deforestation,Controversial,14.101474,,XVV,201075983.0
-2023,Deforestation,Controversial,10.587226,,CRBN,897207980.0
-2023,Deforestation,Controversial,6.434901,,DMXF,475875769.0
-2023,Deforestation,Controversial,11.99595,,DSI,3536465235.0
-2023,Deforestation,Controversial,2.781085,,EMXF,55954926.0
-2023,Deforestation,Controversial,13.226783000000001,,ESGD,7260643178.0
-2023,Deforestation,Controversial,3.057585,,ESGE,4323754536.0
-2023,Deforestation,Controversial,12.165825,,ESGU,12824827132.0
-2023,Deforestation,Controversial,0.509018,,ESML,1403577468.0
-2023,Deforestation,Controversial,9.943463,,LCTD,576261731.0
-2023,Deforestation,Controversial,10.400019,,LCTU,1683978711.0
-2023,Deforestation,Controversial,7.033949000000001,,PABU,1489773825.0
-2023,Deforestation,Controversial,10.928535,,SDG,374082063.0
-2023,Deforestation,Controversial,9.471805999999999,,SUSA,3260027828.0
-2023,Deforestation,Controversial,10.524395,,SUSL,1139306520.0
-2023,Deforestation,Controversial,9.220331,,USCL,2299045699.0
-2023,Deforestation,Controversial,3.8258229999999998,,USXF,722994091.0
-2023,Deforestation,Controversial,1.3577810000000001,,XJH,111598396.0
-2023,Deforestation,Controversial,12.612542,,XVV,155683944.0
-2024,Deforestation,Controversial,10.728437,,CRBN,865372385.0
-2024,Deforestation,Controversial,6.403579,,DMXF,612269849.0
-2024,Deforestation,Controversial,9.579162,,DSI,4246772961.0
-2024,Deforestation,Controversial,2.709064,,EMXF,73705908.0
-2024,Deforestation,Controversial,13.439278,,ESGD,7857945972.0
-2024,Deforestation,Controversial,3.164402,,ESGE,4045464980.0
-2024,Deforestation,Controversial,13.443513,,ESGU,13485685666.0
-2024,Deforestation,Controversial,0.901957,,ESML,1578937784.0
-2024,Deforestation,Controversial,11.553197,,LCTD,344953405.0
-2024,Deforestation,Controversial,10.073439,,LCTU,1356576171.0
-2024,Deforestation,Controversial,8.735337,,PABD,6204660.0
-2024,Deforestation,Controversial,7.644519,,PABU,1776067415.0
-2024,Deforestation,Controversial,11.410842,,SDG,301162124.0
-2024,Deforestation,Controversial,11.223624000000001,,SUSA,3333157871.0
-2024,Deforestation,Controversial,9.742346,,SUSL,1123280187.0
-2024,Deforestation,Controversial,15.025894,,USCL,1949740013.0
-2024,Deforestation,Controversial,4.429467,,USXF,936873745.0
-2024,Deforestation,Controversial,1.105429,,XJH,182811359.0
-2024,Deforestation,Controversial,12.911318,,XVV,253613830.0
-2025,Deforestation,Controversial,10.21,,CRBN,1027534118.21
-2025,Deforestation,Controversial,7.34,,DMXF,804362959.91
-2025,Deforestation,Controversial,6.9,,DSI,4790621472.66
-2025,Deforestation,Controversial,1.4200000000000002,,EMXF,106662263.48
-2025,Deforestation,Controversial,14.360000000000001,,ESGD,9596812876.42
-2025,Deforestation,Controversial,1.29,,ESGE,5076162057.75
-2025,Deforestation,Controversial,13.049999999999999,,ESGU,13989919390.35
-2025,Deforestation,Controversial,1.93,,ESML,1878348896.09
-2025,Deforestation,Controversial,13.65,,LCTD,234070256.94
-2025,Deforestation,Controversial,10.48,,LCTU,1305135788.31
-2025,Deforestation,Controversial,7.82,,PABD,208173774.79
-2025,Deforestation,Controversial,6.43,,PABU,2177420259.22
-2025,Deforestation,Controversial,10.84,,SDG,167008602.29
-2025,Deforestation,Controversial,9.1,,SUSA,3555990177.17
-2025,Deforestation,Controversial,7.37,,SUSL,969050560.38
-2025,Deforestation,Controversial,15.31,,USCL,2487467893.45
-2025,Deforestation,Controversial,3.83,,USXF,1263627631.62
-2025,Deforestation,Controversial,1.9,,XJH,290594113.62
-2025,Deforestation,Controversial,11.97,,XVV,430814329.23
-2017,Fossil Fuel,Controversial,1.353457,,CRBN,434815251.0
-2017,Fossil Fuel,Controversial,2.341487,,DSI,822945453.0
-2017,Fossil Fuel,Controversial,4.705245,,ESGD,122123323.0
-2017,Fossil Fuel,Controversial,1.753253,,ESGE,96812458.0
-2017,Fossil Fuel,Controversial,4.14349,,ESGU,10829518.0
-2017,Fossil Fuel,Controversial,1.309402,,SUSA,528508524.0
-2018,Fossil Fuel,Controversial,2.410263,,CRBN,534024244.0
-2018,Fossil Fuel,Controversial,2.256731,,DSI,1035422953.0
-2018,Fossil Fuel,Controversial,6.280598,,ESGD,360308692.0
-2018,Fossil Fuel,Controversial,3.027531,,ESGE,329752699.0
-2018,Fossil Fuel,Controversial,5.4890419999999995,,ESGU,98974020.0
-2018,Fossil Fuel,Controversial,2.203316,,ESML,11505741.0
-2018,Fossil Fuel,Controversial,5.666917,,ICLN,165729203.0
-2018,Fossil Fuel,Controversial,0.826219,,SUSA,681606886.0
-2019,Fossil Fuel,Controversial,2.018681,,CRBN,468999117.0
-2019,Fossil Fuel,Controversial,2.648492,,DSI,1640657277.0
-2019,Fossil Fuel,Controversial,5.908897,,ESGD,917779537.0
-2019,Fossil Fuel,Controversial,3.213025,,ESGE,672543077.0
-2019,Fossil Fuel,Controversial,5.915547,,ESGU,295904506.0
-2019,Fossil Fuel,Controversial,2.225261,,ESML,57663750.0
-2019,Fossil Fuel,Controversial,5.509992,,ICLN,360049255.0
-2019,Fossil Fuel,Controversial,2.017916,,SUSA,1075898000.0
-2019,Fossil Fuel,Controversial,3.017379,,SUSL,1579065100.0
-2020,Fossil Fuel,Controversial,1.888601,,CRBN,432095233.0
-2020,Fossil Fuel,Controversial,0.255788,,DMXF,11157682.0
-2020,Fossil Fuel,Controversial,1.841442,,DSI,1793823683.0
-2020,Fossil Fuel,Controversial,6.04043,,ESGD,3025518508.0
-2020,Fossil Fuel,Controversial,2.787931,,ESGE,3654480091.0
-2020,Fossil Fuel,Controversial,4.453433,,ESGU,8991145354.0
-2020,Fossil Fuel,Controversial,2.000648,,ESML,366339046.0
-2020,Fossil Fuel,Controversial,3.230986,,ICLN,1541917450.0
-2020,Fossil Fuel,Controversial,1.754744,,SUSA,1289055430.0
-2020,Fossil Fuel,Controversial,1.9634,,SUSL,2564227647.0
-2020,Fossil Fuel,Controversial,1.2419449999999999,,XJH,5125191.0
-2020,Fossil Fuel,Controversial,3.710363,,XVV,5139636.0
-2021,Fossil Fuel,Controversial,1.441741,,CRBN,861219103.0
-2021,Fossil Fuel,Controversial,0.408191,,DMXF,245845684.0
-2021,Fossil Fuel,Controversial,1.752345,,DSI,3109465386.0
-2021,Fossil Fuel,Controversial,0.993011,,EMXF,13549906.0
-2021,Fossil Fuel,Controversial,6.023848,,ESGD,6694668587.0
-2021,Fossil Fuel,Controversial,2.848568,,ESGE,7105443464.0
-2021,Fossil Fuel,Controversial,3.352159,,ESGU,22262630403.0
-2021,Fossil Fuel,Controversial,1.762115,,ESML,1099038297.0
-2021,Fossil Fuel,Controversial,6.453782,,ICLN,5855954348.0
-2021,Fossil Fuel,Controversial,3.962567,,LCTD,605599462.0
-2021,Fossil Fuel,Controversial,2.785121,,LCTU,1423888880.0
-2021,Fossil Fuel,Controversial,1.367756,,SUSA,3057930957.0
-2021,Fossil Fuel,Controversial,1.920284,,SUSL,4077962404.0
-2021,Fossil Fuel,Controversial,1.059202,,XJH,39689358.0
-2021,Fossil Fuel,Controversial,2.092056,,XVV,146941913.0
-2022,Fossil Fuel,Controversial,2.615974,,CRBN,907313054.0
-2022,Fossil Fuel,Controversial,0.291129,,DMXF,354432464.0
-2022,Fossil Fuel,Controversial,2.106358,,DSI,3613714403.0
-2022,Fossil Fuel,Controversial,0.967197,,EMXF,35467841.0
-2022,Fossil Fuel,Controversial,9.442422,,ESGD,6376261704.0
-2022,Fossil Fuel,Controversial,4.135401,,ESGE,4251524672.0
-2022,Fossil Fuel,Controversial,4.80539,,ESGU,22194428203.0
-2022,Fossil Fuel,Controversial,4.27737,,ESML,1479097137.0
-2022,Fossil Fuel,Controversial,5.677308,,ICLN,4983595510.0
-2022,Fossil Fuel,Controversial,7.480499,,LCTD,442314960.0
-2022,Fossil Fuel,Controversial,6.348762,,LCTU,1409350423.0
-2022,Fossil Fuel,Controversial,0.031687,,SDG,415790649.0
-2022,Fossil Fuel,Controversial,2.819396,,SUSA,3662646233.0
-2022,Fossil Fuel,Controversial,3.1505549999999998,,SUSL,3116650243.0
-2022,Fossil Fuel,Controversial,0.04158,,USXF,589182424.0
-2022,Fossil Fuel,Controversial,2.089279,,XJH,84725034.0
-2022,Fossil Fuel,Controversial,4.438886,,XVV,201075983.0
-2023,Fossil Fuel,Controversial,3.688089,,CRBN,897207980.0
-2023,Fossil Fuel,Controversial,0.306241,,DMXF,475875769.0
-2023,Fossil Fuel,Controversial,2.532743,,DSI,3536465235.0
-2023,Fossil Fuel,Controversial,0.758056,,EMXF,55954926.0
-2023,Fossil Fuel,Controversial,8.677514,,ESGD,7260643178.0
-2023,Fossil Fuel,Controversial,4.152933,,ESGE,4323754536.0
-2023,Fossil Fuel,Controversial,4.626808,,ESGU,12824827132.0
-2023,Fossil Fuel,Controversial,4.371556,,ESML,1403577468.0
-2023,Fossil Fuel,Controversial,5.610884,,ICLN,4573104098.0
-2023,Fossil Fuel,Controversial,7.497594,,LCTD,576261731.0
-2023,Fossil Fuel,Controversial,6.159339,,LCTU,1683978711.0
-2023,Fossil Fuel,Controversial,1.107623,,PABU,1489773825.0
-2023,Fossil Fuel,Controversial,0.032018,,SDG,374082063.0
-2023,Fossil Fuel,Controversial,3.788122,,SUSA,3260027828.0
-2023,Fossil Fuel,Controversial,3.443301,,SUSL,1139306520.0
-2023,Fossil Fuel,Controversial,4.735657,,USCL,2299045699.0
-2023,Fossil Fuel,Controversial,0.038359,,USXF,722994091.0
-2023,Fossil Fuel,Controversial,2.53911,,XJH,111598396.0
-2023,Fossil Fuel,Controversial,4.622818,,XVV,155683944.0
-2024,Fossil Fuel,Controversial,2.949592,,CRBN,865372385.0
-2024,Fossil Fuel,Controversial,0.37833,,DMXF,612269849.0
-2024,Fossil Fuel,Controversial,2.602809,,DSI,4246772961.0
-2024,Fossil Fuel,Controversial,0.658745,,EMXF,73705908.0
-2024,Fossil Fuel,Controversial,8.682604,,ESGD,7857945972.0
-2024,Fossil Fuel,Controversial,4.387922,,ESGE,4045464980.0
-2024,Fossil Fuel,Controversial,4.046458,,ESGU,13485685666.0
-2024,Fossil Fuel,Controversial,4.178,,ESML,1578937784.0
-2024,Fossil Fuel,Controversial,8.493388,,ICLN,2165452705.0
-2024,Fossil Fuel,Controversial,7.978109,,LCTD,344953405.0
-2024,Fossil Fuel,Controversial,6.2685249999999995,,LCTU,1356576171.0
-2024,Fossil Fuel,Controversial,1.2424849999999998,,PABD,6204660.0
-2024,Fossil Fuel,Controversial,1.160555,,PABU,1776067415.0
-2024,Fossil Fuel,Controversial,0.04042,,SDG,301162124.0
-2024,Fossil Fuel,Controversial,3.74239,,SUSA,3333157871.0
-2024,Fossil Fuel,Controversial,3.160642,,SUSL,1123280187.0
-2024,Fossil Fuel,Controversial,5.108137,,USCL,1949740013.0
-2024,Fossil Fuel,Controversial,0.055199,,USXF,936873745.0
-2024,Fossil Fuel,Controversial,2.242563,,XJH,182811359.0
-2024,Fossil Fuel,Controversial,4.552855,,XVV,253613830.0
-2025,Fossil Fuel,Controversial,3.37,,CRBN,1027534118.21
-2025,Fossil Fuel,Controversial,0.42,,DMXF,804362959.91
-2025,Fossil Fuel,Controversial,2.33,,DSI,4790621472.66
-2025,Fossil Fuel,Controversial,0.51,,EMXF,106662263.48
-2025,Fossil Fuel,Controversial,8.46,,ESGD,9596812876.42
-2025,Fossil Fuel,Controversial,3.91,,ESGE,5076162057.75
-2025,Fossil Fuel,Controversial,6.2,,ESGU,13989919390.35
-2025,Fossil Fuel,Controversial,5.26,,ESML,1878348896.09
-2025,Fossil Fuel,Controversial,18.06,,ICLN,1457155418.31
-2025,Fossil Fuel,Controversial,6.01,,LCTD,234070256.94
-2025,Fossil Fuel,Controversial,7.99,,LCTU,1305135788.31
-2025,Fossil Fuel,Controversial,0.63,,PABD,208173774.79
-2025,Fossil Fuel,Controversial,0.77,,PABU,2177420259.22
-2025,Fossil Fuel,Controversial,0.04,,SDG,167008602.29
-2025,Fossil Fuel,Controversial,4.42,,SUSA,3555990177.17
-2025,Fossil Fuel,Controversial,2.83,,SUSL,969050560.38
-2025,Fossil Fuel,Controversial,5.3100000000000005,,USCL,2487467893.45
-2025,Fossil Fuel,Controversial,0.8999999999999999,,USXF,1263627631.62
-2025,Fossil Fuel,Controversial,1.84,,XJH,290594113.62
-2025,Fossil Fuel,Controversial,4.64,,XVV,430814329.23
-2017,Prisons,Controversial,1.5853929999999998,,CRBN,434815251.0
-2017,Prisons,Controversial,8.468527,,DSI,822945453.0
-2017,Prisons,Controversial,2.791891,,ESGD,122123323.0
-2017,Prisons,Controversial,7.4138209999999996,,ESGU,10829518.0
-2017,Prisons,Controversial,12.057706,,SUSA,528508524.0
-2018,Prisons,Controversial,4.407385,,CRBN,534024244.0
-2018,Prisons,Controversial,10.371623,,DSI,1035422953.0
-2018,Prisons,Controversial,2.834081,,ESGD,360308692.0
-2018,Prisons,Controversial,14.892166,,ESGU,98974020.0
-2018,Prisons,Controversial,0.900664,,ESML,11505741.0
-2018,Prisons,Controversial,13.294913000000001,,SUSA,681606886.0
-2019,Prisons,Controversial,4.945111,,CRBN,468999117.0
-2019,Prisons,Controversial,17.077394,,DSI,1640657277.0
-2019,Prisons,Controversial,2.503957,,ESGD,917779537.0
-2019,Prisons,Controversial,15.529328,,ESGU,295904506.0
-2019,Prisons,Controversial,0.594317,,ESML,57663750.0
-2019,Prisons,Controversial,12.666699,,SUSA,1075898000.0
-2019,Prisons,Controversial,16.454485,,SUSL,1579065100.0
-2020,Prisons,Controversial,5.930371,,CRBN,432095233.0
-2020,Prisons,Controversial,1.407281,,DMXF,11157682.0
-2020,Prisons,Controversial,19.401735,,DSI,1793823683.0
-2020,Prisons,Controversial,1.981652,,ESGD,3025518508.0
-2020,Prisons,Controversial,17.386759,,ESGU,8991145354.0
-2020,Prisons,Controversial,0.789906,,ESML,366339046.0
-2020,Prisons,Controversial,14.35778,,SUSA,1289055430.0
-2020,Prisons,Controversial,20.17957,,SUSL,2564227647.0
-2020,Prisons,Controversial,0.114971,,USXF,5807543.0
-2020,Prisons,Controversial,0.889802,,XJH,5125191.0
-2020,Prisons,Controversial,21.122119,,XVV,5139636.0
-2021,Prisons,Controversial,6.440208,,CRBN,861219103.0
-2021,Prisons,Controversial,1.193145,,DMXF,245845684.0
-2021,Prisons,Controversial,16.844656,,DSI,3109465386.0
-2021,Prisons,Controversial,1.697437,,ESGD,6694668587.0
-2021,Prisons,Controversial,10.695579,,ESGU,22262630403.0
-2021,Prisons,Controversial,0.950566,,ESML,1099038297.0
-2021,Prisons,Controversial,2.243921,,LCTD,605599462.0
-2021,Prisons,Controversial,10.061967000000001,,LCTU,1423888880.0
-2021,Prisons,Controversial,10.754024000000001,,SUSA,3057930957.0
-2021,Prisons,Controversial,22.213897,,SUSL,4077962404.0
-2021,Prisons,Controversial,0.394973,,USXF,419105368.0
-2021,Prisons,Controversial,1.3626559999999999,,XJH,39689358.0
-2021,Prisons,Controversial,12.793113,,XVV,146941913.0
-2022,Prisons,Controversial,7.294835,,CRBN,907313054.0
-2022,Prisons,Controversial,1.510234,,DMXF,354432464.0
-2022,Prisons,Controversial,21.056926,,DSI,3613714403.0
-2022,Prisons,Controversial,2.504314,,ESGD,6376261704.0
-2022,Prisons,Controversial,16.750025,,ESGU,22194428203.0
-2022,Prisons,Controversial,1.166585,,ESML,1479097137.0
-2022,Prisons,Controversial,3.152556,,LCTD,442314960.0
-2022,Prisons,Controversial,17.89787,,LCTU,1409350423.0
-2022,Prisons,Controversial,16.213655,,PABU,756881657.0
-2022,Prisons,Controversial,11.3179,,SUSA,3662646233.0
-2022,Prisons,Controversial,22.726593,,SUSL,3116650243.0
-2022,Prisons,Controversial,1.034221,,USXF,589182424.0
-2022,Prisons,Controversial,2.409754,,XJH,84725034.0
-2022,Prisons,Controversial,21.553489,,XVV,201075983.0
-2023,Prisons,Controversial,7.651838,,CRBN,897207980.0
-2023,Prisons,Controversial,1.621669,,DMXF,475875769.0
-2023,Prisons,Controversial,22.784556000000002,,DSI,3536465235.0
-2023,Prisons,Controversial,3.150566,,ESGD,7260643178.0
-2023,Prisons,Controversial,17.172068,,ESGU,12824827132.0
-2023,Prisons,Controversial,1.532033,,ESML,1403577468.0
-2023,Prisons,Controversial,4.5850729999999995,,LCTD,576261731.0
-2023,Prisons,Controversial,18.260106999999998,,LCTU,1683978711.0
-2023,Prisons,Controversial,17.320203,,PABU,1489773825.0
-2023,Prisons,Controversial,12.928625,,SUSA,3260027828.0
-2023,Prisons,Controversial,23.472763999999998,,SUSL,1139306520.0
-2023,Prisons,Controversial,15.904800000000002,,USCL,2299045699.0
-2023,Prisons,Controversial,0.845565,,USXF,722994091.0
-2023,Prisons,Controversial,2.03927,,XJH,111598396.0
-2023,Prisons,Controversial,22.270797,,XVV,155683944.0
-2024,Prisons,Controversial,8.355845,,CRBN,865372385.0
-2024,Prisons,Controversial,1.973985,,DMXF,612269849.0
-2024,Prisons,Controversial,23.88566,,DSI,4246772961.0
-2024,Prisons,Controversial,3.132119,,ESGD,7857945972.0
-2024,Prisons,Controversial,18.111892,,ESGU,13485685666.0
-2024,Prisons,Controversial,2.110365,,ESML,1578937784.0
-2024,Prisons,Controversial,5.360072,,LCTD,344953405.0
-2024,Prisons,Controversial,19.449214,,LCTU,1356576171.0
-2024,Prisons,Controversial,2.135024,,PABD,6204660.0
-2024,Prisons,Controversial,18.257210999999998,,PABU,1776067415.0
-2024,Prisons,Controversial,12.992370000000001,,SUSA,3333157871.0
-2024,Prisons,Controversial,24.09201,,SUSL,1123280187.0
-2024,Prisons,Controversial,19.809112,,USCL,1949740013.0
-2024,Prisons,Controversial,0.954322,,USXF,936873745.0
-2024,Prisons,Controversial,1.927519,,XJH,182811359.0
-2024,Prisons,Controversial,22.73438,,XVV,253613830.0
-2025,Prisons,Controversial,7.8999999999999995,,CRBN,1027534118.21
-2025,Prisons,Controversial,1.9100000000000001,,DMXF,804362959.91
-2025,Prisons,Controversial,22.8,,DSI,4790621472.66
-2025,Prisons,Controversial,2.98,,ESGD,9596812876.42
-2025,Prisons,Controversial,19.75,,ESGU,13989919390.35
-2025,Prisons,Controversial,1.9100000000000001,,ESML,1878348896.09
-2025,Prisons,Controversial,3.08,,LCTD,234070256.94
-2025,Prisons,Controversial,18.490000000000002,,LCTU,1305135788.31
-2025,Prisons,Controversial,2.3200000000000003,,PABD,208173774.79
-2025,Prisons,Controversial,18.84,,PABU,2177420259.22
-2025,Prisons,Controversial,14.52,,SUSA,3555990177.17
-2025,Prisons,Controversial,22.75,,SUSL,969050560.38
-2025,Prisons,Controversial,22.19,,USCL,2487467893.45
-2025,Prisons,Controversial,1.45,,USXF,1263627631.62
-2025,Prisons,Controversial,1.59,,XJH,290594113.62
-2025,Prisons,Controversial,22.39,,XVV,430814329.23
-2017,Tobacco,Controversial,2.597841,,CRBN,434815251.0
-2017,Tobacco,Controversial,1.84968,,DSI,822945453.0
-2017,Tobacco,Controversial,0.367846,,ESGD,122123323.0
-2017,Tobacco,Controversial,2.230708,,ESGU,10829518.0
-2017,Tobacco,Controversial,1.400826,,SUSA,528508524.0
-2018,Tobacco,Controversial,2.564208,,CRBN,534024244.0
-2018,Tobacco,Controversial,1.362593,,DSI,1035422953.0
-2018,Tobacco,Controversial,0.611716,,ESGD,360308692.0
-2018,Tobacco,Controversial,1.552978,,ESGU,98974020.0
-2018,Tobacco,Controversial,0.527978,,SUSA,681606886.0
-2019,Tobacco,Controversial,2.620746,,CRBN,468999117.0
-2019,Tobacco,Controversial,1.724417,,DSI,1640657277.0
-2019,Tobacco,Controversial,0.60285,,ESGD,917779537.0
-2019,Tobacco,Controversial,2.58793,,ESGU,295904506.0
-2019,Tobacco,Controversial,0.622999,,SUSA,1075898000.0
-2019,Tobacco,Controversial,1.888555,,SUSL,1579065100.0
-2020,Tobacco,Controversial,2.254251,,CRBN,432095233.0
-2020,Tobacco,Controversial,1.468229,,DSI,1793823683.0
-2020,Tobacco,Controversial,0.786509,,ESGD,3025518508.0
-2020,Tobacco,Controversial,1.997317,,ESGU,8991145354.0
-2020,Tobacco,Controversial,0.52904,,SUSA,1289055430.0
-2020,Tobacco,Controversial,1.544804,,SUSL,2564227647.0
-2020,Tobacco,Controversial,2.5088939999999997,,XVV,5139636.0
-2021,Tobacco,Controversial,2.155769,,CRBN,861219103.0
-2021,Tobacco,Controversial,0.911067,,ESGD,6694668587.0
-2021,Tobacco,Controversial,0.942018,,ESGU,22262630403.0
-2021,Tobacco,Controversial,0.522678,,LCTD,605599462.0
-2021,Tobacco,Controversial,1.608819,,SUSL,4077962404.0
-2021,Tobacco,Controversial,1.3414570000000001,,XVV,146941913.0
-2022,Tobacco,Controversial,1.944679,,CRBN,907313054.0
-2022,Tobacco,Controversial,1.050322,,DSI,3613714403.0
-2022,Tobacco,Controversial,0.913951,,ESGD,6376261704.0
-2022,Tobacco,Controversial,1.264006,,ESGU,22194428203.0
-2022,Tobacco,Controversial,0.721099,,LCTD,442314960.0
-2022,Tobacco,Controversial,0.670684,,LCTU,1409350423.0
-2022,Tobacco,Controversial,0.66925,,SUSA,3662646233.0
-2022,Tobacco,Controversial,1.174822,,SUSL,3116650243.0
-2022,Tobacco,Controversial,1.027177,,USXF,589182424.0
-2022,Tobacco,Controversial,1.5594080000000001,,XVV,201075983.0
-2023,Tobacco,Controversial,2.139155,,CRBN,897207980.0
-2023,Tobacco,Controversial,0.963999,,DSI,3536465235.0
-2023,Tobacco,Controversial,0.868058,,ESGD,7260643178.0
-2023,Tobacco,Controversial,1.078376,,ESGU,12824827132.0
-2023,Tobacco,Controversial,0.525008,,LCTD,576261731.0
-2023,Tobacco,Controversial,0.356989,,LCTU,1683978711.0
-2023,Tobacco,Controversial,0.836226,,SUSA,3260027828.0
-2023,Tobacco,Controversial,1.700496,,SUSL,1139306520.0
-2023,Tobacco,Controversial,1.8117750000000001,,USCL,2299045699.0
-2023,Tobacco,Controversial,1.049463,,USXF,722994091.0
-2023,Tobacco,Controversial,1.371171,,XVV,155683944.0
-2024,Tobacco,Controversial,2.206887,,CRBN,865372385.0
-2024,Tobacco,Controversial,0.863463,,DSI,4246772961.0
-2024,Tobacco,Controversial,0.865325,,ESGD,7857945972.0
-2024,Tobacco,Controversial,0.986011,,ESGU,13485685666.0
-2024,Tobacco,Controversial,0.443499,,LCTD,344953405.0
-2024,Tobacco,Controversial,0.45222300000000004,,LCTU,1356576171.0
-2024,Tobacco,Controversial,0.555373,,PABD,6204660.0
-2024,Tobacco,Controversial,0.771307,,SUSA,3333157871.0
-2024,Tobacco,Controversial,1.634055,,SUSL,1123280187.0
-2024,Tobacco,Controversial,1.546374,,USCL,1949740013.0
-2024,Tobacco,Controversial,0.956955,,USXF,936873745.0
-2024,Tobacco,Controversial,1.307621,,XVV,253613830.0
-2025,Tobacco,Controversial,2.36,,CRBN,1027534118.21
-2025,Tobacco,Controversial,0.73,,DSI,4790621472.66
-2025,Tobacco,Controversial,1.0,,ESGD,9596812876.42
-2025,Tobacco,Controversial,0.75,,ESGU,13989919390.35
-2025,Tobacco,Controversial,0.17,,ESML,1878348896.09
-2025,Tobacco,Controversial,0.55,,LCTD,234070256.94
-2025,Tobacco,Controversial,0.26,,LCTU,1305135788.31
-2025,Tobacco,Controversial,0.89,,PABD,208173774.79
-2025,Tobacco,Controversial,0.37,,SUSA,3555990177.17
-2025,Tobacco,Controversial,1.16,,SUSL,969050560.38
-2025,Tobacco,Controversial,1.45,,USCL,2487467893.45
-2025,Tobacco,Controversial,0.57,,USXF,1263627631.62
-2025,Tobacco,Controversial,1.1199999999999999,,XVV,430814329.23
-2017,Weapons,Controversial,0.355109,,CRBN,434815251.0
-2017,Weapons,Controversial,1.429989,,DSI,822945453.0
-2017,Weapons,Controversial,1.643542,,ESGD,122123323.0
-2017,Weapons,Controversial,2.090814,,ESGU,10829518.0
-2017,Weapons,Controversial,1.172053,,SUSA,528508524.0
-2018,Weapons,Controversial,0.358016,,CRBN,534024244.0
-2018,Weapons,Controversial,1.46476,,DSI,1035422953.0
-2018,Weapons,Controversial,2.27696,,ESGD,360308692.0
-2018,Weapons,Controversial,1.7701449999999999,,ESGU,98974020.0
-2018,Weapons,Controversial,2.262707,,ESML,11505741.0
-2018,Weapons,Controversial,1.495009,,SUSA,681606886.0
-2019,Weapons,Controversial,0.536889,,CRBN,468999117.0
-2019,Weapons,Controversial,1.320956,,DSI,1640657277.0
-2019,Weapons,Controversial,2.322848,,ESGD,917779537.0
-2019,Weapons,Controversial,1.851985,,ESGU,295904506.0
-2019,Weapons,Controversial,2.254698,,ESML,57663750.0
-2019,Weapons,Controversial,0.959837,,SUSA,1075898000.0
-2019,Weapons,Controversial,0.40019099999999996,,SUSL,1579065100.0
-2020,Weapons,Controversial,0.49723,,CRBN,432095233.0
-2020,Weapons,Controversial,0.461583,,DMXF,11157682.0
-2020,Weapons,Controversial,1.179759,,DSI,1793823683.0
-2020,Weapons,Controversial,2.123729,,ESGD,3025518508.0
-2020,Weapons,Controversial,1.597914,,ESGU,8991145354.0
-2020,Weapons,Controversial,2.3828489999999998,,ESML,366339046.0
-2020,Weapons,Controversial,0.61007,,SUSA,1289055430.0
-2020,Weapons,Controversial,0.884268,,SUSL,2564227647.0
-2020,Weapons,Controversial,1.029023,,USXF,5807543.0
-2020,Weapons,Controversial,1.535592,,XJH,5125191.0
-2020,Weapons,Controversial,0.797565,,XVV,5139636.0
-2021,Weapons,Controversial,0.611255,,CRBN,861219103.0
-2021,Weapons,Controversial,0.382349,,DMXF,245845684.0
-2021,Weapons,Controversial,1.253148,,DSI,3109465386.0
-2021,Weapons,Controversial,0.39809900000000004,,EMXF,13549906.0
-2021,Weapons,Controversial,1.937496,,ESGD,6694668587.0
-2021,Weapons,Controversial,0.20631,,ESGE,7105443464.0
-2021,Weapons,Controversial,1.515447,,ESGU,22262630403.0
-2021,Weapons,Controversial,1.357003,,ESML,1099038297.0
-2021,Weapons,Controversial,1.789386,,LCTD,605599462.0
-2021,Weapons,Controversial,1.05249,,LCTU,1423888880.0
-2021,Weapons,Controversial,0.662123,,SUSA,3057930957.0
-2021,Weapons,Controversial,1.168891,,SUSL,4077962404.0
-2021,Weapons,Controversial,1.188157,,USXF,419105368.0
-2021,Weapons,Controversial,1.460856,,XJH,39689358.0
-2021,Weapons,Controversial,0.819395,,XVV,146941913.0
-2022,Weapons,Controversial,0.586324,,CRBN,907313054.0
-2022,Weapons,Controversial,0.36371,,DMXF,354432464.0
-2022,Weapons,Controversial,1.305716,,DSI,3613714403.0
-2022,Weapons,Controversial,0.658013,,EMXF,35467841.0
-2022,Weapons,Controversial,1.972873,,ESGD,6376261704.0
-2022,Weapons,Controversial,0.42441700000000004,,ESGE,4251524672.0
-2022,Weapons,Controversial,1.391059,,ESGU,22194428203.0
-2022,Weapons,Controversial,2.234562,,ESML,1479097137.0
-2022,Weapons,Controversial,2.295775,,LCTD,442314960.0
-2022,Weapons,Controversial,0.664728,,LCTU,1409350423.0
-2022,Weapons,Controversial,0.162157,,PABU,756881657.0
-2022,Weapons,Controversial,0.9171849999999999,,SUSA,3662646233.0
-2022,Weapons,Controversial,1.176442,,SUSL,3116650243.0
-2022,Weapons,Controversial,1.251749,,USXF,589182424.0
-2022,Weapons,Controversial,2.14106,,XJH,84725034.0
-2022,Weapons,Controversial,0.988592,,XVV,201075983.0
-2023,Weapons,Controversial,1.450927,,CRBN,897207980.0
-2023,Weapons,Controversial,0.457778,,DMXF,475875769.0
-2023,Weapons,Controversial,1.387443,,DSI,3536465235.0
-2023,Weapons,Controversial,0.792594,,EMXF,55954926.0
-2023,Weapons,Controversial,2.707274,,ESGD,7260643178.0
-2023,Weapons,Controversial,0.5112610000000001,,ESGE,4323754536.0
-2023,Weapons,Controversial,2.054068,,ESGU,12824827132.0
-2023,Weapons,Controversial,3.241455,,ESML,1403577468.0
-2023,Weapons,Controversial,1.925029,,LCTD,576261731.0
-2023,Weapons,Controversial,0.9958739999999999,,LCTU,1683978711.0
-2023,Weapons,Controversial,0.506011,,PABU,1489773825.0
-2023,Weapons,Controversial,0.395574,,SUSA,3260027828.0
-2023,Weapons,Controversial,1.4116279999999999,,SUSL,1139306520.0
-2023,Weapons,Controversial,0.68557,,USCL,2299045699.0
-2023,Weapons,Controversial,1.649225,,USXF,722994091.0
-2023,Weapons,Controversial,2.07084,,XJH,111598396.0
-2023,Weapons,Controversial,1.161786,,XVV,155683944.0
-2024,Weapons,Controversial,1.401283,,CRBN,865372385.0
-2024,Weapons,Controversial,0.574,,DMXF,612269849.0
-2024,Weapons,Controversial,1.779852,,DSI,4246772961.0
-2024,Weapons,Controversial,1.221616,,EMXF,73705908.0
-2024,Weapons,Controversial,2.978062,,ESGD,7857945972.0
-2024,Weapons,Controversial,1.2369,,ESGE,4045464980.0
-2024,Weapons,Controversial,1.682674,,ESGU,13485685666.0
-2024,Weapons,Controversial,3.41356,,ESML,1578937784.0
-2024,Weapons,Controversial,2.399699,,LCTD,344953405.0
-2024,Weapons,Controversial,1.132092,,LCTU,1356576171.0
-2024,Weapons,Controversial,0.851861,,PABD,6204660.0
-2024,Weapons,Controversial,0.495483,,PABU,1776067415.0
-2024,Weapons,Controversial,0.519686,,SUSA,3333157871.0
-2024,Weapons,Controversial,1.4860499999999999,,SUSL,1123280187.0
-2024,Weapons,Controversial,0.640401,,USCL,1949740013.0
-2024,Weapons,Controversial,2.080494,,USXF,936873745.0
-2024,Weapons,Controversial,1.970561,,XJH,182811359.0
-2024,Weapons,Controversial,1.255266,,XVV,253613830.0
-2025,Weapons,Controversial,2.05,,CRBN,1027534118.21
-2025,Weapons,Controversial,1.09,,DMXF,804362959.91
-2025,Weapons,Controversial,1.94,,DSI,4790621472.66
-2025,Weapons,Controversial,1.56,,EMXF,106662263.48
-2025,Weapons,Controversial,3.83,,ESGD,9596812876.42
-2025,Weapons,Controversial,1.08,,ESGE,5076162057.75
-2025,Weapons,Controversial,3.36,,ESGU,13989919390.35
-2025,Weapons,Controversial,4.85,,ESML,1878348896.09
-2025,Weapons,Controversial,3.23,,LCTD,234070256.94
-2025,Weapons,Controversial,4.6,,LCTU,1305135788.31
-2025,Weapons,Controversial,1.5,,PABD,208173774.79
-2025,Weapons,Controversial,0.51,,PABU,2177420259.22
-2025,Weapons,Controversial,1.94,,SUSA,3555990177.17
-2025,Weapons,Controversial,1.61,,SUSL,969050560.38
-2025,Weapons,Controversial,1.4,,USCL,2487467893.45
-2025,Weapons,Controversial,2.84,,USXF,1263627631.62
-2025,Weapons,Controversial,3.35,,XJH,290594113.62
-2025,Weapons,Controversial,1.96,,XVV,430814329.23
-2017,Clean200,Clean,7.981593999999999,,CRBN,434815251.0
-2017,Clean200,Clean,8.773249,,DSI,822945453.0
-2017,Clean200,Clean,7.025117,,ESGD,122123323.0
-2017,Clean200,Clean,6.959931,,ESGE,96812458.0
-2017,Clean200,Clean,10.172493,,ESGU,10829518.0
-2017,Clean200,Clean,10.261991,,ICLN,112605427.0
-2017,Clean200,Clean,8.294807,,SDG,25164057.0
-2017,Clean200,Clean,13.533777,,SUSA,528508524.0
-2018,Clean200,Clean,7.904637,,CRBN,534024244.0
-2018,Clean200,Clean,9.841622,,DSI,1035422953.0
-2018,Clean200,Clean,7.106287,,ESGD,360308692.0
-2018,Clean200,Clean,7.825232,,ESGE,329752699.0
-2018,Clean200,Clean,10.625385,,ESGU,98974020.0
-2018,Clean200,Clean,0.5524020000000001,,ESML,11505741.0
-2018,Clean200,Clean,19.429907,,ICLN,165729203.0
-2018,Clean200,Clean,12.587608,,SDG,37928461.0
-2018,Clean200,Clean,15.447271,,SUSA,681606886.0
-2019,Clean200,Clean,8.312671,,CRBN,468999117.0
-2019,Clean200,Clean,9.070782,,DSI,1640657277.0
-2019,Clean200,Clean,7.437703,,ESGD,917779537.0
-2019,Clean200,Clean,7.085789,,ESGE,672543077.0
-2019,Clean200,Clean,9.870056,,ESGU,295904506.0
-2019,Clean200,Clean,0.298552,,ESML,57663750.0
-2019,Clean200,Clean,12.460107,,ICLN,360049255.0
-2019,Clean200,Clean,11.620691,,SDG,54174461.0
-2019,Clean200,Clean,14.868479,,SUSA,1075898000.0
-2019,Clean200,Clean,6.0957609999999995,,SUSL,1579065100.0
-2020,Clean200,Clean,10.60878,,CRBN,432095233.0
-2020,Clean200,Clean,7.232657000000001,,DMXF,11157682.0
-2020,Clean200,Clean,10.175799,,DSI,1793823683.0
-2020,Clean200,Clean,8.536093,,ESGD,3025518508.0
-2020,Clean200,Clean,8.694189999999999,,ESGE,3654480091.0
-2020,Clean200,Clean,13.961899,,ESGU,8991145354.0
-2020,Clean200,Clean,0.945241,,ESML,366339046.0
-2020,Clean200,Clean,14.405678,,ICLN,1541917450.0
-2020,Clean200,Clean,13.842074,,SDG,175603848.0
-2020,Clean200,Clean,15.564781,,SUSA,1289055430.0
-2020,Clean200,Clean,8.339983,,SUSL,2564227647.0
-2020,Clean200,Clean,2.479431,,USXF,5807543.0
-2020,Clean200,Clean,1.101481,,XJH,5125191.0
-2020,Clean200,Clean,13.700309,,XVV,5139636.0
-2021,Clean200,Clean,10.262889,,CRBN,861219103.0
-2021,Clean200,Clean,4.22516,,DMXF,245845684.0
-2021,Clean200,Clean,7.164296,,DSI,3109465386.0
-2021,Clean200,Clean,6.235932,,EMXF,13549906.0
-2021,Clean200,Clean,7.226199,,ESGD,6694668587.0
-2021,Clean200,Clean,9.66605,,ESGE,7105443464.0
-2021,Clean200,Clean,10.860646000000001,,ESGU,22262630403.0
-2021,Clean200,Clean,0.41299399999999997,,ESML,1099038297.0
-2021,Clean200,Clean,30.973068,,ICLN,5855954348.0
-2021,Clean200,Clean,9.312959,,LCTD,605599462.0
-2021,Clean200,Clean,9.360655999999999,,LCTU,1423888880.0
-2021,Clean200,Clean,12.798697,,SDG,565145405.0
-2021,Clean200,Clean,11.200990000000001,,SUSA,3057930957.0
-2021,Clean200,Clean,7.5851500000000005,,SUSL,4077962404.0
-2021,Clean200,Clean,2.438812,,USXF,419105368.0
-2021,Clean200,Clean,0.44239,,XJH,39689358.0
-2021,Clean200,Clean,11.657048,,XVV,146941913.0
-2022,Clean200,Clean,11.788373,,CRBN,907313054.0
-2022,Clean200,Clean,6.437482,,DMXF,354432464.0
-2022,Clean200,Clean,12.253141,,DSI,3613714403.0
-2022,Clean200,Clean,5.371347999999999,,EMXF,35467841.0
-2022,Clean200,Clean,8.165941,,ESGD,6376261704.0
-2022,Clean200,Clean,9.711916,,ESGE,4251524672.0
-2022,Clean200,Clean,15.12659,,ESGU,22194428203.0
-2022,Clean200,Clean,0.773953,,ESML,1479097137.0
-2022,Clean200,Clean,18.264197,,ICLN,4983595510.0
-2022,Clean200,Clean,9.063296,,LCTD,442314960.0
-2022,Clean200,Clean,15.553607,,LCTU,1409350423.0
-2022,Clean200,Clean,16.160618,,PABU,756881657.0
-2022,Clean200,Clean,11.995662,,SDG,415790649.0
-2022,Clean200,Clean,14.816265,,SUSA,3662646233.0
-2022,Clean200,Clean,8.922675,,SUSL,3116650243.0
-2022,Clean200,Clean,4.7622,,USXF,589182424.0
-2022,Clean200,Clean,1.502109,,XJH,84725034.0
-2022,Clean200,Clean,16.241078,,XVV,201075983.0
-2023,Clean200,Clean,13.236662,,CRBN,897207980.0
-2023,Clean200,Clean,7.721079,,DMXF,475875769.0
-2023,Clean200,Clean,10.796019,,DSI,3536465235.0
-2023,Clean200,Clean,6.496854,,EMXF,55954926.0
-2023,Clean200,Clean,8.921795,,ESGD,7260643178.0
-2023,Clean200,Clean,10.657931999999999,,ESGE,4323754536.0
-2023,Clean200,Clean,15.07448,,ESGU,12824827132.0
-2023,Clean200,Clean,0.533897,,ESML,1403577468.0
-2023,Clean200,Clean,17.800282,,ICLN,4573104098.0
-2023,Clean200,Clean,9.72659,,LCTD,576261731.0
-2023,Clean200,Clean,15.546249,,LCTU,1683978711.0
-2023,Clean200,Clean,17.684645,,PABU,1489773825.0
-2023,Clean200,Clean,13.853793,,SDG,374082063.0
-2023,Clean200,Clean,15.953148,,SUSA,3260027828.0
-2023,Clean200,Clean,8.323653,,SUSL,1139306520.0
-2023,Clean200,Clean,9.543753,,USCL,2299045699.0
-2023,Clean200,Clean,5.635403999999999,,USXF,722994091.0
-2023,Clean200,Clean,1.93902,,XJH,111598396.0
-2023,Clean200,Clean,16.394175,,XVV,155683944.0
-2024,Clean200,Clean,13.180996,,CRBN,865372385.0
-2024,Clean200,Clean,8.380118,,DMXF,612269849.0
-2024,Clean200,Clean,10.377368,,DSI,4246772961.0
-2024,Clean200,Clean,6.023001,,EMXF,73705908.0
-2024,Clean200,Clean,9.673244,,ESGD,7857945972.0
-2024,Clean200,Clean,11.893206,,ESGE,4045464980.0
-2024,Clean200,Clean,14.197804,,ESGU,13485685666.0
-2024,Clean200,Clean,0.592049,,ESML,1578937784.0
-2024,Clean200,Clean,21.370578000000002,,ICLN,2165452705.0
-2024,Clean200,Clean,10.10818,,LCTD,344953405.0
-2024,Clean200,Clean,13.520774999999999,,LCTU,1356576171.0
-2024,Clean200,Clean,10.172548,,PABD,6204660.0
-2024,Clean200,Clean,16.660299,,PABU,1776067415.0
-2024,Clean200,Clean,14.103028,,SDG,301162124.0
-2024,Clean200,Clean,16.073313,,SUSA,3333157871.0
-2024,Clean200,Clean,7.337209,,SUSL,1123280187.0
-2024,Clean200,Clean,7.838889,,USCL,1949740013.0
-2024,Clean200,Clean,9.224955,,USXF,936873745.0
-2024,Clean200,Clean,1.650207,,XJH,182811359.0
-2024,Clean200,Clean,14.210936,,XVV,253613830.0
-2025,Clean200,Clean,13.67,,CRBN,1027534118.21
-2025,Clean200,Clean,8.92,,DMXF,804362959.91
-2025,Clean200,Clean,10.07,,DSI,4790621472.66
-2025,Clean200,Clean,7.13,,EMXF,106662263.48
-2025,Clean200,Clean,8.870000000000001,,ESGD,9596812876.42
-2025,Clean200,Clean,13.62,,ESGE,5076162057.75
-2025,Clean200,Clean,14.84,,ESGU,13989919390.35
-2025,Clean200,Clean,0.84,,ESML,1878348896.09
-2025,Clean200,Clean,24.990000000000002,,ICLN,1457155418.31
-2025,Clean200,Clean,11.58,,LCTD,234070256.94
-2025,Clean200,Clean,17.06,,LCTU,1305135788.31
-2025,Clean200,Clean,10.66,,PABD,208173774.79
-2025,Clean200,Clean,19.14,,PABU,2177420259.22
-2025,Clean200,Clean,23.63,,SDG,167008602.29
-2025,Clean200,Clean,16.41,,SUSA,3555990177.17
-2025,Clean200,Clean,8.22,,SUSL,969050560.38
-2025,Clean200,Clean,9.15,,USCL,2487467893.45
-2025,Clean200,Clean,11.33,,USXF,1263627631.62
-2025,Clean200,Clean,1.54,,XJH,290594113.62
-2025,Clean200,Clean,15.46,,XVV,430814329.23
+year,ETF_Ticker,screen_category,exposure_pct,aum_usd
+2017,CRBN,Deforestation,9.046972,434815251.0
+2017,DSI,Deforestation,9.604343,822945453.0
+2017,ESGD,Deforestation,12.594588,122123323.0
+2017,ESGE,Deforestation,2.462418,96812458.0
+2017,ESGU,Deforestation,13.845503,10829518.0
+2017,SDG,Deforestation,7.9643310000000005,25164057.0
+2017,SUSA,Deforestation,10.517048,528508524.0
+2018,CRBN,Deforestation,10.654379,534024244.0
+2018,DSI,Deforestation,8.820777,1035422953.0
+2018,ESGD,Deforestation,13.060284,360308692.0
+2018,ESGE,Deforestation,3.735048,329752699.0
+2018,ESGU,Deforestation,15.883193,98974020.0
+2018,ESML,Deforestation,0.268892,11505741.0
+2018,SDG,Deforestation,7.923242,37928461.0
+2018,SUSA,Deforestation,8.612134000000001,681606886.0
+2019,CRBN,Deforestation,11.458759,468999117.0
+2019,DSI,Deforestation,10.937836,1640657277.0
+2019,ESGD,Deforestation,12.714756,917779537.0
+2019,ESGE,Deforestation,2.701361,672543077.0
+2019,ESGU,Deforestation,16.115878,295904506.0
+2019,ESML,Deforestation,0.215627,57663750.0
+2019,SDG,Deforestation,8.819291999999999,54174461.0
+2019,SUSA,Deforestation,9.778232,1075898000.0
+2019,SUSL,Deforestation,12.488902,1579065100.0
+2020,CRBN,Deforestation,11.025598,432095233.0
+2020,DMXF,Deforestation,5.869973,11157682.0
+2020,DSI,Deforestation,11.873126,1793823683.0
+2020,ESGD,Deforestation,11.091134,3025518508.0
+2020,ESGE,Deforestation,1.7981829999999999,3654480091.0
+2020,ESGU,Deforestation,15.464074,8991145354.0
+2020,ESML,Deforestation,0.36997599999999997,366339046.0
+2020,SDG,Deforestation,10.15503,175603848.0
+2020,SUSA,Deforestation,10.139037,1289055430.0
+2020,SUSL,Deforestation,12.379852,2564227647.0
+2020,USXF,Deforestation,4.181338,5807543.0
+2020,XJH,Deforestation,0.382991,5125191.0
+2020,XVV,Deforestation,16.223307,5139636.0
+2021,CRBN,Deforestation,9.872171,861219103.0
+2021,DMXF,Deforestation,4.879573,245845684.0
+2021,DSI,Deforestation,11.064297,3109465386.0
+2021,EMXF,Deforestation,2.614276,13549906.0
+2021,ESGD,Deforestation,11.128205,6694668587.0
+2021,ESGE,Deforestation,2.0839410000000003,7105443464.0
+2021,ESGU,Deforestation,10.501461,22262630403.0
+2021,ESML,Deforestation,0.155119,1099038297.0
+2021,LCTD,Deforestation,7.085149,605599462.0
+2021,LCTU,Deforestation,8.027791,1423888880.0
+2021,SDG,Deforestation,12.556269,565145405.0
+2021,SUSA,Deforestation,7.861567,3057930957.0
+2021,SUSL,Deforestation,11.226399,4077962404.0
+2021,USXF,Deforestation,3.9400049999999998,419105368.0
+2021,XJH,Deforestation,0.432506,39689358.0
+2021,XVV,Deforestation,10.402482,146941913.0
+2022,CRBN,Deforestation,10.612106,907313054.0
+2022,DMXF,Deforestation,5.922081,354432464.0
+2022,DSI,Deforestation,11.636701,3613714403.0
+2022,EMXF,Deforestation,3.269532,35467841.0
+2022,ESGD,Deforestation,13.196083,6376261704.0
+2022,ESGE,Deforestation,2.904442,4251524672.0
+2022,ESGU,Deforestation,13.157187,22194428203.0
+2022,ESML,Deforestation,0.533345,1479097137.0
+2022,LCTD,Deforestation,7.924595,442314960.0
+2022,LCTU,Deforestation,10.430572,1409350423.0
+2022,PABU,Deforestation,7.331351,756881657.0
+2022,SDG,Deforestation,12.317451,415790649.0
+2022,SUSA,Deforestation,9.858706999999999,3662646233.0
+2022,SUSL,Deforestation,11.990603,3116650243.0
+2022,USXF,Deforestation,4.338526,589182424.0
+2022,XJH,Deforestation,0.845413,84725034.0
+2022,XVV,Deforestation,14.101474,201075983.0
+2023,CRBN,Deforestation,10.587226,897207980.0
+2023,DMXF,Deforestation,6.434901,475875769.0
+2023,DSI,Deforestation,11.99595,3536465235.0
+2023,EMXF,Deforestation,2.781085,55954926.0
+2023,ESGD,Deforestation,13.226783000000001,7260643178.0
+2023,ESGE,Deforestation,3.057585,4323754536.0
+2023,ESGU,Deforestation,12.165825,12824827132.0
+2023,ESML,Deforestation,0.509018,1403577468.0
+2023,LCTD,Deforestation,9.943463,576261731.0
+2023,LCTU,Deforestation,10.400019,1683978711.0
+2023,PABU,Deforestation,7.033949000000001,1489773825.0
+2023,SDG,Deforestation,10.928535,374082063.0
+2023,SUSA,Deforestation,9.471805999999999,3260027828.0
+2023,SUSL,Deforestation,10.524395,1139306520.0
+2023,USCL,Deforestation,9.220331,2299045699.0
+2023,USXF,Deforestation,3.8258229999999998,722994091.0
+2023,XJH,Deforestation,1.3577810000000001,111598396.0
+2023,XVV,Deforestation,12.612542,155683944.0
+2024,CRBN,Deforestation,10.728437,865372385.0
+2024,DMXF,Deforestation,6.403579,612269849.0
+2024,DSI,Deforestation,9.579162,4246772961.0
+2024,EMXF,Deforestation,2.709064,73705908.0
+2024,ESGD,Deforestation,13.439278,7857945972.0
+2024,ESGE,Deforestation,3.164402,4045464980.0
+2024,ESGU,Deforestation,13.443513,13485685666.0
+2024,ESML,Deforestation,0.901957,1578937784.0
+2024,LCTD,Deforestation,11.553197,344953405.0
+2024,LCTU,Deforestation,10.073439,1356576171.0
+2024,PABD,Deforestation,8.735337,6204660.0
+2024,PABU,Deforestation,7.644519,1776067415.0
+2024,SDG,Deforestation,11.410842,301162124.0
+2024,SUSA,Deforestation,11.223624000000001,3333157871.0
+2024,SUSL,Deforestation,9.742346,1123280187.0
+2024,USCL,Deforestation,15.025894,1949740013.0
+2024,USXF,Deforestation,4.429467,936873745.0
+2024,XJH,Deforestation,1.105429,182811359.0
+2024,XVV,Deforestation,12.911318,253613830.0
+2025,CRBN,Deforestation,10.21,1027534118.21
+2025,DMXF,Deforestation,7.34,804362959.91
+2025,DSI,Deforestation,6.9,4790621472.66
+2025,EMXF,Deforestation,1.4200000000000002,106662263.48
+2025,ESGD,Deforestation,14.360000000000001,9596812876.42
+2025,ESGE,Deforestation,1.29,5076162057.75
+2025,ESGU,Deforestation,13.049999999999999,13989919390.35
+2025,ESML,Deforestation,1.93,1878348896.09
+2025,LCTD,Deforestation,13.65,234070256.94
+2025,LCTU,Deforestation,10.48,1305135788.31
+2025,PABD,Deforestation,7.82,208173774.79
+2025,PABU,Deforestation,6.43,2177420259.22
+2025,SDG,Deforestation,10.84,167008602.29
+2025,SUSA,Deforestation,9.1,3555990177.17
+2025,SUSL,Deforestation,7.37,969050560.38
+2025,USCL,Deforestation,15.31,2487467893.45
+2025,USXF,Deforestation,3.83,1263627631.62
+2025,XJH,Deforestation,1.9,290594113.62
+2025,XVV,Deforestation,11.97,430814329.23
+2017,CRBN,Fossil Fuel,1.353457,434815251.0
+2017,DSI,Fossil Fuel,2.341487,822945453.0
+2017,ESGD,Fossil Fuel,4.705245,122123323.0
+2017,ESGE,Fossil Fuel,1.753253,96812458.0
+2017,ESGU,Fossil Fuel,4.14349,10829518.0
+2017,SUSA,Fossil Fuel,1.309402,528508524.0
+2018,CRBN,Fossil Fuel,2.410263,534024244.0
+2018,DSI,Fossil Fuel,2.256731,1035422953.0
+2018,ESGD,Fossil Fuel,6.280598,360308692.0
+2018,ESGE,Fossil Fuel,3.027531,329752699.0
+2018,ESGU,Fossil Fuel,5.4890419999999995,98974020.0
+2018,ESML,Fossil Fuel,2.203316,11505741.0
+2018,ICLN,Fossil Fuel,5.666917,165729203.0
+2018,SUSA,Fossil Fuel,0.826219,681606886.0
+2019,CRBN,Fossil Fuel,2.018681,468999117.0
+2019,DSI,Fossil Fuel,2.648492,1640657277.0
+2019,ESGD,Fossil Fuel,5.908897,917779537.0
+2019,ESGE,Fossil Fuel,3.213025,672543077.0
+2019,ESGU,Fossil Fuel,5.915547,295904506.0
+2019,ESML,Fossil Fuel,2.225261,57663750.0
+2019,ICLN,Fossil Fuel,5.509992,360049255.0
+2019,SUSA,Fossil Fuel,2.017916,1075898000.0
+2019,SUSL,Fossil Fuel,3.017379,1579065100.0
+2020,CRBN,Fossil Fuel,1.888601,432095233.0
+2020,DMXF,Fossil Fuel,0.255788,11157682.0
+2020,DSI,Fossil Fuel,1.841442,1793823683.0
+2020,ESGD,Fossil Fuel,6.04043,3025518508.0
+2020,ESGE,Fossil Fuel,2.787931,3654480091.0
+2020,ESGU,Fossil Fuel,4.453433,8991145354.0
+2020,ESML,Fossil Fuel,2.000648,366339046.0
+2020,ICLN,Fossil Fuel,3.230986,1541917450.0
+2020,SUSA,Fossil Fuel,1.754744,1289055430.0
+2020,SUSL,Fossil Fuel,1.9634,2564227647.0
+2020,XJH,Fossil Fuel,1.2419449999999999,5125191.0
+2020,XVV,Fossil Fuel,3.710363,5139636.0
+2021,CRBN,Fossil Fuel,1.441741,861219103.0
+2021,DMXF,Fossil Fuel,0.408191,245845684.0
+2021,DSI,Fossil Fuel,1.752345,3109465386.0
+2021,EMXF,Fossil Fuel,0.993011,13549906.0
+2021,ESGD,Fossil Fuel,6.023848,6694668587.0
+2021,ESGE,Fossil Fuel,2.848568,7105443464.0
+2021,ESGU,Fossil Fuel,3.352159,22262630403.0
+2021,ESML,Fossil Fuel,1.762115,1099038297.0
+2021,ICLN,Fossil Fuel,6.453782,5855954348.0
+2021,LCTD,Fossil Fuel,3.962567,605599462.0
+2021,LCTU,Fossil Fuel,2.785121,1423888880.0
+2021,SUSA,Fossil Fuel,1.367756,3057930957.0
+2021,SUSL,Fossil Fuel,1.920284,4077962404.0
+2021,XJH,Fossil Fuel,1.059202,39689358.0
+2021,XVV,Fossil Fuel,2.092056,146941913.0
+2022,CRBN,Fossil Fuel,2.615974,907313054.0
+2022,DMXF,Fossil Fuel,0.291129,354432464.0
+2022,DSI,Fossil Fuel,2.106358,3613714403.0
+2022,EMXF,Fossil Fuel,0.967197,35467841.0
+2022,ESGD,Fossil Fuel,9.442422,6376261704.0
+2022,ESGE,Fossil Fuel,4.135401,4251524672.0
+2022,ESGU,Fossil Fuel,4.80539,22194428203.0
+2022,ESML,Fossil Fuel,4.27737,1479097137.0
+2022,ICLN,Fossil Fuel,5.677308,4983595510.0
+2022,LCTD,Fossil Fuel,7.480499,442314960.0
+2022,LCTU,Fossil Fuel,6.348762,1409350423.0
+2022,SDG,Fossil Fuel,0.031687,415790649.0
+2022,SUSA,Fossil Fuel,2.819396,3662646233.0
+2022,SUSL,Fossil Fuel,3.1505549999999998,3116650243.0
+2022,USXF,Fossil Fuel,0.04158,589182424.0
+2022,XJH,Fossil Fuel,2.089279,84725034.0
+2022,XVV,Fossil Fuel,4.438886,201075983.0
+2023,CRBN,Fossil Fuel,3.688089,897207980.0
+2023,DMXF,Fossil Fuel,0.306241,475875769.0
+2023,DSI,Fossil Fuel,2.532743,3536465235.0
+2023,EMXF,Fossil Fuel,0.758056,55954926.0
+2023,ESGD,Fossil Fuel,8.677514,7260643178.0
+2023,ESGE,Fossil Fuel,4.152933,4323754536.0
+2023,ESGU,Fossil Fuel,4.626808,12824827132.0
+2023,ESML,Fossil Fuel,4.371556,1403577468.0
+2023,ICLN,Fossil Fuel,5.610884,4573104098.0
+2023,LCTD,Fossil Fuel,7.497594,576261731.0
+2023,LCTU,Fossil Fuel,6.159339,1683978711.0
+2023,PABU,Fossil Fuel,1.107623,1489773825.0
+2023,SDG,Fossil Fuel,0.032018,374082063.0
+2023,SUSA,Fossil Fuel,3.788122,3260027828.0
+2023,SUSL,Fossil Fuel,3.443301,1139306520.0
+2023,USCL,Fossil Fuel,4.735657,2299045699.0
+2023,USXF,Fossil Fuel,0.038359,722994091.0
+2023,XJH,Fossil Fuel,2.53911,111598396.0
+2023,XVV,Fossil Fuel,4.622818,155683944.0
+2024,CRBN,Fossil Fuel,2.949592,865372385.0
+2024,DMXF,Fossil Fuel,0.37833,612269849.0
+2024,DSI,Fossil Fuel,2.602809,4246772961.0
+2024,EMXF,Fossil Fuel,0.658745,73705908.0
+2024,ESGD,Fossil Fuel,8.682604,7857945972.0
+2024,ESGE,Fossil Fuel,4.387922,4045464980.0
+2024,ESGU,Fossil Fuel,4.046458,13485685666.0
+2024,ESML,Fossil Fuel,4.178,1578937784.0
+2024,ICLN,Fossil Fuel,8.493388,2165452705.0
+2024,LCTD,Fossil Fuel,7.978109,344953405.0
+2024,LCTU,Fossil Fuel,6.2685249999999995,1356576171.0
+2024,PABD,Fossil Fuel,1.2424849999999998,6204660.0
+2024,PABU,Fossil Fuel,1.160555,1776067415.0
+2024,SDG,Fossil Fuel,0.04042,301162124.0
+2024,SUSA,Fossil Fuel,3.74239,3333157871.0
+2024,SUSL,Fossil Fuel,3.160642,1123280187.0
+2024,USCL,Fossil Fuel,5.108137,1949740013.0
+2024,USXF,Fossil Fuel,0.055199,936873745.0
+2024,XJH,Fossil Fuel,2.242563,182811359.0
+2024,XVV,Fossil Fuel,4.552855,253613830.0
+2025,CRBN,Fossil Fuel,3.37,1027534118.21
+2025,DMXF,Fossil Fuel,0.42,804362959.91
+2025,DSI,Fossil Fuel,2.33,4790621472.66
+2025,EMXF,Fossil Fuel,0.51,106662263.48
+2025,ESGD,Fossil Fuel,8.46,9596812876.42
+2025,ESGE,Fossil Fuel,3.91,5076162057.75
+2025,ESGU,Fossil Fuel,6.2,13989919390.35
+2025,ESML,Fossil Fuel,5.26,1878348896.09
+2025,ICLN,Fossil Fuel,18.06,1457155418.31
+2025,LCTD,Fossil Fuel,6.01,234070256.94
+2025,LCTU,Fossil Fuel,7.99,1305135788.31
+2025,PABD,Fossil Fuel,0.63,208173774.79
+2025,PABU,Fossil Fuel,0.77,2177420259.22
+2025,SDG,Fossil Fuel,0.04,167008602.29
+2025,SUSA,Fossil Fuel,4.42,3555990177.17
+2025,SUSL,Fossil Fuel,2.83,969050560.38
+2025,USCL,Fossil Fuel,5.3100000000000005,2487467893.45
+2025,USXF,Fossil Fuel,0.8999999999999999,1263627631.62
+2025,XJH,Fossil Fuel,1.84,290594113.62
+2025,XVV,Fossil Fuel,4.64,430814329.23
+2017,CRBN,Prisons,1.5853929999999998,434815251.0
+2017,DSI,Prisons,8.468527,822945453.0
+2017,ESGD,Prisons,2.791891,122123323.0
+2017,ESGU,Prisons,7.4138209999999996,10829518.0
+2017,SUSA,Prisons,12.057706,528508524.0
+2018,CRBN,Prisons,4.407385,534024244.0
+2018,DSI,Prisons,10.371623,1035422953.0
+2018,ESGD,Prisons,2.834081,360308692.0
+2018,ESGU,Prisons,14.892166,98974020.0
+2018,ESML,Prisons,0.900664,11505741.0
+2018,SUSA,Prisons,13.294913000000001,681606886.0
+2019,CRBN,Prisons,4.945111,468999117.0
+2019,DSI,Prisons,17.077394,1640657277.0
+2019,ESGD,Prisons,2.503957,917779537.0
+2019,ESGU,Prisons,15.529328,295904506.0
+2019,ESML,Prisons,0.594317,57663750.0
+2019,SUSA,Prisons,12.666699,1075898000.0
+2019,SUSL,Prisons,16.454485,1579065100.0
+2020,CRBN,Prisons,5.930371,432095233.0
+2020,DMXF,Prisons,1.407281,11157682.0
+2020,DSI,Prisons,19.401735,1793823683.0
+2020,ESGD,Prisons,1.981652,3025518508.0
+2020,ESGU,Prisons,17.386759,8991145354.0
+2020,ESML,Prisons,0.789906,366339046.0
+2020,SUSA,Prisons,14.35778,1289055430.0
+2020,SUSL,Prisons,20.17957,2564227647.0
+2020,USXF,Prisons,0.114971,5807543.0
+2020,XJH,Prisons,0.889802,5125191.0
+2020,XVV,Prisons,21.122119,5139636.0
+2021,CRBN,Prisons,6.440208,861219103.0
+2021,DMXF,Prisons,1.193145,245845684.0
+2021,DSI,Prisons,16.844656,3109465386.0
+2021,ESGD,Prisons,1.697437,6694668587.0
+2021,ESGU,Prisons,10.695579,22262630403.0
+2021,ESML,Prisons,0.950566,1099038297.0
+2021,LCTD,Prisons,2.243921,605599462.0
+2021,LCTU,Prisons,10.061967000000001,1423888880.0
+2021,SUSA,Prisons,10.754024000000001,3057930957.0
+2021,SUSL,Prisons,22.213897,4077962404.0
+2021,USXF,Prisons,0.394973,419105368.0
+2021,XJH,Prisons,1.3626559999999999,39689358.0
+2021,XVV,Prisons,12.793113,146941913.0
+2022,CRBN,Prisons,7.294835,907313054.0
+2022,DMXF,Prisons,1.510234,354432464.0
+2022,DSI,Prisons,21.056926,3613714403.0
+2022,ESGD,Prisons,2.504314,6376261704.0
+2022,ESGU,Prisons,16.750025,22194428203.0
+2022,ESML,Prisons,1.166585,1479097137.0
+2022,LCTD,Prisons,3.152556,442314960.0
+2022,LCTU,Prisons,17.89787,1409350423.0
+2022,PABU,Prisons,16.213655,756881657.0
+2022,SUSA,Prisons,11.3179,3662646233.0
+2022,SUSL,Prisons,22.726593,3116650243.0
+2022,USXF,Prisons,1.034221,589182424.0
+2022,XJH,Prisons,2.409754,84725034.0
+2022,XVV,Prisons,21.553489,201075983.0
+2023,CRBN,Prisons,7.651838,897207980.0
+2023,DMXF,Prisons,1.621669,475875769.0
+2023,DSI,Prisons,22.784556000000002,3536465235.0
+2023,ESGD,Prisons,3.150566,7260643178.0
+2023,ESGU,Prisons,17.172068,12824827132.0
+2023,ESML,Prisons,1.532033,1403577468.0
+2023,LCTD,Prisons,4.5850729999999995,576261731.0
+2023,LCTU,Prisons,18.260106999999998,1683978711.0
+2023,PABU,Prisons,17.320203,1489773825.0
+2023,SUSA,Prisons,12.928625,3260027828.0
+2023,SUSL,Prisons,23.472763999999998,1139306520.0
+2023,USCL,Prisons,15.904800000000002,2299045699.0
+2023,USXF,Prisons,0.845565,722994091.0
+2023,XJH,Prisons,2.03927,111598396.0
+2023,XVV,Prisons,22.270797,155683944.0
+2024,CRBN,Prisons,8.355845,865372385.0
+2024,DMXF,Prisons,1.973985,612269849.0
+2024,DSI,Prisons,23.88566,4246772961.0
+2024,ESGD,Prisons,3.132119,7857945972.0
+2024,ESGU,Prisons,18.111892,13485685666.0
+2024,ESML,Prisons,2.110365,1578937784.0
+2024,LCTD,Prisons,5.360072,344953405.0
+2024,LCTU,Prisons,19.449214,1356576171.0
+2024,PABD,Prisons,2.135024,6204660.0
+2024,PABU,Prisons,18.257210999999998,1776067415.0
+2024,SUSA,Prisons,12.992370000000001,3333157871.0
+2024,SUSL,Prisons,24.09201,1123280187.0
+2024,USCL,Prisons,19.809112,1949740013.0
+2024,USXF,Prisons,0.954322,936873745.0
+2024,XJH,Prisons,1.927519,182811359.0
+2024,XVV,Prisons,22.73438,253613830.0
+2025,CRBN,Prisons,7.8999999999999995,1027534118.21
+2025,DMXF,Prisons,1.9100000000000001,804362959.91
+2025,DSI,Prisons,22.8,4790621472.66
+2025,ESGD,Prisons,2.98,9596812876.42
+2025,ESGU,Prisons,19.75,13989919390.35
+2025,ESML,Prisons,1.9100000000000001,1878348896.09
+2025,LCTD,Prisons,3.08,234070256.94
+2025,LCTU,Prisons,18.490000000000002,1305135788.31
+2025,PABD,Prisons,2.3200000000000003,208173774.79
+2025,PABU,Prisons,18.84,2177420259.22
+2025,SUSA,Prisons,14.52,3555990177.17
+2025,SUSL,Prisons,22.75,969050560.38
+2025,USCL,Prisons,22.19,2487467893.45
+2025,USXF,Prisons,1.45,1263627631.62
+2025,XJH,Prisons,1.59,290594113.62
+2025,XVV,Prisons,22.39,430814329.23
+2017,CRBN,Tobacco,2.597841,434815251.0
+2017,DSI,Tobacco,1.84968,822945453.0
+2017,ESGD,Tobacco,0.367846,122123323.0
+2017,ESGU,Tobacco,2.230708,10829518.0
+2017,SUSA,Tobacco,1.400826,528508524.0
+2018,CRBN,Tobacco,2.564208,534024244.0
+2018,DSI,Tobacco,1.362593,1035422953.0
+2018,ESGD,Tobacco,0.611716,360308692.0
+2018,ESGU,Tobacco,1.552978,98974020.0
+2018,SUSA,Tobacco,0.527978,681606886.0
+2019,CRBN,Tobacco,2.620746,468999117.0
+2019,DSI,Tobacco,1.724417,1640657277.0
+2019,ESGD,Tobacco,0.60285,917779537.0
+2019,ESGU,Tobacco,2.58793,295904506.0
+2019,SUSA,Tobacco,0.622999,1075898000.0
+2019,SUSL,Tobacco,1.888555,1579065100.0
+2020,CRBN,Tobacco,2.254251,432095233.0
+2020,DSI,Tobacco,1.468229,1793823683.0
+2020,ESGD,Tobacco,0.786509,3025518508.0
+2020,ESGU,Tobacco,1.997317,8991145354.0
+2020,SUSA,Tobacco,0.52904,1289055430.0
+2020,SUSL,Tobacco,1.544804,2564227647.0
+2020,XVV,Tobacco,2.5088939999999997,5139636.0
+2021,CRBN,Tobacco,2.155769,861219103.0
+2021,ESGD,Tobacco,0.911067,6694668587.0
+2021,ESGU,Tobacco,0.942018,22262630403.0
+2021,LCTD,Tobacco,0.522678,605599462.0
+2021,SUSL,Tobacco,1.608819,4077962404.0
+2021,XVV,Tobacco,1.3414570000000001,146941913.0
+2022,CRBN,Tobacco,1.944679,907313054.0
+2022,DSI,Tobacco,1.050322,3613714403.0
+2022,ESGD,Tobacco,0.913951,6376261704.0
+2022,ESGU,Tobacco,1.264006,22194428203.0
+2022,LCTD,Tobacco,0.721099,442314960.0
+2022,LCTU,Tobacco,0.670684,1409350423.0
+2022,SUSA,Tobacco,0.66925,3662646233.0
+2022,SUSL,Tobacco,1.174822,3116650243.0
+2022,USXF,Tobacco,1.027177,589182424.0
+2022,XVV,Tobacco,1.5594080000000001,201075983.0
+2023,CRBN,Tobacco,2.139155,897207980.0
+2023,DSI,Tobacco,0.963999,3536465235.0
+2023,ESGD,Tobacco,0.868058,7260643178.0
+2023,ESGU,Tobacco,1.078376,12824827132.0
+2023,LCTD,Tobacco,0.525008,576261731.0
+2023,LCTU,Tobacco,0.356989,1683978711.0
+2023,SUSA,Tobacco,0.836226,3260027828.0
+2023,SUSL,Tobacco,1.700496,1139306520.0
+2023,USCL,Tobacco,1.8117750000000001,2299045699.0
+2023,USXF,Tobacco,1.049463,722994091.0
+2023,XVV,Tobacco,1.371171,155683944.0
+2024,CRBN,Tobacco,2.206887,865372385.0
+2024,DSI,Tobacco,0.863463,4246772961.0
+2024,ESGD,Tobacco,0.865325,7857945972.0
+2024,ESGU,Tobacco,0.986011,13485685666.0
+2024,LCTD,Tobacco,0.443499,344953405.0
+2024,LCTU,Tobacco,0.45222300000000004,1356576171.0
+2024,PABD,Tobacco,0.555373,6204660.0
+2024,SUSA,Tobacco,0.771307,3333157871.0
+2024,SUSL,Tobacco,1.634055,1123280187.0
+2024,USCL,Tobacco,1.546374,1949740013.0
+2024,USXF,Tobacco,0.956955,936873745.0
+2024,XVV,Tobacco,1.307621,253613830.0
+2025,CRBN,Tobacco,2.36,1027534118.21
+2025,DSI,Tobacco,0.73,4790621472.66
+2025,ESGD,Tobacco,1.0,9596812876.42
+2025,ESGU,Tobacco,0.75,13989919390.35
+2025,ESML,Tobacco,0.17,1878348896.09
+2025,LCTD,Tobacco,0.55,234070256.94
+2025,LCTU,Tobacco,0.26,1305135788.31
+2025,PABD,Tobacco,0.89,208173774.79
+2025,SUSA,Tobacco,0.37,3555990177.17
+2025,SUSL,Tobacco,1.16,969050560.38
+2025,USCL,Tobacco,1.45,2487467893.45
+2025,USXF,Tobacco,0.57,1263627631.62
+2025,XVV,Tobacco,1.1199999999999999,430814329.23
+2017,CRBN,Weapons,0.355109,434815251.0
+2017,DSI,Weapons,1.429989,822945453.0
+2017,ESGD,Weapons,1.643542,122123323.0
+2017,ESGU,Weapons,2.090814,10829518.0
+2017,SUSA,Weapons,1.172053,528508524.0
+2018,CRBN,Weapons,0.358016,534024244.0
+2018,DSI,Weapons,1.46476,1035422953.0
+2018,ESGD,Weapons,2.27696,360308692.0
+2018,ESGU,Weapons,1.7701449999999999,98974020.0
+2018,ESML,Weapons,2.262707,11505741.0
+2018,SUSA,Weapons,1.495009,681606886.0
+2019,CRBN,Weapons,0.536889,468999117.0
+2019,DSI,Weapons,1.320956,1640657277.0
+2019,ESGD,Weapons,2.322848,917779537.0
+2019,ESGU,Weapons,1.851985,295904506.0
+2019,ESML,Weapons,2.254698,57663750.0
+2019,SUSA,Weapons,0.959837,1075898000.0
+2019,SUSL,Weapons,0.40019099999999996,1579065100.0
+2020,CRBN,Weapons,0.49723,432095233.0
+2020,DMXF,Weapons,0.461583,11157682.0
+2020,DSI,Weapons,1.179759,1793823683.0
+2020,ESGD,Weapons,2.123729,3025518508.0
+2020,ESGU,Weapons,1.597914,8991145354.0
+2020,ESML,Weapons,2.3828489999999998,366339046.0
+2020,SUSA,Weapons,0.61007,1289055430.0
+2020,SUSL,Weapons,0.884268,2564227647.0
+2020,USXF,Weapons,1.029023,5807543.0
+2020,XJH,Weapons,1.535592,5125191.0
+2020,XVV,Weapons,0.797565,5139636.0
+2021,CRBN,Weapons,0.611255,861219103.0
+2021,DMXF,Weapons,0.382349,245845684.0
+2021,DSI,Weapons,1.253148,3109465386.0
+2021,EMXF,Weapons,0.39809900000000004,13549906.0
+2021,ESGD,Weapons,1.937496,6694668587.0
+2021,ESGE,Weapons,0.20631,7105443464.0
+2021,ESGU,Weapons,1.515447,22262630403.0
+2021,ESML,Weapons,1.357003,1099038297.0
+2021,LCTD,Weapons,1.789386,605599462.0
+2021,LCTU,Weapons,1.05249,1423888880.0
+2021,SUSA,Weapons,0.662123,3057930957.0
+2021,SUSL,Weapons,1.168891,4077962404.0
+2021,USXF,Weapons,1.188157,419105368.0
+2021,XJH,Weapons,1.460856,39689358.0
+2021,XVV,Weapons,0.819395,146941913.0
+2022,CRBN,Weapons,0.586324,907313054.0
+2022,DMXF,Weapons,0.36371,354432464.0
+2022,DSI,Weapons,1.305716,3613714403.0
+2022,EMXF,Weapons,0.658013,35467841.0
+2022,ESGD,Weapons,1.972873,6376261704.0
+2022,ESGE,Weapons,0.42441700000000004,4251524672.0
+2022,ESGU,Weapons,1.391059,22194428203.0
+2022,ESML,Weapons,2.234562,1479097137.0
+2022,LCTD,Weapons,2.295775,442314960.0
+2022,LCTU,Weapons,0.664728,1409350423.0
+2022,PABU,Weapons,0.162157,756881657.0
+2022,SUSA,Weapons,0.9171849999999999,3662646233.0
+2022,SUSL,Weapons,1.176442,3116650243.0
+2022,USXF,Weapons,1.251749,589182424.0
+2022,XJH,Weapons,2.14106,84725034.0
+2022,XVV,Weapons,0.988592,201075983.0
+2023,CRBN,Weapons,1.450927,897207980.0
+2023,DMXF,Weapons,0.457778,475875769.0
+2023,DSI,Weapons,1.387443,3536465235.0
+2023,EMXF,Weapons,0.792594,55954926.0
+2023,ESGD,Weapons,2.707274,7260643178.0
+2023,ESGE,Weapons,0.5112610000000001,4323754536.0
+2023,ESGU,Weapons,2.054068,12824827132.0
+2023,ESML,Weapons,3.241455,1403577468.0
+2023,LCTD,Weapons,1.925029,576261731.0
+2023,LCTU,Weapons,0.9958739999999999,1683978711.0
+2023,PABU,Weapons,0.506011,1489773825.0
+2023,SUSA,Weapons,0.395574,3260027828.0
+2023,SUSL,Weapons,1.4116279999999999,1139306520.0
+2023,USCL,Weapons,0.68557,2299045699.0
+2023,USXF,Weapons,1.649225,722994091.0
+2023,XJH,Weapons,2.07084,111598396.0
+2023,XVV,Weapons,1.161786,155683944.0
+2024,CRBN,Weapons,1.401283,865372385.0
+2024,DMXF,Weapons,0.574,612269849.0
+2024,DSI,Weapons,1.779852,4246772961.0
+2024,EMXF,Weapons,1.221616,73705908.0
+2024,ESGD,Weapons,2.978062,7857945972.0
+2024,ESGE,Weapons,1.2369,4045464980.0
+2024,ESGU,Weapons,1.682674,13485685666.0
+2024,ESML,Weapons,3.41356,1578937784.0
+2024,LCTD,Weapons,2.399699,344953405.0
+2024,LCTU,Weapons,1.132092,1356576171.0
+2024,PABD,Weapons,0.851861,6204660.0
+2024,PABU,Weapons,0.495483,1776067415.0
+2024,SUSA,Weapons,0.519686,3333157871.0
+2024,SUSL,Weapons,1.4860499999999999,1123280187.0
+2024,USCL,Weapons,0.640401,1949740013.0
+2024,USXF,Weapons,2.080494,936873745.0
+2024,XJH,Weapons,1.970561,182811359.0
+2024,XVV,Weapons,1.255266,253613830.0
+2025,CRBN,Weapons,2.05,1027534118.21
+2025,DMXF,Weapons,1.09,804362959.91
+2025,DSI,Weapons,1.94,4790621472.66
+2025,EMXF,Weapons,1.56,106662263.48
+2025,ESGD,Weapons,3.83,9596812876.42
+2025,ESGE,Weapons,1.08,5076162057.75
+2025,ESGU,Weapons,3.36,13989919390.35
+2025,ESML,Weapons,4.85,1878348896.09
+2025,LCTD,Weapons,3.23,234070256.94
+2025,LCTU,Weapons,4.6,1305135788.31
+2025,PABD,Weapons,1.5,208173774.79
+2025,PABU,Weapons,0.51,2177420259.22
+2025,SUSA,Weapons,1.94,3555990177.17
+2025,SUSL,Weapons,1.61,969050560.38
+2025,USCL,Weapons,1.4,2487467893.45
+2025,USXF,Weapons,2.84,1263627631.62
+2025,XJH,Weapons,3.35,290594113.62
+2025,XVV,Weapons,1.96,430814329.23
+2017,CRBN,Clean200,7.981593999999999,434815251.0
+2017,DSI,Clean200,8.773249,822945453.0
+2017,ESGD,Clean200,7.025117,122123323.0
+2017,ESGE,Clean200,6.959931,96812458.0
+2017,ESGU,Clean200,10.172493,10829518.0
+2017,ICLN,Clean200,10.261991,112605427.0
+2017,SDG,Clean200,8.294807,25164057.0
+2017,SUSA,Clean200,13.533777,528508524.0
+2018,CRBN,Clean200,7.904637,534024244.0
+2018,DSI,Clean200,9.841622,1035422953.0
+2018,ESGD,Clean200,7.106287,360308692.0
+2018,ESGE,Clean200,7.825232,329752699.0
+2018,ESGU,Clean200,10.625385,98974020.0
+2018,ESML,Clean200,0.5524020000000001,11505741.0
+2018,ICLN,Clean200,19.429907,165729203.0
+2018,SDG,Clean200,12.587608,37928461.0
+2018,SUSA,Clean200,15.447271,681606886.0
+2019,CRBN,Clean200,8.312671,468999117.0
+2019,DSI,Clean200,9.070782,1640657277.0
+2019,ESGD,Clean200,7.437703,917779537.0
+2019,ESGE,Clean200,7.085789,672543077.0
+2019,ESGU,Clean200,9.870056,295904506.0
+2019,ESML,Clean200,0.298552,57663750.0
+2019,ICLN,Clean200,12.460107,360049255.0
+2019,SDG,Clean200,11.620691,54174461.0
+2019,SUSA,Clean200,14.868479,1075898000.0
+2019,SUSL,Clean200,6.0957609999999995,1579065100.0
+2020,CRBN,Clean200,10.60878,432095233.0
+2020,DMXF,Clean200,7.232657000000001,11157682.0
+2020,DSI,Clean200,10.175799,1793823683.0
+2020,ESGD,Clean200,8.536093,3025518508.0
+2020,ESGE,Clean200,8.694189999999999,3654480091.0
+2020,ESGU,Clean200,13.961899,8991145354.0
+2020,ESML,Clean200,0.945241,366339046.0
+2020,ICLN,Clean200,14.405678,1541917450.0
+2020,SDG,Clean200,13.842074,175603848.0
+2020,SUSA,Clean200,15.564781,1289055430.0
+2020,SUSL,Clean200,8.339983,2564227647.0
+2020,USXF,Clean200,2.479431,5807543.0
+2020,XJH,Clean200,1.101481,5125191.0
+2020,XVV,Clean200,13.700309,5139636.0
+2021,CRBN,Clean200,10.262889,861219103.0
+2021,DMXF,Clean200,4.22516,245845684.0
+2021,DSI,Clean200,7.164296,3109465386.0
+2021,EMXF,Clean200,6.235932,13549906.0
+2021,ESGD,Clean200,7.226199,6694668587.0
+2021,ESGE,Clean200,9.66605,7105443464.0
+2021,ESGU,Clean200,10.860646000000001,22262630403.0
+2021,ESML,Clean200,0.41299399999999997,1099038297.0
+2021,ICLN,Clean200,30.973068,5855954348.0
+2021,LCTD,Clean200,9.312959,605599462.0
+2021,LCTU,Clean200,9.360655999999999,1423888880.0
+2021,SDG,Clean200,12.798697,565145405.0
+2021,SUSA,Clean200,11.200990000000001,3057930957.0
+2021,SUSL,Clean200,7.5851500000000005,4077962404.0
+2021,USXF,Clean200,2.438812,419105368.0
+2021,XJH,Clean200,0.44239,39689358.0
+2021,XVV,Clean200,11.657048,146941913.0
+2022,CRBN,Clean200,11.788373,907313054.0
+2022,DMXF,Clean200,6.437482,354432464.0
+2022,DSI,Clean200,12.253141,3613714403.0
+2022,EMXF,Clean200,5.371347999999999,35467841.0
+2022,ESGD,Clean200,8.165941,6376261704.0
+2022,ESGE,Clean200,9.711916,4251524672.0
+2022,ESGU,Clean200,15.12659,22194428203.0
+2022,ESML,Clean200,0.773953,1479097137.0
+2022,ICLN,Clean200,18.264197,4983595510.0
+2022,LCTD,Clean200,9.063296,442314960.0
+2022,LCTU,Clean200,15.553607,1409350423.0
+2022,PABU,Clean200,16.160618,756881657.0
+2022,SDG,Clean200,11.995662,415790649.0
+2022,SUSA,Clean200,14.816265,3662646233.0
+2022,SUSL,Clean200,8.922675,3116650243.0
+2022,USXF,Clean200,4.7622,589182424.0
+2022,XJH,Clean200,1.502109,84725034.0
+2022,XVV,Clean200,16.241078,201075983.0
+2023,CRBN,Clean200,13.236662,897207980.0
+2023,DMXF,Clean200,7.721079,475875769.0
+2023,DSI,Clean200,10.796019,3536465235.0
+2023,EMXF,Clean200,6.496854,55954926.0
+2023,ESGD,Clean200,8.921795,7260643178.0
+2023,ESGE,Clean200,10.657931999999999,4323754536.0
+2023,ESGU,Clean200,15.07448,12824827132.0
+2023,ESML,Clean200,0.533897,1403577468.0
+2023,ICLN,Clean200,17.800282,4573104098.0
+2023,LCTD,Clean200,9.72659,576261731.0
+2023,LCTU,Clean200,15.546249,1683978711.0
+2023,PABU,Clean200,17.684645,1489773825.0
+2023,SDG,Clean200,13.853793,374082063.0
+2023,SUSA,Clean200,15.953148,3260027828.0
+2023,SUSL,Clean200,8.323653,1139306520.0
+2023,USCL,Clean200,9.543753,2299045699.0
+2023,USXF,Clean200,5.635403999999999,722994091.0
+2023,XJH,Clean200,1.93902,111598396.0
+2023,XVV,Clean200,16.394175,155683944.0
+2024,CRBN,Clean200,13.180996,865372385.0
+2024,DMXF,Clean200,8.380118,612269849.0
+2024,DSI,Clean200,10.377368,4246772961.0
+2024,EMXF,Clean200,6.023001,73705908.0
+2024,ESGD,Clean200,9.673244,7857945972.0
+2024,ESGE,Clean200,11.893206,4045464980.0
+2024,ESGU,Clean200,14.197804,13485685666.0
+2024,ESML,Clean200,0.592049,1578937784.0
+2024,ICLN,Clean200,21.370578000000002,2165452705.0
+2024,LCTD,Clean200,10.10818,344953405.0
+2024,LCTU,Clean200,13.520774999999999,1356576171.0
+2024,PABD,Clean200,10.172548,6204660.0
+2024,PABU,Clean200,16.660299,1776067415.0
+2024,SDG,Clean200,14.103028,301162124.0
+2024,SUSA,Clean200,16.073313,3333157871.0
+2024,SUSL,Clean200,7.337209,1123280187.0
+2024,USCL,Clean200,7.838889,1949740013.0
+2024,USXF,Clean200,9.224955,936873745.0
+2024,XJH,Clean200,1.650207,182811359.0
+2024,XVV,Clean200,14.210936,253613830.0
+2025,CRBN,Clean200,13.67,1027534118.21
+2025,DMXF,Clean200,8.92,804362959.91
+2025,DSI,Clean200,10.07,4790621472.66
+2025,EMXF,Clean200,7.13,106662263.48
+2025,ESGD,Clean200,8.870000000000001,9596812876.42
+2025,ESGE,Clean200,13.62,5076162057.75
+2025,ESGU,Clean200,14.84,13989919390.35
+2025,ESML,Clean200,0.84,1878348896.09
+2025,ICLN,Clean200,24.990000000000002,1457155418.31
+2025,LCTD,Clean200,11.58,234070256.94
+2025,LCTU,Clean200,17.06,1305135788.31
+2025,PABD,Clean200,10.66,208173774.79
+2025,PABU,Clean200,19.14,2177420259.22
+2025,SDG,Clean200,23.63,167008602.29
+2025,SUSA,Clean200,16.41,3555990177.17
+2025,SUSL,Clean200,8.22,969050560.38
+2025,USCL,Clean200,9.15,2487467893.45
+2025,USXF,Clean200,11.33,1263627631.62
+2025,XJH,Clean200,1.54,290594113.62
+2025,XVV,Clean200,15.46,430814329.23
