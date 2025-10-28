@@ -803,10 +803,10 @@ def render_change_since_2017():
             SCREEN_COLORS = [
                 COLORS["clean"],
                 "#E66A6A",  # Prisons (soft red)
-                "#8B2C2C",  # Deforestation (rose/pink)
+                "#B5651D",  # Deforestation (rose/pink)
                 "#800020",  # Fossil Fuel (orange)
                 "#F08BA6",  # Weapons (very dark red/brown)
-                "#B5651D",  # Tobacco (brown)
+                "#8B2C2C",  # Tobacco (brown)
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
