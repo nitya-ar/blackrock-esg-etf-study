@@ -11,7 +11,7 @@ import streamlit as st
 from PIL import Image  
 
 # ---- Page config (set favicon/logo in the browser tab) 
-_ICON_FILE = "Blackrock esg study logo.png"  # or "assets/Blackrock esg study logo.png" if you move it
+_ICON_FILE = "Blackrock esg study logo .png"  # or "assets/Blackrock esg study logo.png" if you move it
 
 try:
     _icon_img = Image.open(_ICON_FILE)
