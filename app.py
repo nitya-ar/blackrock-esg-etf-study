@@ -549,6 +549,36 @@ with left:
         )
 
 
+d = load_screen_trends().copy()
+if "exposure_pct" in d.columns and "value" not in d.columns:
+    d = d.rename(columns={"exposure_pct":"value"})
+# Weighting
+mode = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
+if "weighting_mode" in d.columns:
+    d = d[d["weighting_mode"] == mode]
+# Year filter
+if "year" in d.columns:
+    d = d[(d["year"] >= start_year) & (d["year"] <= end_year)]
+# ETF filter (optional)
+etf_col = next((c for c in d.columns if c.lower() in ("etf_ticker","etf")), None)
+if etf_col:
+    d = d[d[etf_col].astype(str).isin(set(cohort))]
+# Keep only known categories
+d["Category"] = d["screen_category"].astype(str).str.strip().replace(
+    {"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"}
+)
+keep = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
+d = d[d["Category"].isin(keep)]
+# Aggregate AFTER ETF filtering
+if etf_col:
+    d["value"] = pd.to_numeric(d["value"], errors="coerce")
+    if mode == "AUM_TRUE" and "aum_usd" in d.columns:
+        d["aum_usd"] = pd.to_numeric(d["aum_usd"], errors="coerce").clip(lower=0)
+        d = (d.groupby(["year","Category"])
+               .apply(lambda g: (g["value"]*g["aum_usd"]).sum()/g["aum_usd"].sum() if g["aum_usd"].sum()>0 else np.nan)
+               .reset_index(name="value"))
+    else:
+        d = d.groupby(["year","Category"], as_index=False)["value"].mean()
 
 
 
