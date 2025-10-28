@@ -803,9 +803,9 @@ def render_change_since_2017():
             SCREEN_COLORS = [
                 COLORS["clean"],
                 "#E66A6A",  # Prisons (soft red)
-                "#F08BA6",  # Deforestation (rose/pink)
+                "#8B2C2C",  # Deforestation (rose/pink)
                 "#800020",  # Fossil Fuel (orange)
-                "#8B2C2C",  # Weapons (very dark red/brown)
+                "#F08BA6",  # Weapons (very dark red/brown)
                 "#B5651D",  # Tobacco (brown)
             ]
             H = 300
