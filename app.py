@@ -899,7 +899,7 @@ def render_change_since_2017():
         st.dataframe(_fmt(dec), hide_index=True, use_container_width=True)
 
 
-# ---------------------------
+# --------------------------
 # TAB 3: Tradeoff Scenarios
 # ---------------------------
 def render_tradeoff_scenarios():
