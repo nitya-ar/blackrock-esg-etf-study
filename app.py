@@ -856,34 +856,66 @@ def render_change_since_2017():
     st.markdown(
         f'''<div class="chart-head">
                <div class="chart-title">Top movers — holdings ({start_year} → {end_year})</div>
-               <div class="info-badge has-tip" data-tip="This table is pre-aggregated across ETFs and built with AUM contributions; it responds to the chosen start year.">i</div>
+               <div class="info-badge has-tip" data-tip="Computed from per-ETF deltas and aggregated by your ETF selection; weighting toggle applies (AUM vs EW).">i</div>
              </div>''',
         unsafe_allow_html=True,
     )
 
     mv = movers.copy()
-    ya = _pick_exact(mv, "year_a")
-    yb = _pick_exact(mv, "year_b")
+    ya   = _pick_exact(mv, "year_a") or _pick(mv, "year_a")
+    yb   = _pick_exact(mv, "year_b") or _pick(mv, "year_b")
+    ecol = _pick_exact(mv, "etf_ticker") or _pick(mv, "etf")
     tick = _pick_exact(mv, "ticker")
-    nm25 = _pick_exact(mv, "Name_2025")
-    hld  = _pick_exact(mv, "holding_name")
-    delta = _pick_exact(mv, "delta_contrib_pct_agg")
+    hld  = _pick_exact(mv, "holding_name") or _pick(mv, "name")
+    nm25 = _pick_exact(mv, "name_2025") or _pick(mv, "name_2025")
+    w_a  = _pick_exact(mv, "w_a") or _pick(mv, "weight_a", "wa")
+    w_b  = _pick_exact(mv, "w_b") or _pick(mv, "weight_b", "wb")
+    delta_pre = _pick_exact(mv, "delta_contrib_pct_agg") or _pick_exact(mv, "delta_weight_pp") or _pick_exact(mv, "delta_weight_pct") or _pick_exact(mv, "delta_pp") or _pick(mv, "delta")
 
-    for need_c, lbl in [(ya, "year_a"), (yb, "year_b"), (tick, "ticker"), (delta, "delta_contrib_pct_agg")]:
+    for need_c, lbl in [(ya, "year_a"), (yb, "year_b"), (tick, "ticker")]:
         _need_col(mv, need_c, f"Top movers: need '{lbl}'")
 
     mv = mv[(mv[ya] == start_year) & (mv[yb] == end_year)].copy()
-    if nm25 is None and hld is not None:
-        nm25 = hld
-    if nm25 is None:
-        mv["Company"] = mv[tick]
-        nm25 = "Company"
-    mv["Company"] = mv[nm25].where(mv[nm25].notna() & (mv[nm25].astype(str).str.len()>0), mv[tick])
-    mv["Ticker"] = mv[tick].astype(str)
-    mv["Δ weight (pp)"] = pd.to_numeric(mv[delta], errors="coerce") * 100.0
+    if ecol is not None:
+        mv = mv[mv[ecol].astype(str).isin(set(cohort))]
 
-    inc = mv.sort_values("Δ weight (pp)", ascending=False).loc[:, ["Company","Ticker","Δ weight (pp)"]].head(10)
-    dec = mv.sort_values("Δ weight (pp)", ascending=True ).loc[:, ["Company","Ticker","Δ weight (pp)"]].head(10)
+    if delta_pre is not None:
+        mv["__delta_pp__"] = pd.to_numeric(mv[delta_pre], errors="coerce")
+    else:
+        _need_col(mv, w_a, "Top movers: need 'w_a'")
+        _need_col(mv, w_b, "Top movers: need 'w_b'")
+        mv["__delta_pp__"] = pd.to_numeric(mv[w_b], errors="coerce") - pd.to_numeric(mv[w_a], errors="coerce")
+
+    if ecol is None:
+        mv["__wETF__"] = 1.0
+    else:
+        if weighting == "AUM-weighted" and aum_col in df_all.columns:
+            aum_map = (df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
+                       .groupby(etf_col, as_index=True)[aum_col].first().astype(float))
+            total_aum = float(aum_map.sum()) if len(aum_map) else 0.0
+            if total_aum > 0:
+                mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
+            else:
+                mv["__wETF__"] = 1.0 / max(len(cohort), 1)
+        else:
+            mv["__wETF__"] = 1.0 / max(len(cohort), 1)
+
+    mv["__contrib_pp__"] = pd.to_numeric(mv["__delta_pp__"], errors="coerce").fillna(0.0) * pd.to_numeric(mv["__wETF__"], errors="coerce").fillna(0.0)
+
+    name_col = None
+    if nm25 is not None:
+        name_col = nm25
+    elif hld is not None:
+        name_col = hld
+    mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
+    mv["Ticker"] = mv[tick].astype(str)
+
+    grp_cols = ["Ticker", "Company"]
+    agg = mv.groupby(grp_cols, dropna=False)["__contrib_pp__"].sum().reset_index()
+    agg = agg.rename(columns={"__contrib_pp__": "Δ weight (pp)"})
+
+    top_increase = agg.sort_values("Δ weight (pp)", ascending=False).head(10).copy()
+    top_decrease = agg.sort_values("Δ weight (pp)", ascending=True ).head(10).copy()
 
     def _fmt(df):
         out = df.copy()
@@ -893,13 +925,13 @@ def render_change_since_2017():
     a, b = st.columns(2, gap="large")
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
-        st.dataframe(_fmt(inc), hide_index=True, use_container_width=True)
+        st.dataframe(_fmt(top_increase), hide_index=True, use_container_width=True)
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
-        st.dataframe(_fmt(dec), hide_index=True, use_container_width=True)
+        st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
 
 
-# ---------------------------
+# --------------------------
 # TAB 3: Tradeoff Scenarios
 # ---------------------------
 def render_tradeoff_scenarios():
