@@ -8,7 +8,7 @@ import altair as alt
 import streamlit as st
 
 
-from PIL import Image  # add this near the other imports, once
+from PIL import Image  
 
 # ---- Page config (set favicon/logo in the browser tab) ----
 _ICON_FILE = "Blackrock esg study logo.png"  # or "assets/Blackrock esg study logo.png" if you move it
@@ -802,11 +802,11 @@ def render_change_since_2017():
             SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
             SCREEN_COLORS = [
                 COLORS["clean"],
-                "#E66A6A",  # Prisons (soft red)
-                "#F08BA6",  # Deforestation (rose/pink)
-                "#FF8C42",  # Fossil Fuel (orange)
-                "#8B2C2C",  # Weapons (very dark red/brown)
-                "#B5651D",  # Tobacco (brown)
+                "#C84B4B",  # Prisons (soft red)
+                "#B5651D",  # Deforestation (rose/pink)
+                "#800020",  # Fossil Fuel (orange)
+                "#F08BA6",  # Weapons (very dark red/brown)
+                "#4B2E05",  # Tobacco (brown)
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
