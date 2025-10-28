@@ -391,24 +391,10 @@ def load_year_compare():
     return load_csv(2, "year_compare_summary.csv")
 
 @st.cache_data(show_spinner=False)
-def load_movers_by_yearpair():
-    return load_csv(2, "movers_by_yearpair.csv")
-
-@st.cache_data(show_spinner=False)
-def load_movers_by_yearpair_aum():
-    return load_csv(2, "movers_by_yearpair_AUM.csv")
-
-@st.cache_data(show_spinner=False)
-def load_movers_by_yearpair_ew():
-    return load_csv(2, "movers_by_yearpair_EW.csv")
-
-@st.cache_data(show_spinner=False)
-def load_movers_by_yearpair_per_etf():
-    return load_csv(2, "movers_by_yearpair_perETF.csv")
-
-@st.cache_data(show_spinner=False)
 def load_top_movers_with_names():
     return load_csv(2, "top_movers_with_names.csv")
+
+
 
 # -------------------------
 # Analysis 3 loaders
@@ -552,8 +538,11 @@ def render_change_since_2017():
 
     by_fund   = load_exposures_by_fund_year()
     scr_tr    = load_screen_trends()
+    movers_etf = load_top_movers_with_names()
+
     _exists(by_fund, "Exposures by fund/year")
     _exists(scr_tr,   "Screen trends")
+    _exists(movers_etf,"Top movers (per-ETF)")
 
     year_col  = _pick(by_fund, "year")
     etf_col   = _pick(by_fund, "etf_ticker", "etf ticker", "etf")
@@ -755,38 +744,34 @@ def render_change_since_2017():
 
     left, right = st.columns([0.5, 0.5])
 
-    # Screen trends — ETF filter + EW/AUM reactive using per-ETF rows in file
     with left:
         d = scr_tr.copy()
-        if "value" not in d.columns and "exposure_pct" in d.columns:
-            d = d.rename(columns={"exposure_pct": "value"})
-        _need_col(d, "value", "Screen trends")
-        if "weighting_mode" in d.columns:
-            mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
-            d = d[d["weighting_mode"].astype(str) == mode_name]
         yscr = _pick_exact(d, "year")
-        if yscr:
-            d[yscr] = pd.to_numeric(d[yscr], errors="coerce")
-            d = d[(d[yscr] >= start_year) & (d[yscr] <= end_year)]
         etf_scr = _pick_exact(d, "ETF_Ticker", "etf_ticker", "etf")
-        if etf_scr:
-            d = d[d[etf_scr].astype(str).isin(set(cohort))]
+        cat_scr = _pick_exact(d, "screen_category")
+        val_scr = _pick_exact(d, "exposure_pct", "value")
+        aum_scr = _pick_exact(d, "aum_usd")
+
+        for need_c, lbl in [(yscr, "year"), (etf_scr, "ETF_Ticker"), (cat_scr, "screen_category"), (val_scr, "exposure_pct")]:
+            _need_col(d, need_c, f"Screen trends missing '{lbl}'")
+
+        d[yscr] = pd.to_numeric(d[yscr], errors="coerce")
+        d[val_scr] = pd.to_numeric(d[val_scr], errors="coerce")
+        d = d[(d[yscr] >= start_year) & (d[yscr] <= end_year)]
+        d = d[d[etf_scr].astype(str).isin(set(cohort))]
+
+        d["Category"] = d[cat_scr].astype(str).str.strip().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
         keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
-        _need_col(d, "screen_category", "Screen trends")
-        d["Category"] = d["screen_category"].astype(str).str.strip().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel"})
         d = d[d["Category"].isin(keep)]
-        # aggregate after ETF filter
-        if etf_scr and yscr:
-            if weighting == "AUM-weighted" and "aum_usd" in d.columns:
-                dd = d.copy()
-                dd["aum_usd"] = pd.to_numeric(dd["aum_usd"], errors="coerce").clip(lower=0)
-                dd["value"]   = pd.to_numeric(dd["value"],   errors="coerce")
-                d = (dd.groupby([yscr, "Category"])
-                        .apply(lambda g: (g["value"] * g["aum_usd"]).sum() / g["aum_usd"].sum() if g["aum_usd"].sum() > 0 else np.nan)
-                        .reset_index(name="value"))
-            else:
-                d["value"] = pd.to_numeric(d["value"], errors="coerce")
-                d = d.groupby([yscr, "Category"], as_index=False)["value"].mean()
+
+        if weighting == "AUM-weighted" and aum_scr in d.columns:
+            d[aum_scr] = pd.to_numeric(d[aum_scr], errors="coerce").clip(lower=0)
+            d = (d.groupby([yscr, "Category"])
+                   .apply(lambda g: (g[val_scr]*g[aum_scr]).sum()/g[aum_scr].sum() if g[aum_scr].sum()>0 else np.nan)
+                   .reset_index(name="value"))
+        else:
+            d = d.groupby([yscr, "Category"], as_index=False)[val_scr].mean().rename(columns={val_scr:"value"})
+
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
@@ -794,21 +779,18 @@ def render_change_since_2017():
             SCREEN_COLORS = [COLORS["clean"], "#FF6B3D", "#FF4D6D", "#D7263D", "#9B2226", "#F77F00"]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
-            x_enc = alt.X(f"{(yscr or 'Year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
-            if not yscr:
-                d["__year__"] = start_year
-                x_enc = alt.X("__year__:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
             base = alt.Chart(d).encode(
-                x=x_enc,
-                y=alt.Y("value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f"), scale=alt.Scale(domain=y_dom_scr, zero=False, nice=True)),
-                color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=SCREEN_DOMAIN, range=SCREEN_COLORS)),
+                x=alt.X(f"{yscr}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
+                y=alt.Y("value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f"),
+                        scale=alt.Scale(domain=y_dom_scr, zero=False, nice=True)),
+                color=alt.Color("Category:N", title=None,
+                                scale=alt.Scale(domain=SCREEN_DOMAIN, range=SCREEN_COLORS)),
                 tooltip=[alt.Tooltip("Category:N", title="Category"),
-                         alt.Tooltip((yscr or "__year__")+":O", title="Year"),
+                         alt.Tooltip(f"{yscr}:O", title="Year"),
                          alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")],
             )
             st.altair_chart(alt.layer(_zero_rule(H), base.mark_line(strokeWidth=2, opacity=0.95), base.mark_point(size=36, opacity=0.95)).resolve_scale(y='shared'), use_container_width=True)
 
-    # Composition bars (start vs end) — uses same cohort + weighting as combined trend
     with right:
         comp_rows = []
         def _val_series(col):
@@ -828,7 +810,9 @@ def render_change_since_2017():
             comp_chart = alt.Chart(comp_df).mark_bar(opacity=0.92, stroke="#0A0B0D", strokeWidth=0.6).encode(
                 x=alt.X("Year:N", title=None),
                 y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True), title="Portfolio share"),
-                color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial","Other"], range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
+                color=alt.Color("Category:N", title=None,
+                                scale=alt.Scale(domain=["Clean","Controversial","Other"],
+                                                range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
                 tooltip=[alt.Tooltip("Year:N", title="Year"),
                          alt.Tooltip("Category:N", title="Category"),
                          alt.Tooltip("Value:Q", title="Share (%)", format=".1f")]
@@ -847,46 +831,33 @@ def render_change_since_2017():
         unsafe_allow_html=True,
     )
 
-    per_etf = load_csv(2, "movers_by_yearpair_perETF.csv")
-    _exists(per_etf, "Per-ETF movers")
+    tm = movers_etf.copy()
+    c_year_a = _pick_exact(tm, "year_a")
+    c_year_b = _pick_exact(tm, "year_b")
+    c_etf    = _pick_exact(tm, "ETF_TICKER", "etf_ticker", "etf")
+    c_name   = _pick_exact(tm, "holding_name", "name")
+    c_tick   = _pick_exact(tm, "ticker", "company_ticker")
+    c_wa     = _pick_exact(tm, "w_a", "weight_a", "weight_start")
+    c_wb     = _pick_exact(tm, "w_b", "weight_b", "weight_end")
 
-    def _pick_cols(df, want_list):
-        low = {c.lower(): c for c in df.columns}
-        out = []
-        for want in want_list:
-            out.append(low.get(want.lower()))
-        return out
+    for need_c, lbl in [(c_year_a,"year_a"), (c_year_b,"year_b"), (c_etf,"ETF_TICKER"),
+                        (c_name,"holding_name"), (c_tick,"ticker"), (c_wa,"w_a"), (c_wb,"w_b")]:
+        _need_col(tm, need_c, f"Top movers missing '{lbl}'")
 
-    c_year_a, c_year_b, c_etf, c_name, c_tick, c_da = _pick_cols(
-        per_etf, ["year_a","year_b","ETF_TICKER","holding_name","ticker","delta_weight_pct"]
-    )
-    if c_da is None:
-        c_da = _pick(per_etf, "delta_weight_pct", "delta_weight_pp", "delta", "delta_weight", "delta_pct", "delta_pp")
-
-    for need_c, lbl in [(c_year_a, "year_a"), (c_year_b, "year_b"),
-                        (c_etf, "ETF_TICKER"), (c_tick, "ticker"),
-                        (c_name, "holding_name"), (c_da, "delta")]:
-        _need_col(per_etf, need_c, f"Per-ETF movers missing '{lbl}'")
-
-    tm = per_etf.copy()
     tm = tm[(tm[c_year_a] == start_year) & (tm[c_year_b] == end_year)]
     tm = tm[tm[c_etf].astype(str).isin(set(cohort))]
     if tm.empty:
         st.info("No movers for the current filters.")
         return
 
-    tm["__delta__"] = pd.to_numeric(tm[c_da], errors="coerce").fillna(0.0)
-    tm["__w__"] = 1.0
+    tm["__delta__"] = pd.to_numeric(tm[c_wb], errors="coerce").fillna(0.0) - pd.to_numeric(tm[c_wa], errors="coerce").fillna(0.0)
+
+    aum_map = {}
     if weighting == "AUM-weighted":
-        try:
-            A = load_etf_aum_2025()
-            f = "ETF_Ticker" if "ETF_Ticker" in A.columns else ("etf_ticker" if "etf_ticker" in A.columns else None)
-            v = "ETF_AUM_USD" if "ETF_AUM_USD" in A.columns else ("AUM_USD" if "AUM_USD" in A.columns else None)
-            if f and v:
-                aum_map = A[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
-                tm["__w__"] = pd.to_numeric(tm[c_etf].map(aum_map), errors="coerce").fillna(0.0).clip(lower=0)
-        except Exception:
-            pass
+        aum_end = by_fund[(by_fund[year_col] == end_year) & (by_fund[etf_col].astype(str).isin(set(cohort)))]
+        if not aum_end.empty and aum_col in aum_end.columns:
+            aum_map = aum_end.set_index(etf_col)[aum_col].astype(float).to_dict()
+    tm["__w__"] = 1.0 if weighting == "Equal-weighted" else pd.to_numeric(tm[c_etf].map(aum_map), errors="coerce").fillna(0.0).clip(lower=0)
 
     grp_cols = [c for c in [c_tick, c_name] if c]
     agg = (tm.groupby(grp_cols, dropna=False)
@@ -919,6 +890,7 @@ def render_change_since_2017():
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
+
 
 
 
