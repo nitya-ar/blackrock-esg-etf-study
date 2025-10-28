@@ -484,7 +484,6 @@ mode = "Dashboard"
 divider()
 
 
-
 # -------------------------
 # RENDERER FOR TAB 2
 # -------------------------
@@ -798,7 +797,7 @@ def render_change_since_2017():
             st.info("No screen-trend data for the current filters.")
         else:
             SCREEN_DOMAIN = ["Clean200","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
-            SCREEN_COLORS = [COLORS["clean"], "#FF6B3D", "#FF4D6D", "#D7263D", "#9B2226", "#F77F00"]
+            SCREEN_COLORS = [COLORS["clean"], "#D2691E", "#FF6F61", "#C63C41", "#7B1E1E", "#E67E22"]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
             x_enc = alt.X(f"{(yscr or 'year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
@@ -817,7 +816,11 @@ def render_change_since_2017():
                          alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")],
             )
             st.altair_chart(
-                alt.layer(_zero_rule(H), base.mark_line(strokeWidth=2, opacity=0.95), base.mark_point(size=36, opacity=0.95)).resolve_scale(y='shared'),
+                alt.layer(
+                    _zero_rule(H),
+                    base.mark_line(strokeWidth=2, opacity=0.95),
+                    base.mark_point(shape="circle", filled=True, size=64, opacity=1.0),
+                ).resolve_scale(y='shared'),
                 use_container_width=True
             )
 
@@ -856,7 +859,6 @@ def render_change_since_2017():
     st.markdown(
         f'''<div class="chart-head">
                <div class="chart-title">Top movers — holdings ({start_year} → {end_year})</div>
-               <div class="info-badge has-tip" data-tip="Computed from per-ETF deltas and aggregated by your ETF selection; weighting toggle applies (AUM vs EW).">i</div>
              </div>''',
         unsafe_allow_html=True,
     )
@@ -871,6 +873,7 @@ def render_change_since_2017():
     w_a  = _pick_exact(mv, "w_a") or _pick(mv, "weight_a", "wa")
     w_b  = _pick_exact(mv, "w_b") or _pick(mv, "weight_b", "wb")
     delta_pre = _pick_exact(mv, "delta_contrib_pct_agg") or _pick_exact(mv, "delta_weight_pp") or _pick_exact(mv, "delta_weight_pct") or _pick_exact(mv, "delta_pp") or _pick(mv, "delta")
+    cat_pre = _pick_exact(mv, "classification_b") or _pick_exact(mv, "classification_a")
 
     for need_c, lbl in [(ya, "year_a"), (yb, "year_b"), (tick, "ticker")]:
         _need_col(mv, need_c, f"Top movers: need '{lbl}'")
@@ -902,17 +905,27 @@ def render_change_since_2017():
 
     mv["__contrib_pp__"] = pd.to_numeric(mv["__delta_pp__"], errors="coerce").fillna(0.0) * pd.to_numeric(mv["__wETF__"], errors="coerce").fillna(0.0)
 
-    name_col = None
-    if nm25 is not None:
-        name_col = nm25
-    elif hld is not None:
-        name_col = hld
+    name_col = nm25 or hld
     mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
     mv["Ticker"] = mv[tick].astype(str)
 
     grp_cols = ["Ticker", "Company"]
     agg = mv.groupby(grp_cols, dropna=False)["__contrib_pp__"].sum().reset_index()
     agg = agg.rename(columns={"__contrib_pp__": "Δ weight (pp)"})
+
+    if cat_pre is not None:
+        mv["__cat__"] = mv[cat_pre].fillna("Other")
+    else:
+        mv["__cat__"] = "Unknown"
+    cat_choice = (
+        mv.assign(__absw__=mv["__contrib_pp__"].abs())
+          .groupby(grp_cols + ["__cat__"], as_index=False)["__absw__"].sum()
+          .sort_values(["Ticker","Company","__absw__"], ascending=[True,True,False])
+          .drop_duplicates(grp_cols)[grp_cols + ["__cat__"]]
+          .rename(columns={"__cat__":"Category"})
+    )
+    agg = agg.merge(cat_choice, on=grp_cols, how="left")
+    agg["Category"] = agg["Category"].fillna("Unknown")
 
     top_increase = agg.sort_values("Δ weight (pp)", ascending=False).head(10).copy()
     top_decrease = agg.sort_values("Δ weight (pp)", ascending=True ).head(10).copy()
@@ -925,10 +938,11 @@ def render_change_since_2017():
     a, b = st.columns(2, gap="large")
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
-        st.dataframe(_fmt(top_increase), hide_index=True, use_container_width=True)
+        st.dataframe(_fmt(top_increase)[["Ticker","Company","Category","Δ weight (pp)"]], hide_index=True, use_container_width=True)
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
-        st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
+        st.dataframe(_fmt(top_decrease)[["Ticker","Company","Category","Δ weight (pp)"]], hide_index=True, use_container_width=True)
+
 
 
 # --------------------------
