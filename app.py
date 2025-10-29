@@ -7,18 +7,28 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-# --- HEADER (must be first, before any st.* output)
-import os
+# --- HEADER (must be first)
+import base64
 from io import BytesIO
 from pathlib import Path
-from PIL import Image
 import requests
+from PIL import Image
 import streamlit as st
 
-# change this if your repo/path differs
 _GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
 
-def _load_icon():
+def _read_bytes(p: Path):
+    try:
+        return p.read_bytes()
+    except Exception:
+        return None
+
+def _pil_to_png_bytes(img: Image.Image) -> bytes:
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+def _load_icon_bytes() -> bytes | None:
     here = Path(__file__).parent if "__file__" in globals() else Path.cwd()
     candidates = [
         Path("Blackrock esg study icon.png"),
@@ -29,25 +39,48 @@ def _load_icon():
     ]
     for p in candidates:
         if p.exists():
+            # normalize via PIL to ensure valid PNG bytes
             try:
-                return Image.open(p)
+                img = Image.open(p)
+                return _pil_to_png_bytes(img)
             except Exception:
-                pass
+                b = _read_bytes(p)
+                if b: return b
+
     try:
         r = requests.get(_GH_RAW, timeout=8)
         r.raise_for_status()
-        return Image.open(BytesIO(r.content))
+        img = Image.open(BytesIO(r.content))
+        return _pil_to_png_bytes(img)
     except Exception:
-        return "🌿"  # last-resort: emoji works as a favicon too
+        return None
 
-icon_obj = _load_icon()
-
+_icon_bytes = _load_icon_bytes()
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=icon_obj,
+    page_icon=_icon_bytes if _icon_bytes else "🌿",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+# hard override if the browser still shows the Streamlit swirl
+if _icon_bytes:
+    _b64 = base64.b64encode(_icon_bytes).decode()
+    st.markdown(
+        f"""
+        <script>
+        const setFav = () => {{
+            const link = document.querySelector("link[rel='icon']") || document.createElement('link');
+            link.type = 'image/png';
+            link.rel = 'icon';
+            link.href = "data:image/png;base64,{_b64}";
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }};
+        setFav();
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
