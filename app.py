@@ -1,38 +1,31 @@
-import os
-from io import StringIO
-import urllib.parse
-
 import requests
-import pandas as pd
-import altair as alt
+from io import BytesIO
+from pathlib import Path
+from urllib.parse import quote
+from PIL import Image
 import streamlit as st
 
-from PIL import Image
-from pathlib import Path
-
-# HEADER
-from io import BytesIO
-
-_ICON_FILE = Path("Blackrock esg study icon.png")
+ICON_LOCAL = Path("Blackrock esg study icon.png")
+ICON_GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/" + quote(ICON_LOCAL.name)
 
 def _load_icon():
-    if _ICON_FILE.exists():
-        return Image.open(_ICON_FILE)
+    if ICON_LOCAL.exists():
+        try:
+            return Image.open(ICON_LOCAL)
+        except Exception:
+            pass
     try:
-        repo = GITHUB_USER_REPO
-        branch = GITHUB_BRANCH
-        raw_url = f"https://raw.githubusercontent.com/{repo}/{branch}/Blackrock esg study icon.png"
-        r = requests.get(raw_url, timeout=10)
+        r = requests.get(ICON_GH_RAW, timeout=10)
         r.raise_for_status()
         return Image.open(BytesIO(r.content))
     except Exception:
-        return "🌿"
+        return None  
 
-_icon_obj = _load_icon()
+icon_obj = _load_icon()
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=_icon_obj,
+    page_icon=icon_obj,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
