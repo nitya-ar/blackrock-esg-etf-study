@@ -13,7 +13,7 @@ from PIL import Image
 from pathlib import Path
 
 # ---- Favicon / Page config (must be called exactly once, and before ANY UI output)
-_ICON_FILE = Path("blackrock-esg-etf-study/Blackrock esg study icon.png")  # commit your icon here; name is case-sensitive
+_ICON_FILE = Path("Blackrock esg study icon.png")  # commit your icon here; name is case-sensitive
 
 if _ICON_FILE.exists():
     _icon_obj = Image.open(_ICON_FILE)
