@@ -1365,7 +1365,8 @@ def render_tradeoff_scenarios():
             heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
 
-            import numpy as np as _np  # ensure np is available in this scope if not already
+            import numpy as np
+            _np = np
             dom = _np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
             if not _np.isfinite(dom) or dom <= 0: dom = 0.1
             lo  = max(dom * 0.15, 0.01)
