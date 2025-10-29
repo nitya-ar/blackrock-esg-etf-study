@@ -1083,7 +1083,7 @@ def render_tradeoff_scenarios():
       /* info badge (slightly larger); Tooltip opens LEFT back over the chart */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
-        width:22px;height:22px;min-width:22px;border-radius:50%;
+        width:22px;height:22px;min-width:40px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:12px;
         margin-left:8px;position:relative;z-index:3;
       }
