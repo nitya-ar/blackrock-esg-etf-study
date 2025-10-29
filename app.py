@@ -292,6 +292,54 @@ st.markdown(
 )
 
 
+st.markdown("""
+<style>
+/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
+
+/* 1) Tables — ensure first data row never flips to white */
+div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+div[data-testid="stTable"] tbody tr:first-child td {
+  background: #0E1015 !important;
+  color: #E7EBF0 !important;
+}
+
+/* 2) Tab 2: segmented control (Weighting) hover/focus states */
+div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
+div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
+  background: #151923 !important;
+  color: var(--text) !important;
+}
+
+/* 3) Tab 3: radio group (Top Added / Top Removed) dark background */
+div[data-testid="stRadio"][data-baseweb="radio"] {
+  background: #0E1015 !important;
+  border-radius: 10px !important;
+}
+div[data-testid="stRadio"][data-baseweb="radio"] > div {
+  background: transparent !important;
+}
+div[data-baseweb="radio"] label {
+  color: var(--text) !important;
+}
+div[data-baseweb="radio"] svg {
+  background: #0E1015 !important;
+  border-radius: 50%;
+}
+div[data-baseweb="radio"] input:checked + label svg {
+  box-shadow: 0 0 0 2px var(--accent) inset !important;
+}
+
+/* 4) Altair/Vega tooltip — single, pinned dark theme */
+.vega-tooltip,
+.vega-tooltip * {
+  background: #0F1116 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -1472,7 +1520,8 @@ def render_tradeoff_scenarios():
         else:
             st.info("Column 'ActiveShare_%' not found in metrics.")
 
-    st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+
     st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
     sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
@@ -1487,18 +1536,19 @@ def render_tradeoff_scenarios():
             continue
     if deltas2 is None:
         try:
-            deltas2 = load_data_file("scenario_position_deltas.csv").copy()  # type: ignore
+            deltas2 = load_data_file("scenario_position_deltas.csv").copy()
         except Exception:
             deltas2 = None
 
     if deltas2 is not None:
         try:
-            s_col = _need(deltas2, "scenario")
-            e_col = _need(deltas2, "ETF_Ticker")
+            s_col  = _need(deltas2, "scenario")
+            e_col  = _need(deltas2, "ETF_Ticker")
             nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
             tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
-            sec_col = "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
-            d_col = _need(deltas2, "delta")
+            sec_col= "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
+            cat_col= "category" if "category" in deltas2.columns else _need(deltas2, "category")
+            d_col  = _need(deltas2, "delta")
         except KeyError as err:
             deltas2 = None
             st.info(f"Missing column in deltas: {err}")
@@ -1528,18 +1578,18 @@ def render_tradeoff_scenarios():
 
             use["delta"] = pd.to_numeric(use[d_col], errors="coerce").fillna(0.0)
 
-            grp = (use.groupby([tk_col, nm_col, sec_col])
+            grp = (use.groupby([tk_col, nm_col, sec_col, cat_col])
                       .apply(lambda d: pd.Series({
                           "Δ weight (pp)": (d["delta"] * d["__w__"]).sum() / max(d["__w__"].sum(), 1e-9) * 100.0
                       }))
                       .reset_index()
-                      .rename(columns={tk_col:"Ticker", nm_col:"Company", sec_col:"Sector"}))
+                      .rename(columns={tk_col:"Ticker", nm_col:"Company", sec_col:"Sector", cat_col:"Category"}))
 
             top_added   = grp.sort_values("Δ weight (pp)", ascending=False).head(10)
             top_removed = grp.sort_values("Δ weight (pp)", ascending=True).head(10)
 
             def _fmt_table(df):
-                out = df[["Company", "Ticker", "Sector", "Δ weight (pp)"]].copy()
+                out = df[["Company", "Ticker", "Sector", "Category", "Δ weight (pp)"]].copy()
                 out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
                 return out.reset_index(drop=True)
 
@@ -1552,6 +1602,7 @@ def render_tradeoff_scenarios():
                 grid(_fmt_table(top_removed))
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
+
 
 # BODY
 if mode == "Dashboard":
