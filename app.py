@@ -1,4 +1,3 @@
-
 import os
 from io import StringIO
 import urllib.parse
@@ -8,17 +7,14 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-
 from PIL import Image
 from pathlib import Path
 
-# ---- Favicon / Page config (must be called exactly once, and before ANY UI output)
-_ICON_FILE = Path("Blackrock esg study icon.png")  # commit your icon here; name is case-sensitive
-
+# HEADER
+_ICON_FILE = Path("Blackrock esg study icon.png")
 if _ICON_FILE.exists():
     _icon_obj = Image.open(_ICON_FILE)
 else:
-    # Last-resort: let Streamlit try a string path (will still fail if the file isn’t in the repo)
     _icon_obj = str(_ICON_FILE)
 
 st.set_page_config(
@@ -28,15 +24,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
 DASH_BASE_PATH   = st.secrets.get("ESG_DASH_PATH", os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard"))
-LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", ""))  # optional
-GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))      # optional
+LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", ""))
+GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-# Dark-but-bright palette
 COLORS = {
     "bg": "#0A0B0D",
     "card": "#0F1116",
@@ -49,8 +43,6 @@ COLORS = {
     "other": "#768397",
 }
 
-
-# ---- Altair dark theme to soften axes/grid/labels/legend ----
 def _alt_dark():
     return {
         "config": {
@@ -73,10 +65,7 @@ def _alt_dark():
 alt.themes.register("custom_dark", _alt_dark)
 alt.themes.enable("custom_dark")
 
-
-# =========================
-# STYLES (final — cross-browser dark, fixed tooltips/contrast/controls)
-# =========================
+# STYLES
 st.markdown(
     f"""
     <style>
@@ -87,16 +76,14 @@ st.markdown(
         --card: {COLORS['card']};
         --border: {COLORS['border']};
         --text: {COLORS['text']};
-        --muted: {COLORS.get('muted','#A9B4C2')};     /* brighter for readability */
+        --muted: {COLORS.get('muted','#A9B4C2')};
         --primary: {COLORS['primary']};
         --clean: {COLORS.get('clean','#0E8F66')};
         --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
-        --accent:#C63C41;                              /* red for active & slider */
+        --accent:#C63C41;
       }}
 
-
-      /* ---------- Base ---------- */
       html, body, [data-testid="stAppViewContainer"] {{
         background-color: var(--bg) !important;
         color: var(--text) !important;
@@ -106,7 +93,6 @@ st.markdown(
       .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
       .blx-muted {{ color: var(--muted); }}
 
-      /* ---------- Cards ---------- */
       .blx-card {{
         background: var(--card) !important;
         border: 1px solid var(--border) !important;
@@ -123,7 +109,6 @@ st.markdown(
       .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
       .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
 
-      /* ---------- Charts / tooltips ---------- */
       .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
@@ -132,23 +117,21 @@ st.markdown(
 .info-badge {{
   display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; min-width:22px; border-radius:50%;
-  background: transparent !important;               /* no fill */
-  color: var(--texted) !important;                  /* red “i” */
-  border: 2px solid var(--texted) !important;       /* red outline */
+  background: transparent !important;
+  color: var(--texted) !important;
+  border: 2px solid var(--texted) !important;
   font-weight:700; font-size:12px;
   margin-left:8px; vertical-align:text-bottom;
 }}
 .chart-head {{ display:flex; align-items:center; }}
 .chart-head .chart-title {{ flex:1 1 auto; }}
-.chart-head .info-badge {{ margin-left:auto; }}        /* push to right end */
+.chart-head .info-badge {{ margin-left:auto; }}
 
-/* optional: subtle hover focus ring */
 .info-badge:hover, .info-badge:focus {{
   box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
   outline: none;
 }}
 
-/* Tooltip stays the same */
 .has-tip {{ position:relative; }}
 .has-tip::after {{
   content: attr(data-tip);
@@ -161,8 +144,6 @@ st.markdown(
 }}
 .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
-
-      /* ---------- DataFrames & Tables (no white headers/rows) ---------- */
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
         background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
       }}
@@ -181,7 +162,6 @@ st.markdown(
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
       :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
 
-      /* ---------- Inputs (Select/Text) — dark + consistent placeholders ---------- */
       [data-baseweb="select"], [data-baseweb="input"] {{
         border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
       }}
@@ -193,7 +173,6 @@ st.markdown(
         outline:none !important; border:1px solid var(--accent) !important;
         box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
       }}
-      /* placeholders: match “Any” muted tone */
       [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
       [data-baseweb="menu"] {{
         background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
@@ -201,7 +180,6 @@ st.markdown(
       [data-baseweb="menu"] li {{ color:var(--text) !important; }}
       [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
 
-      /* ---------- Slider (thumb not blue) ---------- */
       [data-baseweb="slider"] > div {{ background:transparent !important; }}
       [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
@@ -211,11 +189,9 @@ st.markdown(
       }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
-      /* ---------- Segmented controls (Dashboard/Report & AUM/EW) ---------- */
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
         background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      /* force dark on button and nested wrappers (Safari/Private) */
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
       div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
@@ -234,18 +210,15 @@ st.markdown(
         background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
       }}
 
-      /* ---------- Tabs ---------- */
       .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
       .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
       .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
 
-      /* ---------- Buttons ---------- */
       .stDownloadButton > button, .stButton > button {{
         background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      /* ---------- Labels (ETF / Weighting / Start Year) & scrollbars ---------- */
       label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
         color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
       }}
@@ -253,12 +226,8 @@ st.markdown(
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
 
-      /* ===== FORCE-DARK FOR PORTALS / MENUS / TOOLTIPS (cross-browser, incognito) ===== */
-
-/* Tell the UA we are dark so native widgets don't flip white in private/Incognito */
 :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
 
-/* BaseWeb popovers/menus are rendered in a body-level portal; keep them dark */
 [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
 [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
   background: #10131A !important;
@@ -266,27 +235,22 @@ st.markdown(
   border-color: var(--border) !important;
 }}
 
-/* Listbox rows in selects */
 [role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
 [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
 [role="option"][aria-selected="true"],
 [role="option"]:hover {{ background:#161A22 !important; }}
 
-/* Streamlit’s “popover” wrapper sometimes used for select/multiselect */
 div[data-testid="stPopover"] div[role="dialog"],
 div[data-testid="stPopover"] div[role="dialog"] * {{
   background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
 }}
 
-/* Keep Vega/Altair tooltips locked dark (extra guard) */
 .vega-tooltip, .vega-tooltip * {{
   background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
 }}
 
-/* Dataframe FIRST ROW stays dark in all tabs */
 div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
-/* Segmented controls (incl. the Weighting AUM/EW toggle) — force fully dark in Safari/Incognito */
 div[data-testid="stSegmentedControl"] div[role="tablist"],
 div[data-testid="stSegmentedControl"] button[role="tab"],
 div[data-testid="stSegmentedControl"] button[role="tab"] > *,
@@ -299,7 +263,6 @@ div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
   background:#12151C !important; color:var(--text) !important;
   box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
 }}
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -311,7 +274,6 @@ def divider():
 def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
-# Dark styler for tables inside iframe
 def style_dark_df(df: pd.DataFrame):
     bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
     return (
@@ -328,10 +290,7 @@ def style_dark_df(df: pd.DataFrame):
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
-
-# =========================
-# DATA LOADER
-# =========================
+# LOADERS
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
@@ -371,7 +330,6 @@ def load_csv(analysis: int, filename: str) -> pd.DataFrame:
                 f"Failed to load {filename}. Tried local, public raw, and API.\nraw={e_raw}; api={e_api}"
             )
 
-# Analysis 1 loaders
 @st.cache_data(show_spinner=False)
 def load_context_summary():   return load_csv(1, "context_summary_2025.csv")
 @st.cache_data(show_spinner=False)
@@ -408,10 +366,6 @@ def load_explorer():
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
 
-
-# -----------------------------
-# Analysis 2 loaders (Change since 2017)
-# -----------------------------
 @st.cache_data(show_spinner=False)
 def load_exposures_by_fund_year():
     return load_csv(2, "exposures_by_fund_year.csv")
@@ -436,30 +390,20 @@ def load_year_compare():
 def load_top_movers_with_names():
     return load_csv(2, "top_movers_with_names.csv")
 
-
-
-# -------------------------
-# Analysis 3 loaders
-# -------------------------
 @st.cache_data(show_spinner=False)
 def load_scenario_specs():
     return load_csv(3, "scenario_specs.csv")
 
 @st.cache_data(show_spinner=False)
 def load_scenario_metrics():
-    # Expected columns (any reasonable header casing is fine in render):
-    # scenario, ETF_Ticker, %Clean (or pct_clean_scn), %Controversial (or pct_contro_scn),
-    # TE_annual (or est_te_annual_pct), #names
     return load_csv(3, "scenario_portfolio_metrics.csv")
 
 @st.cache_data(show_spinner=False)
 def load_scenario_deltas():
-    # Expected: [scenario, ETF_Ticker, company_ticker, company_name, Sector, Location, w_base, w_new, delta]
     return load_csv(3, "scenario_position_deltas.csv")
 
 @st.cache_data(show_spinner=False)
 def load_returns_top():
-    # Daily single-name returns for top names per ETF (used later for financial-impact charts)
     return load_csv(3, "returns_top_per_etf_2025.csv")
 
 @st.cache_data(show_spinner=False)
@@ -468,17 +412,9 @@ def load_covariance_daily():
 
 @st.cache_data(show_spinner=False)
 def load_etf_aum_2025():
-    # Simple helper so we don’t rely on Analysis 2 if you want a direct AUM table.
-    # Expected columns: ETF_Ticker, AUM_USD (names can vary; render will map flexibly)
     return load_csv(3, "etf_aum_2025.csv")
 
-
-
-
-
-# =========================
-# HEADER
-# =========================
+# HEADER CONTENT
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -493,8 +429,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# KPI helpers
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
     st.markdown(f"""
@@ -518,17 +452,10 @@ def usd_fmt(x):
 
 divider()
 
-# =========================
-# VIEW SWITCH
-# =========================
-
 mode = "Dashboard"
 divider()
 
-
-# -------------------------
-# RENDERER FOR TAB 2
-# -------------------------
+# RENDER: Change since 2017
 def render_change_since_2017():
     import numpy as np
     import pandas as pd
@@ -982,11 +909,7 @@ def render_change_since_2017():
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
 
-
-
-# --------------------------
-# TAB 3: Tradeoff Scenarios
-# ---------------------------
+# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -994,7 +917,6 @@ def render_tradeoff_scenarios():
     import base64
     import altair as alt
 
-    # ---------- helpers ----------
     def _need(df: pd.DataFrame, name: str) -> str:
         if name in df.columns: return name
         low = {c.lower(): c for c in df.columns}
@@ -1017,9 +939,8 @@ def render_tradeoff_scenarios():
         try: return abs(float(v)) < 0.05
         except: return False
 
-    # palette fallbacks (if a global COLORS dict isn't present)
     try:
-        _ = COLORS  # noqa: F821
+        _ = COLORS
     except Exception:
         globals()["COLORS"] = {
             "clean":  "#24A27B",
@@ -1027,10 +948,9 @@ def render_tradeoff_scenarios():
             "other":  "#9AA3B2",
         }
 
-    COLOR_PT = "#C77DBB"  # Pragmatic Tilt
-    COLOR_SE = "#A47ADC"  # Strict Exclusion
+    COLOR_PT = "#C77DBB"
+    COLOR_SE = "#A47ADC"
 
-    # ---------- load: metrics ----------
     M = load_scenario_metrics().copy()
 
     scen_col  = _need(M, "scenario")
@@ -1040,7 +960,6 @@ def render_tradeoff_scenarios():
     te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
 
-    # optional columns
     as_col    = "ActiveShare_%" if "ActiveShare_%" in M.columns else None
     aum_in_M  = "ETF_AUM_USD" if "ETF_AUM_USD" in M.columns else None
 
@@ -1050,13 +969,11 @@ def render_tradeoff_scenarios():
     scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
 
-    # ---------- header ----------
     st.subheader("Tradeoff Scenarios")
     st.caption(
         "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
     )
 
-    # ---------- scoped styles ----------
     st.markdown("""
     <style>
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
@@ -1069,7 +986,6 @@ def render_tradeoff_scenarios():
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0; display:flex; align-items:center; gap:6px;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
 
-      /* right aligned CSV line */
       .t3-dl-inline-wrap{ display:flex; justify-content:flex-end; align-items:center; margin:6px 0 12px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
       .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
@@ -1080,7 +996,6 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      /* info badge (larger) */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
         width:22px;height:22px;min-width:22px;border-radius:50%;
@@ -1089,7 +1004,6 @@ def render_tradeoff_scenarios():
       }
 
       .has-tip{position:relative;}
-      /* BOXED tooltip with wider defaults */
       .has-tip.tip-left::after{
         content:attr(data-tip);
         position:absolute;right:0;left:auto;top:calc(100% + 10px);
@@ -1101,18 +1015,13 @@ def render_tradeoff_scenarios():
         transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;
       }
       .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
-
-      /* width modifiers (use alongside tip-left) */
       .has-tip.tip-narrow::after{ min-width:320px; max-width:480px; }
       .has-tip.tip-wide::after  { min-width:560px; max-width:880px; }
       .has-tip.tip-full::after  { min-width:720px; max-width:1100px; }
-
-      /* smaller radio for Top Added/Removed */
       div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ---------- scenario cards ----------
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
         st.markdown("""
@@ -1135,7 +1044,6 @@ def render_tradeoff_scenarios():
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
-    # ---------- ETF filter & AUM map ----------
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
 
@@ -1182,7 +1090,6 @@ def render_tradeoff_scenarios():
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
-    # ---------- KPI tiles ----------
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
@@ -1209,7 +1116,6 @@ def render_tradeoff_scenarios():
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
         st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
-    # ---------- download (per-ETF metrics) ----------
     show = (
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else [])]
         .rename(columns={
@@ -1242,12 +1148,8 @@ def render_tradeoff_scenarios():
 
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # =========================
-    # CHART GRID — exact height balance
-    # =========================
     left_col, right_col = st.columns([0.5, 0.5], gap="large")
 
-    # determine sector count for sizing
     sector_cols = [c for c in M.columns if c.startswith("sector_dev__")]
     n_sectors = len(sector_cols) if sector_cols else 8
     H = max(230, 24 * n_sectors + 12)
@@ -1255,7 +1157,6 @@ def render_tradeoff_scenarios():
     H_LEFT_TOP = int(round(1.5 * H_RIGHT))
     H_LEFT_BOTTOM = H_RIGHT + 130
 
-    # ---------- LEFT-1: Scenario Composition
     with left_col:
         st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div></div>', unsafe_allow_html=True)
 
@@ -1292,7 +1193,6 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-1: Cleanliness Uplift vs Tracking Error
     with right_col:
         st.markdown(
             '<div class="chart-head">'
@@ -1358,7 +1258,6 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- LEFT-2: Turnover & Cost
     with left_col:
         st.markdown(
             '<div class="chart-head">'
@@ -1428,7 +1327,6 @@ def render_tradeoff_scenarios():
         else:
             st.info("Turnover data not available (no position-deltas file detected).")
 
-    # ---------- RIGHT-2: Sector drift vs Baseline
     with right_col:
         st.markdown(
             '<div class="chart-head">'
@@ -1467,8 +1365,9 @@ def render_tradeoff_scenarios():
             heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
 
-            dom = np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
-            if not np.isfinite(dom) or dom <= 0: dom = 0.1
+            import numpy as np as _np  # ensure np is available in this scope if not already
+            dom = _np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
+            if not _np.isfinite(dom) or dom <= 0: dom = 0.1
             lo  = max(dom * 0.15, 0.01)
 
             heat = (
@@ -1491,7 +1390,6 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-3: Active Share vs % Clean
     with right_col:
         st.markdown(
             '<div class="chart-head">'
@@ -1546,9 +1444,6 @@ def render_tradeoff_scenarios():
         else:
             st.info("Column 'ActiveShare_%' not found in metrics.")
 
-    # =========================
-    # TABLES (below the chart grid)
-    # =========================
     st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
@@ -1630,16 +1525,10 @@ def render_tradeoff_scenarios():
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
-
-
-
-# =========================
 # BODY
-# =========================
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
-    # ---------- 2025 OVERVIEW ----------
     with tab1:
         st.subheader("2025 Overview")
 
@@ -1647,7 +1536,6 @@ if mode == "Dashboard":
         scr = load_by_screen()
         spot = load_spotlight()
 
-        # KPIs (tinted)
         k1, k2, k3, k4 = st.columns(4)
         if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
             clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
@@ -1665,7 +1553,6 @@ if mode == "Dashboard":
 
         gap(6)
 
-        # Charts row
         c1, c2 = st.columns([0.5, 0.5])
 
         with c1:
@@ -1685,7 +1572,7 @@ if mode == "Dashboard":
                 })
                 comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
                 comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
-                comp["Group"] = "All"   # <-- fix: single stacked bar anchor
+                comp["Group"] = "All"
 
                 color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
                                         range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
@@ -1824,18 +1711,12 @@ if mode == "Dashboard":
         csv_bytes = df_f.to_csv(index=False).encode("utf-8")
         st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
 
-    # ---------- CHANGE SINCE 2017 ----------
     with tab2:
         render_change_since_2017()
-        # ---------- TRADEOFF SCENARIOS ----------
     with tab3:
         render_tradeoff_scenarios()
 
-
-
-# =========================
-# FOOTER (replacement)
-# =========================
+# FOOTER
 gap(28)
 divider()
 st.markdown(
