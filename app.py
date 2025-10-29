@@ -1541,6 +1541,12 @@ def render_tradeoff_scenarios():
             deltas2 = None
 
     if deltas2 is not None:
+        # === tables fix: normalize header whitespace/invisible chars so _need() finds the columns ===
+        def _norm_col(s):
+            return str(s).replace("\u200b", "").replace("\xa0", " ").strip()
+        deltas2.columns = [_norm_col(c) for c in deltas2.columns]
+        # === end minimal fix ===
+
         try:
             s_col  = _need(deltas2, "scenario")
             e_col  = _need(deltas2, "ETF_Ticker")
