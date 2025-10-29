@@ -1052,12 +1052,7 @@ def render_tradeoff_scenarios():
 
     # ---------- header ----------
     st.subheader("Tradeoff Scenarios")
-    st.write(
-        "This section analyzes three portfolio versions for each fund: the current 2025 portfolio and two cleaner alternatives "
-        "that increase the weight of clean holdings and reduce exposure to controversial areas such as fossil fuels, weapons, "
-        "tobacco, prisons, and deforestation. The analysis highlights how progressive improvements in portfolio cleanliness affect "
-        "diversification, risk, and financial performance, providing a clear view of the tradeoff between sustainability alignment "
-        "and portfolio stability."
+    st.caption( "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
     )
 
     # ---------- scoped styles ----------
