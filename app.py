@@ -263,6 +263,95 @@ div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
   background:#12151C !important; color:var(--text) !important;
   box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
 }}
+
+/* ========= FINAL DARK OVERRIDES (force in Incognito too) ========= */
+:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+/* Tables (st.dataframe + st.table) — keep body, header, and first row dark */
+[data-testid="stDataFrame"] table,
+[data-testid="stDataFrame"] [role="grid"],
+[data-testid="stTable"] table {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}}
+
+/* Header row */
+[data-testid="stDataFrame"] thead th,
+[data-testid="stTable"] thead th {{
+  background: #11151C !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid #2A2F36 !important;
+}}
+
+/* All body rows */
+[data-testid="stDataFrame"] tbody td,
+[data-testid="stTable"] tbody td {{
+  background: #0E1015 !important;
+  color: var(--text) !important;
+  border-top: 1px solid #12151C !important;
+}}
+
+/* First row specifically (some browsers inject light bg) */
+[data-testid="stDataFrame"] tbody tr:nth-child(1) td,
+[data-testid="stTable"]    tbody tr:nth-child(1) td {{
+  background: #10131A !important;
+}}
+
+/* Hover */
+[data-testid="stDataFrame"] tbody tr:hover td,
+[data-testid="stTable"]    tbody tr:hover td {{
+  background: rgba(255,255,255,.04) !important;
+}}
+
+/* Segmented control (AUM-weighted / Equal-weighted) */
+[data-testid="stSegmentedControl"] [role="tablist"] {{
+  background: #0E1015 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}}
+[data-testid="stSegmentedControl"] [role="tab"] {{
+  background: #0E1015 !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+  border: none !important;
+}}
+[data-testid="stSegmentedControl"] [role="tab"][aria-selected="true"] {{
+  background: #12151C !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}}
+
+/* Selects & dropdown menus (prevent white menus in Incognito) */
+[data-baseweb="select"] > div,
+[data-baseweb="input"]  > div {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+[role="listbox"],
+[data-baseweb="menu"],
+[data-baseweb="popover"] {{
+  background: #10131A !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+
+/* Altair / Vega tooltip */
+.vega-tooltip {{
+  background: #0B0D12 !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55) !important;
+}}
+
+/* Your custom info tooltip */
+.has-tip::after {{
+  background: #0B0D12 !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+
     </style>
     """,
     unsafe_allow_html=True,
