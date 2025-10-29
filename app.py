@@ -9,23 +9,25 @@ import altair as alt
 import streamlit as st
 
 
-from PIL import Image  
+from PIL import Image
+from pathlib import Path
 
-# ---- Page config (set favicon/logo in the browser tab
-_ICON_FILE = "Blackrock esg study logo .png"  # or "assets/Blackrock esg study logo.png" if you move it
+# ---- Favicon / Page config (must be called exactly once, and before ANY UI output)
+_ICON_FILE = Path("assets/favicon.png")  # commit your icon here; name is case-sensitive
 
-try:
-    _icon_img = Image.open(_ICON_FILE)
-except Exception:
-    # Fallback: let Streamlit try to load from path string even if PIL failed
-    _icon_img = _ICON_FILE
+if _ICON_FILE.exists():
+    _icon_obj = Image.open(_ICON_FILE)
+else:
+    # Last-resort: let Streamlit try a string path (will still fail if the file isn’t in the repo)
+    _icon_obj = str(_ICON_FILE)
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=_icon_img,   # <— this sets the favicon (replaces Streamlit logo in the tab)
+    page_icon=_icon_obj,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
 
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
