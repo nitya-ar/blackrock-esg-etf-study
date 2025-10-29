@@ -72,114 +72,168 @@ st.markdown(
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
       :root {{
-        --bg:{COLORS['bg']};
-        --card:{COLORS['card']};
-        --border:{COLORS['border']};
-        --text:{COLORS['text']};
-        --muted:{COLORS.get('muted','#A9B4C2')};
-        --primary:{COLORS['primary']};
-        --clean:{COLORS.get('clean','#0E8F66')};
-        --contro:{COLORS.get('contro','#C63C41')};
-        --other:{COLORS.get('other','#4062FF')};
-        --accent:#C63C41;
-        --cellbg:#0E1015;
-        --celltext:var(--text);
-        --cellborder:#12151C;
-        --headbg:#11151C;
-        --headborder:#2A2F36;
+        --bg: {COLORS['bg']};
+        --card: {COLORS['card']};
+        --border: {COLORS['border']};
+        --text: {COLORS['text']};
+        --muted: {COLORS.get('muted','#A9B4C2')};
+        --primary: {COLORS['primary']};
+        --clean: {COLORS.get('clean','#0E8F66')};
+        --contro: {COLORS.get('contro','#C63C41')};
+        --other: {COLORS.get('other','#4062FF')};
+        --accent: #C63C41;
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
-        background-color:var(--bg)!important;
-        color:var(--text)!important;
-        font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-        color-scheme:dark;
+        background-color: var(--bg) !important;
+        color: var(--text) !important;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       }}
+      h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
+      .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
+      .blx-muted {{ color: var(--muted); }}
 
-      h1, h2, h3, h4, h5 {{ color:var(--text); letter-spacing:.1px; }}
-      .blx-divider {{ border-top:1px solid var(--border); margin:10px 0 24px; }}
-      .blx-muted {{ color:var(--muted); }}
-      .blx-card {{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:14px; padding:14px 16px; }}
+      .blx-card {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px; padding: 14px 16px;
+      }}
+      .kpi {{
+        background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+        border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+      }}
+      .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
+      .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
 
-      .kpi {{ background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:0 0 0 1px rgba(255,255,255,.02) inset; }}
-      .kpi .label {{ font-size:12px; color:var(--muted); margin-bottom:6px; }}
-      .kpi .value {{ font-size:30px; font-weight:700; line-height:1.05; }}
-      .kpi.kpi-red {{ background:linear-gradient(180deg,rgba(198,60,65,.16),rgba(255,255,255,0)); border-color:rgba(198,60,65,.45); }}
-      .kpi.kpi-green {{ background:linear-gradient(180deg,rgba(14,143,102,.16),rgba(255,255,255,0)); border-color:rgba(14,143,102,.45); }}
-      .kpi.kpi-neutral {{ background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0)); border-color:rgba(255,255,255,.08); }}
+      .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-      .stAltairChart,.stVegaLiteChart,.stPlotlyChart {{ background:var(--card)!important; border:1px solid var(--border)!important; }}
-      .vega-embed,.stAltairChart {{ background:transparent!important; }}
-      .vega-tooltip,.vega-tooltip * {{ background:#0F1116!important; color:var(--text)!important; border-color:var(--border)!important; }}
-
-      .info-badge {{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; min-width:22px; border-radius:50%; background:transparent!important; color:var(--text)!important; border:2px solid var(--text)!important; font-weight:700; font-size:12px; margin-left:8px; vertical-align:text-bottom; }}
+      .info-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:50%;
+        background: transparent !important;
+        color: var(--text) !important;
+        border: 2px solid var(--text) !important;
+        font-weight:700; font-size:12px;
+        margin-left:8px; vertical-align:text-bottom;
+      }}
       .chart-head {{ display:flex; align-items:center; }}
       .chart-head .chart-title {{ flex:1 1 auto; }}
       .chart-head .info-badge {{ margin-left:auto; }}
-      .info-badge:hover,.info-badge:focus {{ box-shadow:0 0 0 3px rgba(198,60,65,.22); outline:none; }}
+      .info-badge:hover, .info-badge:focus {{ box-shadow: 0 0 0 3px rgba(198,60,65,0.22); outline: none; }}
 
       .has-tip {{ position:relative; }}
-      .has-tip::after {{ content:attr(data-tip); position:absolute; right:0; top:calc(100% + 8px); background:#0B0D12; color:var(--text); border:1px solid var(--border); padding:6px 10px; border-radius:8px; white-space:nowrap; opacity:0; transform:translateY(6px); pointer-events:none; transition:opacity .15s ease, transform .15s ease; box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999; }}
-      .has-tip:hover::after,.has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
-
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) {{
-        background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important;
+      .has-tip::after {{
+        content: attr(data-tip);
+        position:absolute; right:0; top:calc(100% + 8px);
+        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        padding:6px 10px; border-radius:8px; white-space:nowrap;
+        opacity:0; transform:translateY(6px); pointer-events:none;
+        transition:opacity .15s ease, transform .15s ease;
+        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
       }}
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [role="grid"] {{ background:var(--card)!important; }}
+      .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [role="columnheader"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
       div[data-testid="stDataframe"] thead tr th {{
-        background:var(--headbg)!important; color:var(--text)!important; border-bottom:1px solid var(--headborder)!important;
+        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
+        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
       }}
 
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [role="row"] {{ background:var(--cellbg)!important; }}
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [role="row"] > [role="gridcell"] {{
-        background:var(--cellbg)!important; color:var(--celltext)!important; border-top:1px solid var(--cellborder)!important;
+      :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
+
+      [data-baseweb="select"], [data-baseweb="input"] {{
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
+      }}
+      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+        background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
+      }}
+      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
+      [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
+        outline:none !important; border:1px solid var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
+      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
+      [data-baseweb="menu"] {{
+        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      [data-baseweb="menu"] li {{ color:var(--text) !important; }}
+      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+
+      [data-baseweb="slider"] > div {{ background:transparent !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
+      [data-baseweb="slider"] [role="slider"] {{
+        background:var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+      }}
+      [data-baseweb="slider"] * {{ color:var(--text) !important; }}
+
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[disabled],
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
+      div[data-testid="stSegmentedControl"] button[disabled] > *,
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
       }}
 
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [aria-rowindex="1"] > [role="gridcell"] {{
-        background:var(--cellbg)!important; color:var(--celltext)!important; border-top:1px solid var(--cellborder)!important;
+      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
+
+      .stDownloadButton > button, .stButton > button {{
+        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      :where([data-testid="stDataFrame"],[data-testid="stDataframe"]) [role="rowgroup"] > :is([role="row"],div):first-child > [role="gridcell"] {{
-        background:var(--cellbg)!important; color:var(--celltext)!important; border-top:1px solid var(--cellborder)!important;
+      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
+        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
       }}
-
-      :where([data-testid="stTable"]) table {{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important; }}
-      :where([data-testid="stTable"]) thead th {{ background:var(--headbg)!important; color:var(--text)!important; border-bottom:1px solid var(--headborder)!important; }}
-      :where([data-testid="stTable"]) tbody :is(td,th) {{ background:var(--cellbg)!important; color:var(--celltext)!important; border-top:1px solid var(--cellborder)!important; }}
-      :where([data-testid="stTable"]) tbody tr:first-child :is(td,th) {{ background:var(--cellbg)!important; }}
-
-      [data-baseweb="select"],[data-baseweb="input"] {{ border:1px solid var(--border)!important; border-radius:10px!important; background:#0F1116!important; }}
-      [data-baseweb="select"] > div,[data-baseweb="input"] > div {{ background:var(--card)!important; border-radius:10px!important; box-shadow:none!important; border:none!important; }}
-      [data-baseweb="select"] > div *,[data-baseweb="input"] > div * {{ background:transparent!important; color:var(--text)!important; }}
-      [data-baseweb="select"] > div:focus-within,[data-baseweb="input"] > div:focus-within {{ outline:none!important; border:1px solid var(--accent)!important; box-shadow:0 0 0 3px rgba(198,60,65,.28)!important; }}
-      [data-baseweb="input"] input::placeholder {{ color:var(--muted)!important; opacity:1!important; }}
-      [data-baseweb="menu"] {{ background:#10131A!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:12px!important; }}
-      [data-baseweb="menu"] li {{ color:var(--text)!important; }}
-      [data-baseweb="menu"] li:hover {{ background:#161A22!important; }}
-
-      [data-baseweb="slider"] > div {{ background:transparent!important; }}
-      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027!important; }}
-      [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent)!important; }}
-      [data-baseweb="slider"] [role="slider"] {{ background:var(--accent)!important; box-shadow:0 0 0 3px rgba(198,60,65,.18)!important; border:0!important; }}
-      [data-baseweb="slider"] * {{ color:var(--text)!important; }}
-
-      div[data-testid="stSegmentedControl"] div[role="tablist"] {{ background:#0E1015!important; border:1px solid var(--border)!important; border-radius:12px!important; }}
-      div[data-testid="stSegmentedControl"] button[role="tab"], div[data-testid="stSegmentedControl"] button[role="tab"] * {{ background:#0E1015!important; color:var(--muted)!important; border:none!important; box-shadow:none!important; }}
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"], div[data-testid="stSegmentedControl"] button[aria-selected="true"] * {{ background:#12151C!important; color:var(--text)!important; box-shadow:inset 0 -2px 0 var(--accent)!important; }}
-
-      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015!important; border-bottom:1px solid var(--border)!important; }}
-      .stTabs [data-baseweb="tab"] {{ background:transparent!important; color:var(--muted)!important; border-color:transparent!important; box-shadow:none!important; }}
-      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text)!important; border-color:transparent!important; box-shadow:inset 0 -2px 0 var(--accent)!important; }}
-
-      .stDownloadButton > button,.stButton > button {{ background:#12151C!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:12px!important; }}
-      .stDownloadButton > button:hover,.stButton > button:hover {{ background:#151923!important; border-color:#2A2F36!important; }}
-
-      label,.st-emotion-cache-1cypcdb,.st-emotion-cache-1qg05tj {{ color:var(--muted)!important; font-size:13px!important; letter-spacing:.2px; }}
-      *::-webkit-scrollbar {{ width:10px; height:10px; }}
-      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius:8px; }}
+      *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
+
+      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+      :root{{--cellbg:#0E1015;--celltext:var(--text);--cellborder:#12151C;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-selected="true"]>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:focus-within>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(odd)>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even)>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>[role="row"]:first-child>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>div:first-child>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:hover>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      [data-testid="stTable"] tbody tr>td,[data-testid="stTable"] tbody tr>th{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
+      [data-testid="stTable"] tbody tr:nth-child(odd)>td,[data-testid="stTable"] tbody tr:nth-child(even)>td{{background:var(--cellbg)!important;}}
+      [data-testid="stTable"] tbody tr:first-child>td,[data-testid="stTable"] tbody tr:first-child>th{{background:var(--cellbg)!important;}}
     </style>
     """,
     unsafe_allow_html=True,
