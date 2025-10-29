@@ -276,14 +276,15 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
-    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
+    bg, hdr, txt, bdr, first = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027", "#10131A"
     return (
         df.style
           .set_table_styles([
-              {"selector": "table",             "props": [("background-color", bg),  ("color", txt), ("border-collapse", "collapse"), ("border", f"1px solid {bdr}")]},
-              {"selector": "thead th",          "props": [("background-color", hdr), ("color", txt), ("border-bottom", f"1px solid {bdr}"), ("padding", "6px 8px")]},
-              {"selector": "tbody td",          "props": [("background-color", bg),  ("color", txt), ("border-top",     f"1px solid {bdr}"), ("padding", "6px 8px")]},
-              {"selector": "tbody tr:hover td", "props": [("background-color", "#12151C")]},
+              {"selector": "table",                         "props": [("background-color", bg),  ("color", txt), ("border-collapse", "collapse"), ("border", f"1px solid {bdr}")]},
+              {"selector": "thead th",                      "props": [("background-color", hdr), ("color", txt), ("border-bottom", f"1px solid {bdr}"), ("padding", "6px 8px")]},
+              {"selector": "tbody td",                      "props": [("background-color", bg),  ("color", txt), ("border-top",     f"1px solid {bdr}"), ("padding", "6px 8px")]},
+              {"selector": "tbody tr:nth-child(1) td",      "props": [("background-color", first)]},  
+              {"selector": "tbody tr:hover td",             "props": [("background-color", "#12151C")]},
           ])
           .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
     )
