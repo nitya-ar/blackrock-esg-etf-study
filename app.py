@@ -314,12 +314,8 @@ def style_dark_df(df: pd.DataFrame):
 
 
 
-def grid(df: pd.DataFrame, static: bool = False, height: int | None = None):
-    sty = style_dark_df(df)
-    if static:
-        st.table(sty.hide(axis="index"))
-    else:
-        st.dataframe(sty, use_container_width=True, hide_index=True, height=height)
+def grid(df: pd.DataFrame):
+    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
 # LOADERS
 def _url_join(*parts: str) -> str:
