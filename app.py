@@ -27,6 +27,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# ===============
+# ===============
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
     page_icon=None,
@@ -257,8 +259,6 @@ st.markdown(
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
-
-      
     </style>
     """,
     unsafe_allow_html=True,
