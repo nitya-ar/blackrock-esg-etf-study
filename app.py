@@ -1938,44 +1938,74 @@ gap(28)
 divider()
 
 github_url = f"https://github.com/{GITHUB_USER_REPO}" if "GITHUB_USER_REPO" in globals() else "https://github.com/nitya-ar/blackrock-esg-etf-study"
-asof_str   = f" • Data as of {AUM_ASOF}" if "AUM_ASOF" in globals() and AUM_ASOF else ""
+asof_str   = f"Data as of {AUM_ASOF}" if "AUM_ASOF" in globals() and AUM_ASOF else ""
 
 st.markdown(
     f"""
     <style>
-      .footer-pre {{
-        margin-top: 14px;
-        margin-bottom: 6px;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.4;
+      .footer-cta {{
+        margin: 16px 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.04));
+        border: 1px solid var(--border);
+        border-radius: 12px;
       }}
-      .footer-pre a {{
+      .footer-cta a {{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         color: var(--text);
         text-decoration: none;
         font-weight: 600;
+        font-size: 15px;
+        opacity: .95;
+      }}
+      .footer-cta a:hover {{ opacity: 1; transform: translateY(-0.5px); }}
+      .footer-cta .muted {{ color: var(--muted); font-weight: 500; }}
+      .footer-cta .badge {{
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--muted);
+        background: rgba(255,255,255,.06);
+        border: 1px solid var(--border);
+        padding: 4px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
       }}
       .footer-wrap {{
         display:flex; align-items:center; justify-content:space-between; width:100%;
-        padding-top: 10px;   /* shifts content a bit down */
+        padding-top: 12px;
       }}
-      .footer-left {{
-        color: var(--muted); font-size: 14px; white-space: nowrap;
-      }}
-      .footer-links a {{
-        color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;
-      }}
+      .footer-left {{ color: var(--muted); font-size: 14px; white-space: nowrap; }}
+      .footer-links {{ display:flex; gap:28px; align-items:center; justify-content:flex-end; }}
+      .footer-links a {{ color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9; }}
       .footer-links a:hover {{ opacity:1; }}
+      @media (max-width: 820px) {{
+        .footer-cta {{ flex-wrap: wrap; gap:10px; }}
+        .footer-cta .badge {{ margin-left: 0; }}
+        .footer-wrap {{ flex-direction: column; gap: 8px; align-items: flex-start; }}
+      }}
     </style>
 
-    <div class="footer-pre">
-      Explore the data, methodology, and full code on
-      <a href="{github_url}" target="_blank">GitHub</a>{asof_str}
+    <div class="footer-cta">
+      <span class="muted">Explore the data, methodology, and full code</span>
+      <a href="{github_url}" target="_blank" aria-label="Open GitHub">
+        <!-- GitHub mark (inline SVG) -->
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 .2a8 8 0 0 0-2.53 15.6c.4.07.55-.17.55-.38l-.01-1.34c-2.25.49-2.72-1.09-2.72-1.09-.36-.9-.89-1.13-.89-1.13-.73-.5.06-.49.06-.49.8.06 1.22.83 1.22.83.72 1.23 1.9.87 2.37.66.07-.53.28-.87.5-1.07-1.8-.2-3.69-.9-3.69-4 0-.88.31-1.6.83-2.17-.08-.2-.36-1.02.08-2.12 0 0 .68-.22 2.22.83.65-.18 1.34-.27 2.03-.27.69 0 1.38.09 2.03.27 1.54-1.05 2.22-.83 2.22-.83.44 1.1.16 1.92.08 2.12.52.57.83 1.29.83 2.17 0 3.11-1.89 3.8-3.69 4 .29.25.54.73.54 1.48l-.01 2.19c0 .21.15.45.55.38A8 8 0 0 0 8 .2Z"/>
+        </svg>
+        <span>Open on GitHub</span>
+        <span style="opacity:.7;">→</span>
+      </a>
+      {f'<span class="badge">{asof_str}</span>' if asof_str else ''}
     </div>
 
     <div class="footer-wrap">
       <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
-      <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
+      <div class="footer-links">
         <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
         <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
         <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
