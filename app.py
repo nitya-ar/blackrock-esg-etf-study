@@ -156,7 +156,6 @@ st.markdown(
       div[data-testid="stDataframe"] tbody tr td {{
         background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
       }}
-      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
@@ -249,7 +248,6 @@ div[data-testid="stPopover"] div[role="dialog"] * {{
   background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
 }}
 
-div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
 div[data-testid="stSegmentedControl"] div[role="tablist"],
 div[data-testid="stSegmentedControl"] button[role="tab"],
@@ -263,6 +261,96 @@ div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
   background:#12151C !important; color:var(--text) !important;
   box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
 }}
+
+:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+[data-testid="stDataFrame"] table,
+[data-testid="stDataFrame"] [role="grid"],
+[data-testid="stTable"] table {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}}
+
+[data-testid="stDataFrame"] thead th,
+[data-testid="stTable"] thead th {{
+  background: #11151C !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid #2A2F36 !important;
+}}
+
+[data-testid="stDataFrame"] tbody td,
+[data-testid="stTable"] tbody td {{
+  background: #0E1015 !important;
+  color: var(--text) !important;
+  border-top: 1px solid #12151C !important;
+}}
+
+[data-testid="stDataFrame"] tbody tr:nth-child(1) td,
+[data-testid="stTable"]    tbody tr:nth-child(1) td {{
+  background: #10131A !important;
+}}
+
+[data-testid="stDataFrame"] tbody tr:hover td,
+[data-testid="stTable"]    tbody tr:hover td {{
+  background: rgba(255,255,255,.04) !important;
+}}
+
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"])
+  [role="rowgroup"] [role="row"]:first-child [role="gridcell"] {{
+  background: #10131A !important;
+  color: var(--text) !important;
+  border-top: 1px solid #12151C !important;
+}}
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"])
+  [role="rowgroup"] [role="row"]:first-child {{
+  background: #10131A !important;
+}}
+
+[data-testid="stSegmentedControl"] [role="tablist"] {{
+  background: #0E1015 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}}
+[data-testid="stSegmentedControl"] [role="tab"] {{
+  background: #0E1015 !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+  border: none !important;
+}}
+[data-testid="stSegmentedControl"] [role="tab"][aria-selected="true"] {{
+  background: #12151C !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}}
+
+[data-baseweb="select"] > div,
+[data-baseweb="input"]  > div {{
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+[role="listbox"],
+[data-baseweb="menu"],
+[data-baseweb="popover"] {{
+  background: #10131A !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+
+.vega-tooltip {{
+  background: #0B0D12 !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55) !important;
+}}
+
+.has-tip::after {{
+  background: #0B0D12 !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}}
+
 
     </style>
     """,
