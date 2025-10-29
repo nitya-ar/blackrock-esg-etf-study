@@ -79,9 +79,9 @@ st.markdown(
         --muted: {COLORS.get('muted','#A9B4C2')};
         --primary: {COLORS['primary']};
         --clean: {COLORS.get('clean','#0E8F66')};
-        --contro:{COLORS.get('contro','#C63C41')};
+        --contro: {COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
-        --accent:#C63C41;
+        --accent: #C63C41;
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
@@ -113,36 +113,31 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-    /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
-.info-badge {{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; min-width:22px; border-radius:50%;
-  background: transparent !important;
-  color: var(--texted) !important;
-  border: 2px solid var(--texted) !important;
-  font-weight:700; font-size:12px;
-  margin-left:8px; vertical-align:text-bottom;
-}}
-.chart-head {{ display:flex; align-items:center; }}
-.chart-head .chart-title {{ flex:1 1 auto; }}
-.chart-head .info-badge {{ margin-left:auto; }}
+      .info-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:50%;
+        background: transparent !important;
+        color: var(--text) !important;
+        border: 2px solid var(--text) !important;
+        font-weight:700; font-size:12px;
+        margin-left:8px; vertical-align:text-bottom;
+      }}
+      .chart-head {{ display:flex; align-items:center; }}
+      .chart-head .chart-title {{ flex:1 1 auto; }}
+      .chart-head .info-badge {{ margin-left:auto; }}
+      .info-badge:hover, .info-badge:focus {{ box-shadow: 0 0 0 3px rgba(198,60,65,0.22); outline: none; }}
 
-.info-badge:hover, .info-badge:focus {{
-  box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
-  outline: none;
-}}
-
-.has-tip {{ position:relative; }}
-.has-tip::after {{
-  content: attr(data-tip);
-  position:absolute; right:0; top:calc(100% + 8px);
-  background:#0B0D12; color:var(--text); border:1px solid var(--border);
-  padding:6px 10px; border-radius:8px; white-space:nowrap;
-  opacity:0; transform:translateY(6px); pointer-events:none;
-  transition:opacity .15s ease, transform .15s ease;
-  box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
-}}
-.has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
+      .has-tip {{ position:relative; }}
+      .has-tip::after {{
+        content: attr(data-tip);
+        position:absolute; right:0; top:calc(100% + 8px);
+        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        padding:6px 10px; border-radius:8px; white-space:nowrap;
+        opacity:0; transform:translateY(6px); pointer-events:none;
+        transition:opacity .15s ease, transform .15s ease;
+        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+      }}
+      .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
         background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
@@ -226,36 +221,24 @@ st.markdown(
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
 
       :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
-      [data-testid="stTable"] tbody tr:first-child > td,
 
-      /* === OVERRIDE: do NOT special-style the first data row anywhere === */
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > td,
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > th,
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > [role="row"]:first-child > [role="gridcell"],
-      [data-testid="stTable"] tbody tr:first-child > td,
-      [data-testid="stTable"] tbody tr:first-child > th {{
-      background: #0E1015 !important;    /* same as body cells */
-      color: var(--text) !important;
-      border-top: 1px solid #12151C !important;
-      }}
-      :root{--cellbg:#0E1015;--celltext:var(--text);--cellborder:#12151C;}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]>[role="gridcell"]{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-selected="true"]>[role="gridcell"],
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:focus-within>[role="gridcell"]{background:var(--cellbg)!important;color:var(--celltext)!important;}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(odd)>[role="gridcell"],
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even)>[role="gridcell"]{background:var(--cellbg)!important;}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>[role="row"]:first-child>[role="gridcell"],
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>div:first-child>[role="gridcell"]{background:var(--cellbg)!important;}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:hover>[role="gridcell"]{background:var(--cellbg)!important;}
-[data-testid="stTable"] tbody tr>td,[data-testid="stTable"] tbody tr>th{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}
-[data-testid="stTable"] tbody tr:nth-child(odd)>td,[data-testid="stTable"] tbody tr:nth-child(even)>td{background:var(--cellbg)!important;}
-[data-testid="stTable"] tbody tr:first-child>td,[data-testid="stTable"] tbody tr:first-child>th{background:var(--cellbg)!important;}
-
-
+      :root{{--cellbg:#0E1015;--celltext:var(--text);--cellborder:#12151C;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-selected="true"]>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:focus-within>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(odd)>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even)>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>[role="row"]:first-child>[role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>div:first-child>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:hover>[role="gridcell"]{{background:var(--cellbg)!important;}}
+      [data-testid="stTable"] tbody tr>td,[data-testid="stTable"] tbody tr>th{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
+      [data-testid="stTable"] tbody tr:nth-child(odd)>td,[data-testid="stTable"] tbody tr:nth-child(even)>td{{background:var(--cellbg)!important;}}
+      [data-testid="stTable"] tbody tr:first-child>td,[data-testid="stTable"] tbody tr:first-child>th{{background:var(--cellbg)!important;}}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
