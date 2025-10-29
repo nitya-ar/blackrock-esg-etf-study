@@ -936,11 +936,9 @@ def render_change_since_2017():
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
         grid(_fmt(top_increase))
-    
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         grid(_fmt(top_decrease))
-
 
 # RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
