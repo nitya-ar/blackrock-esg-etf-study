@@ -1,79 +1,144 @@
-BlackRock ESG ETFs — Alignment, Evolution, and Tradeoffs (2017–2025)
-1. Dashboard Access
+# **BlackRock ESG ETFs — Alignment, Evolution, and Tradeoffs (2017–2025)**
 
-The complete interactive analysis is available at:
-Open the Dashboard
+### **Dashboard Access**
 
-The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) over the period 2017 to 2025. It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
+The complete interactive analysis is available here:
+👉 **[Open the Dashboard](#)**
 
-2. Overview and Motivation
+The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) from **2017 to 2025**.
+It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
 
-The acceleration of ESG investing has produced a large universe of funds marketed as sustainable or socially responsible. However, extensive evidence suggests that many such funds retain exposures similar to their conventional benchmarks. This has generated concern about whether ESG labels reflect genuine portfolio transformation or simply marketing differentiation.
+---
 
-BlackRock was selected as the focus of this study because of its dominant position in the global asset-management industry and its leadership in promoting ESG integration. The company’s scale, disclosure quality, and market influence make it a representative case for understanding how large, passively managed ESG products operationalize sustainability objectives within benchmark-constrained frameworks.
+## **Overview and Motivation**
 
-Twenty iShares ESG ETFs were included in the analysis. They were chosen based on two criteria: continuous data availability between 2017 and 2025 through public regulatory filings, and significant net assets that make each fund economically material. This selection ensures both analytical consistency and relevance.
+The acceleration of ESG investing has produced a large universe of funds marketed as sustainable or socially responsible. However, evidence suggests that many such funds retain exposures similar to their conventional benchmarks.
+This raises concern about whether ESG labels reflect genuine portfolio transformation or simply marketing differentiation.
 
-The project’s purpose is to quantify alignment between portfolio holdings and stated sustainability claims, to track how that alignment has evolved, and to evaluate the tradeoffs between improving ESG purity and maintaining benchmark fidelity.
+**BlackRock** was selected as the focus of this study because of its **dominant position** in global asset management and leadership in promoting ESG integration.
+Its scale, disclosure quality, and market influence make it a representative case for understanding how large, passively managed ESG products operationalize sustainability objectives within benchmark-constrained frameworks.
 
-3. Objectives
+**Twenty iShares ESG ETFs** were analyzed, selected based on:
 
-The research is organized around three central questions.
+* Continuous data availability between **2017 and 2025** through public regulatory filings.
+* Significant **net assets**, ensuring that each fund is economically material.
 
-Alignment in 2025
+This approach ensures both **analytical consistency** and **relevance**.
+
+The project’s objective is to **quantify alignment** between portfolio holdings and stated sustainability claims, track how that alignment has evolved, and evaluate the **tradeoffs** between improving ESG purity and maintaining benchmark fidelity.
+
+---
+
+## **Objectives**
+
+The research is organized around three central questions:
+
+**1. Alignment in 2025**
 To what extent are BlackRock’s ESG ETFs invested in companies associated with controversial activities such as fossil-fuel extraction, weapons manufacturing, tobacco production, private prisons, or deforestation?
 
-Evolution from 2017 to 2025
-How have these exposures changed across time? Do the data indicate measurable progress toward cleaner holdings?
+**2. Evolution from 2017 to 2025**
+How have these exposures changed over time? Do the data indicate measurable progress toward cleaner holdings?
 
-Tradeoffs
+**3. Tradeoffs**
 What are the diversification and tracking-error implications of constructing alternative portfolios with stronger sustainability alignment?
 
-4. Methodology
-Data Sources
+---
 
-Holdings were collected from Form N-PORT-P, Form N-CSR, and Form N-CSRS filings submitted to the U.S. Securities and Exchange Commission through the EDGAR database for reporting years 2017 to 2025. These filings contain detailed annual and semi-annual portfolio holdings for registered investment companies.
+## **Methodology and Data Sources**
 
-Company-level ESG classifications were integrated from datasets produced by As You Sow, which identify firms involved in fossil-fuel, tobacco, weapons, prison, and deforestation activities, as well as from the Clean200 list of global companies with the highest clean-energy revenues.
+Holdings were collected from **Form N-PORT-P**, **Form N-CSR**, and **Form N-CSRS** filings submitted to the **U.S. Securities and Exchange Commission (SEC)** through the **EDGAR** database for reporting years **2017–2025**.
+These filings provide detailed annual and semi-annual portfolio holdings for registered investment companies.
 
-ETF and benchmark price series, together with fund assets under management and metadata, were obtained from iShares public disclosures and Yahoo Finance.
+Company-level ESG classifications were integrated from **As You Sow** datasets, which identify firms involved in:
 
-Analytical Framework
+* Fossil fuels
+* Tobacco
+* Weapons
+* Prisons
+* Deforestation
 
-Each holding was standardized by ticker and canonical company name to enable longitudinal analysis. ESG classifications were merged at the company level, and portfolio exposures were computed as weight-adjusted proportions of Clean, Controversial, and Other holdings.
+and from the **Clean200** list of global companies with the highest clean-energy revenues.
 
-Time-series trends were calculated under both equal-weight and asset-weighted frameworks to separate compositional effects from size dynamics.
+ETF and benchmark price series, along with fund **assets under management (AUM)** and metadata, were obtained from **iShares public disclosures** and **Yahoo Finance**.
 
-For the 2025 cross-section, two counterfactual portfolios were modeled to evaluate the practical constraints of cleaner design.
+---
 
-Pragmatic Tilt increases exposure to Clean200 constituents while maintaining sector and regional neutrality within two percentage points and limiting expected tracking error to two percent annualized.
+## **Analytical Framework**
 
-Strict Exclusion eliminates all companies identified as controversial and refills the portfolio to one hundred percent weight while minimizing tracking error relative to the original composition.
+Each holding was standardized by **ticker** and **canonical company name** to enable longitudinal analysis.
+ESG classifications were merged at the company level, and portfolio exposures were computed as **weight-adjusted proportions** of Clean, Controversial, and Other holdings.
 
-Tracking error was estimated using a covariance-based ex-ante approach derived from historical ETF and benchmark returns.
+Time-series trends were calculated under both **equal-weight** and **asset-weighted** frameworks to separate compositional effects from size dynamics.
 
-5. Dashboard Overview
+### **2025 Counterfactual Scenarios**
 
-The Streamlit dashboard serves as the primary medium for presenting results. It is divided into three sections.
+Two alternative portfolio designs were modeled to evaluate the practical constraints of cleaner construction:
 
-2025 Overview summarizes the current composition of each ESG ETF, displaying the proportions of Clean, Controversial, and Other holdings, individual screen exposures, sector and regional distributions, and top holdings.
+**• Pragmatic Tilt**
+Increases exposure to Clean200 constituents while maintaining sector and regional neutrality within ±2 percentage points and limiting expected tracking error to **2% annualized**.
 
-Change Since 2017 illustrates the evolution of alignment over time, showing both aggregate and fund-specific trends in clean and controversial exposure. It includes comparisons between earlier years and 2025, as well as identification of major holding additions and removals.
+**• Strict Exclusion**
+Eliminates all controversial companies and refills the portfolio to 100% weight while minimizing tracking error relative to the original composition.
 
-Tradeoff Scenarios presents the simulated cleaner portfolios alongside the original 2025 baseline, comparing them on key alignment metrics, tracking error, and diversification. It quantifies the measurable cost of increasing ESG purity within realistic portfolio constraints.
+Tracking error was estimated using a **covariance-based ex-ante approach** derived from historical ETF and benchmark returns.
 
-The dashboard employs a dark professional visual design and a consistent analytical structure to support interpretation and comparative analysis.
+---
 
-6. Recent Market Context
+## **Dashboard Overview**
 
-Recent developments underscore the continuing importance of transparency in ESG investing. In August 2025, DeSmog reported that BlackRock, while maintaining sustainability branding, increased its investment exposure to fossil-fuel producers, prompting renewed debate about greenwashing practices. In the same month, the Investment Company Institute estimated that funds applying ESG criteria managed approximately six hundred and five billion U.S. dollars in assets but recorded net outflows, reflecting investor uncertainty about ESG performance claims. Additionally, research from Sustainalytics highlighted rising exposure of “light-green” European funds to defence and aerospace companies, further blurring the boundary between ESG-compliant and conventional holdings.
+The **Streamlit dashboard** serves as the primary medium for presenting results. It is divided into three analytical sections:
 
-These developments reinforce the purpose of this analysis: to measure alignment empirically rather than rely on label-based assumptions, and to clarify how large asset managers balance sustainability commitments with financial and benchmark constraints.
+### **1. 2025 Overview**
 
-(Sources: DeSmog, August 2025; Investment Company Institute, August 2025; Sustainalytics ESG Blog, 2025)
+Summarizes the current composition of each ESG ETF, displaying:
 
-7. Authorship and Disclaimer
+* Clean vs Controversial vs Other holdings
+* Exposure by individual screen
+* Sector and regional distributions
+* Top holdings
 
-Prepared by Nitya Arya.
+### **2. Change Since 2017**
 
-This study was conducted independently to evaluate ESG portfolio alignment and transparency in passively managed funds. All information used in the analysis is publicly available from SEC EDGAR filings, iShares disclosures, As You Sow datasets, and Yahoo Finance. The work is not affiliated with or endorsed by BlackRock, iShares, or As You Sow and is intended solely for academic and research purposes.
+Illustrates the evolution of alignment over time, showing:
+
+* Aggregate and fund-specific trends in clean and controversial exposure
+* Comparisons between earlier years and 2025
+* Major additions and removals in holdings
+
+### **3. Tradeoff Scenarios**
+
+Presents the simulated cleaner portfolios alongside the original 2025 baseline, comparing them on:
+
+* Key alignment metrics
+* Tracking error and diversification impacts
+
+This section quantifies the **measurable cost** of increasing ESG purity within realistic portfolio constraints.
+
+The dashboard employs a **dark, professional visual design** and a consistent analytical structure to support intuitive interpretation and comparison.
+
+---
+
+## **Recent Market Context**
+
+Recent developments highlight the ongoing importance of transparency in ESG investing:
+
+* **DeSmog (August 2025):** Reported that BlackRock increased exposure to fossil-fuel producers despite maintaining sustainability branding, reigniting greenwashing debates.
+* **Investment Company Institute (August 2025):** Estimated that ESG-criteria funds managed approximately **USD 605 billion** but experienced **net outflows**, reflecting investor uncertainty about ESG performance claims.
+* **Sustainalytics ESG Blog (2025):** Found that “light-green” European funds increased exposure to defense and aerospace companies, further blurring the ESG boundary.
+
+These developments reinforce the purpose of this analysis — to measure **alignment empirically** rather than rely on label-based assumptions, and to clarify how large asset managers balance sustainability commitments with financial and benchmark constraints.
+
+*(Sources: DeSmog, August 2025; Investment Company Institute, August 2025; Sustainalytics ESG Blog, 2025)*
+
+---
+
+## **Authorship and Disclaimer**
+
+**Prepared by:** *Nitya Arya*
+
+This study was conducted independently to evaluate ESG portfolio alignment and transparency in passively managed funds.
+All data are publicly available from **SEC EDGAR filings**, **iShares disclosures**, **As You Sow** datasets, and **Yahoo Finance**.
+
+This work is **not affiliated with or endorsed by BlackRock, iShares, or As You Sow** and is intended solely for academic and research purposes.
+
+---
