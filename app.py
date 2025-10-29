@@ -88,9 +88,6 @@ st.markdown(
         background-color: var(--bg) !important;
         color: var(--text) !important;
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        color-scheme: dark !important;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
       }}
       h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
       .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
@@ -116,19 +113,24 @@ st.markdown(
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
       .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
+      /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:50%;
         background: transparent !important;
-        color: var(--text) !important;
-        border: 2px solid var(--text) !important;
+        color: var(--texted) !important;
+        border: 2px solid var(--texted) !important;
         font-weight:700; font-size:12px;
         margin-left:8px; vertical-align:text-bottom;
       }}
       .chart-head {{ display:flex; align-items:center; }}
       .chart-head .chart-title {{ flex:1 1 auto; }}
       .chart-head .info-badge {{ margin-left:auto; }}
-      .info-badge:hover, .info-badge:focus {{ box-shadow: 0 0 0 3px rgba(198,60,65,0.22); outline: none; }}
+
+      .info-badge:hover, .info-badge:focus {{
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+        outline: none;
+      }}
 
       .has-tip {{ position:relative; }}
       .has-tip::after {{
@@ -142,101 +144,127 @@ st.markdown(
       }}
       .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
-      /* ===== Streamlit tables & dataframes (unified dark look) ===== */
-
-      /* Container */
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
-        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
       }}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background:#0F1116 !important; }}
-
-      /* Headers */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-      :where([data-testid="stTable"]) thead th {{
-        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
-        background-clip: padding-box !important;
+      div[data-testid="stDataframe"] thead tr th {{
+        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
+        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
       }}
 
-      /* All data cells (kill zebra & “first row” highlights across engines) */
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] [role="row"] [role="gridcell"],
-      :where([data-testid="stTable"]) tbody td,
-      :where([data-testid="stTable"]) tbody tr:nth-child(odd) td,
-      :where([data-testid="stTable"]) tbody tr:nth-child(even) td,
-      :where([data-testid="stDataFrame"]) [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-      :where([data-testid="stTable"]) tbody tr:first-child td {{
-        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
-        background-clip: padding-box !important;
-      }}
-
-      /* Hover/focus row tint */
-      :where([data-testid="stDataFrame"]) [role="row"]:hover [role="gridcell"],
-      :where([data-testid="stDataFrame"]) [role="row"][data-focused="true"] [role="gridcell"] {{
-        background:#10131A !important;
-      }}
-
-      /* st.table base styles */
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
 
-      /* Inputs/controls */
       [data-baseweb="select"], [data-baseweb="input"] {{
         border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
       }}
-      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{ background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important; }}
+      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+        background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
+      }}
       [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
       [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
-        outline:none !important; border:1px solid var(--accent) !important; box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
+        outline:none !important; border:1px solid var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
       }}
       [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
-      [data-baseweb="menu"] {{ background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important; }}
+      [data-baseweb="menu"] {{
+        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
       [data-baseweb="menu"] li {{ color:var(--text) !important; }}
       [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
 
       [data-baseweb="slider"] > div {{ background:transparent !important; }}
       [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
-      [data-baseweb="slider"] [role="slider"] {{ background:var(--accent) !important; box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important; }}
+      [data-baseweb="slider"] [role="slider"] {{
+        background:var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+      }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
-      div[data-testid="stSegmentedControl"] div[role="tablist"] {{ background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important; }}
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{ background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important; }}
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+      }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"],
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:#12151C !important; color:var(--text) !important; box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+        background:#12151C !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
       }}
       div[data-testid="stSegmentedControl"] button[disabled],
       div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
       div[data-testid="stSegmentedControl"] button[disabled] > *,
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{ background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important; }}
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
+      }}
 
       .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
       .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
       .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
 
-      .stDownloadButton > button, .stButton > button {{ background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important; }}
+      .stDownloadButton > button, .stButton > button {{
+        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
       .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{ color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px; }}
-
+      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
+        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
+      }}
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
 
+      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
       [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
-      [data-baseweb="popover"] * , [data-baseweb="menu"] * {{ background: #10131A !important; color: var(--text) !important; border-color: var(--border) !important; }}
+      [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+        background: #10131A !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }}
+
       [role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
       [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
-      [role="option"][aria-selected="true"], [role="option"]:hover {{ background:#161A22 !important; }}
+      [role="option"][aria-selected="true"],
+      [role="option"]:hover {{ background:#161A22 !important; }}
 
       div[data-testid="stPopover"] div[role="dialog"],
-      div[data-testid="stPopover"] div[role="dialog"] * {{ background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important; }}
-      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
+      div[data-testid="stPopover"] div[role="dialog"] * {{
+        background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
+      }}
+
+      .vega-tooltip, .vega-tooltip * {{
+        background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
+      }}
+
+      div[data-testid="stSegmentedControl"] div[role="tablist"],
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+      }}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 
 def divider():
