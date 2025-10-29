@@ -1059,9 +1059,9 @@ def render_tradeoff_scenarios():
     st.markdown("""
     <style>
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-                   padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
+                   padding:12px 14px;height:130px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
-      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.20;}
+      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.30;}
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
       .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
               display:flex;flex-direction:column;justify-content:center;}
