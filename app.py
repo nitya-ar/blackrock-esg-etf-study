@@ -17,18 +17,18 @@ def _read_bytes(p: Path):
     except Exception:
         return None
 
-def _pil_to_png_bytes(img: Image.Image) -> bytes:
+def _pil_to_png_bytes(img: Image.Image):
     buf = BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()
 
-def _load_icon_bytes() -> bytes | None:
+def _load_icon_bytes():
     here = Path(__file__).parent if "__file__" in globals() else Path.cwd()
     candidates = [
         Path("Blackrock esg study icon.png"),
         Path("assets/Blackrock esg study icon.png"),
         here / "Blackrock esg study icon.png",
-        here / "assets/Blackrock esg study icon.png"),
+        here / "assets/Blackrock esg study icon.png",
         Path("/mnt/data/Blackrock esg study icon.png"),
     ]
     for p in candidates:
