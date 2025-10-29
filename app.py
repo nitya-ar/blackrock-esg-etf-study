@@ -258,17 +258,19 @@ def gap(px=6):
 
 def style_dark_df(df: pd.DataFrame):
     bg, hdr, txt, bdr, first = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027", "#10131A"
-    return (
+    sty = (
         df.style
           .set_table_styles([
-              {"selector": "table",                         "props": [("background-color", bg),  ("color", txt), ("border-collapse", "collapse"), ("border", f"1px solid {bdr}")]},
-              {"selector": "thead th",                      "props": [("background-color", hdr), ("color", txt), ("border-bottom", f"1px solid {bdr}"), ("padding", "6px 8px")]},
-              {"selector": "tbody td",                      "props": [("background-color", bg),  ("color", txt), ("border-top",     f"1px solid {bdr}"), ("padding", "6px 8px")]},
-              {"selector": "tbody tr:nth-child(1) td",      "props": [("background-color", first)]},  
-              {"selector": "tbody tr:hover td",             "props": [("background-color", "#12151C")]},
+              {"selector":"table","props":[("background-color",bg),("color",txt),("border-collapse","collapse"),("border",f"1px solid {bdr}")]},
+              {"selector":"thead th","props":[("background-color",hdr),("color",txt),("border-bottom",f"1px solid {bdr}"),("padding","6px 8px")]},
+              {"selector":"tbody td","props":[("background-color",bg),("color",txt),("border-top",f"1px solid {bdr}"),("padding","6px 8px")]}
           ])
           .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
+          .apply(lambda s: [f"background-color: {first}; color: {txt}; border-top: 1px solid #12151C;"]*len(s)
+                          if s.name == 0 else [""]*len(s), axis=1)
     )
+    return sty
+
 
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
