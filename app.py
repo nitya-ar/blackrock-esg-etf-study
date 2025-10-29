@@ -1,3 +1,4 @@
+
 import os
 from io import StringIO
 import urllib.parse
@@ -8,25 +9,25 @@ import altair as alt
 import streamlit as st
 
 
-from PIL import Image  
+from PIL import Image
+from pathlib import Path
 
-# ---- Page config (set favicon/logo in the browser tab
-_ICON_FILE = "Blackrock esg study logo .png"  # or "assets/Blackrock esg study logo.png" if you move it
+# ---- Favicon / Page config (must be called exactly once, and before ANY UI output)
+_ICON_FILE = Path("Blackrock esg study logo .png")  # commit your icon here; name is case-sensitive
 
-try:
-    _icon_img = Image.open(_ICON_FILE)
-except Exception:
-    # Fallback: let Streamlit try to load from path string even if PIL failed
-    _icon_img = _ICON_FILE
+if _ICON_FILE.exists():
+    _icon_obj = Image.open(_ICON_FILE)
+else:
+    # Last-resort: let Streamlit try a string path (will still fail if the file isn’t in the repo)
+    _icon_obj = str(_ICON_FILE)
 
-# ===============
-# ===============
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=None,
+    page_icon=_icon_obj,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
 
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
@@ -121,26 +122,19 @@ st.markdown(
       .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
       .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
       .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
-/* ---------- Charts / tooltips ---------- */
-.stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
-.vega-embed, .stAltairChart {{ background: transparent !important; }}
 
-/* ---------- Tooltips (match Analysis 1 table bg) ---------- */
-.vega-tooltip, .vega-tooltip * {{
-  background:#0E1015 !important; color:var(--text) !important; border-color:var(--border) !important;
-}}
+      /* ---------- Charts / tooltips ---------- */
+      .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-/* Custom info-badge tooltip bubble */
-.has-tip::after{{
-  background:#0E1015 !important; color:var(--text) !important; border:1px solid var(--border) !important;
-}}
     /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
 .info-badge {{
   display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; min-width:22px; border-radius:50%;
-  background: transparent !important;
-  color: var(--accent) !important;                 /* was --texted */
-  border: 2px solid var(--accent) !important;      /* was --texted */
+  background: transparent !important;               /* no fill */
+  color: var(--texted) !important;                  /* red “i” */
+  border: 2px solid var(--texted) !important;       /* red outline */
   font-weight:700; font-size:12px;
   margin-left:8px; vertical-align:text-bottom;
 }}
@@ -155,14 +149,11 @@ st.markdown(
 }}
 
 /* Tooltip stays the same */
-/* Tooltip (canonical, matches Analysis 1 table bg) */
 .has-tip {{ position:relative; }}
 .has-tip::after {{
   content: attr(data-tip);
   position:absolute; right:0; top:calc(100% + 8px);
-  background:#0E1015 !important;
-  color:var(--text) !important;
-  border:1px solid var(--border) !important;
+  background:#0B0D12; color:var(--text); border:1px solid var(--border);
   padding:6px 10px; border-radius:8px; white-space:nowrap;
   opacity:0; transform:translateY(6px); pointer-events:none;
   transition:opacity .15s ease, transform .15s ease;
@@ -171,32 +162,24 @@ st.markdown(
 .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
 
+      /* ---------- DataFrames & Tables (no white headers/rows) ---------- */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      div[data-testid="stDataframe"] thead tr th {{
+        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
+        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+      }}
+      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
-      /* ---------- DataFrames & Tables (no white headers/rows; match Analysis 1) ---------- */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
-  background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
-}}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
-
-/* Header = #0C0E13 (Analysis 1 header) */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-div[data-testid="stDataframe"] thead tr th {{
-  background:#0C0E13 !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
-}}
-
-/* Body rows = #0E1015 (Analysis 1 body) */
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
-div[data-testid="stDataframe"] tbody tr td {{
-  background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
-}}
-
-/* First row bg = same as body (no lighter row) */
-div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#0E1015 !important; }}
-
-/* st.table too */
-:where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-:where([data-testid="stTable"]) thead th {{ background:#0C0E13 !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
-:where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
+      :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
 
       /* ---------- Inputs (Select/Text) — dark + consistent placeholders ---------- */
       [data-baseweb="select"], [data-baseweb="input"] {{
@@ -228,34 +211,28 @@ div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#0E1015 !im
       }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
- /* ---------- Segmented controls (Dashboard/Report & AUM/EW) — use table bg colors ---------- */
-div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-  background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
-}}
-
-/* base state */
-div[data-testid="stSegmentedControl"] button[role="tab"],
-div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-  background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
-}}
-
-/* selected */
-div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-  background:#0C0E13 !important; color:var(--text) !important;
-  border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
-}}
-
-/* disabled */
-div[data-testid="stSegmentedControl"] button[disabled],
-div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
-div[data-testid="stSegmentedControl"] button[disabled] > *,
-div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
-  background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
-}}
-
+      /* ---------- Segmented controls (Dashboard/Report & AUM/EW) ---------- */
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      /* force dark on button and nested wrappers (Safari/Private) */
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[disabled],
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
+      div[data-testid="stSegmentedControl"] button[disabled] > *,
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
+      }}
 
       /* ---------- Tabs ---------- */
       .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
@@ -275,6 +252,54 @@ div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
+
+      /* ===== FORCE-DARK FOR PORTALS / MENUS / TOOLTIPS (cross-browser, incognito) ===== */
+
+/* Tell the UA we are dark so native widgets don't flip white in private/Incognito */
+:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+/* BaseWeb popovers/menus are rendered in a body-level portal; keep them dark */
+[class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
+[data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+  background: #10131A !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}}
+
+/* Listbox rows in selects */
+[role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
+[role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
+[role="option"][aria-selected="true"],
+[role="option"]:hover {{ background:#161A22 !important; }}
+
+/* Streamlit’s “popover” wrapper sometimes used for select/multiselect */
+div[data-testid="stPopover"] div[role="dialog"],
+div[data-testid="stPopover"] div[role="dialog"] * {{
+  background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
+}}
+
+/* Keep Vega/Altair tooltips locked dark (extra guard) */
+.vega-tooltip, .vega-tooltip * {{
+  background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
+}}
+
+/* Dataframe FIRST ROW stays dark in all tabs */
+div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
+
+/* Segmented controls (incl. the Weighting AUM/EW toggle) — force fully dark in Safari/Incognito */
+div[data-testid="stSegmentedControl"] div[role="tablist"],
+div[data-testid="stSegmentedControl"] button[role="tab"],
+div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+  background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+  background:#12151C !important; color:var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+}}
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -287,21 +312,21 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 # Dark styler for tables inside iframe
-def grid(df: pd.DataFrame, formats: dict | None = None):
-    cfg = {}
-    if formats:
-        for col, spec in formats.items():
-            t = (spec or {}).get("type", "").lower()
-            if t == "pct":
-                cfg[col] = st.column_config.NumberColumn(col, format="%.2f%%")
-            elif t == "int":
-                cfg[col] = st.column_config.NumberColumn(col, format="%d")
-            elif t == "usd":
-                cfg[col] = st.column_config.NumberColumn(col, format="$%,.0f")
-            elif t == "float":
-                cfg[col] = st.column_config.NumberColumn(col, format="%,.2f")
-    st.dataframe(df, use_container_width=True, hide_index=True, column_config=cfg)
+def style_dark_df(df: pd.DataFrame):
+    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
+    return (
+        df.style
+          .set_table_styles([
+              {"selector": "table",             "props": [("background-color", bg),  ("color", txt), ("border-collapse", "collapse"), ("border", f"1px solid {bdr}")]},
+              {"selector": "thead th",          "props": [("background-color", hdr), ("color", txt), ("border-bottom", f"1px solid {bdr}"), ("padding", "6px 8px")]},
+              {"selector": "tbody td",          "props": [("background-color", bg),  ("color", txt), ("border-top",     f"1px solid {bdr}"), ("padding", "6px 8px")]},
+              {"selector": "tbody tr:hover td", "props": [("background-color", "#12151C")]},
+          ])
+          .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
+    )
 
+def grid(df: pd.DataFrame):
+    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
 
 # =========================
@@ -326,11 +351,9 @@ def local_path(analysis: int, filename: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def load_csv(analysis: int, filename: str) -> pd.DataFrame:
-    """Try loading from local path → GitHub raw → GitHub API."""
     lp = local_path(analysis, filename)
     if lp and os.path.exists(lp):
         return pd.read_csv(lp)
-
     raw_url = github_raw_url(analysis, filename)
     try:
         return pd.read_csv(raw_url)
@@ -338,7 +361,7 @@ def load_csv(analysis: int, filename: str) -> pd.DataFrame:
         api_url = github_api_url(analysis, filename)
         headers = {"Accept": "application/vnd.github.v3.raw"}
         if GITHUB_TOKEN:
-            headers["Authorization"] = f"token {GITHUB_TOKEN}"  # add GitHub token if available
+            headers["Authorization"] = f"token {GITHUB_TOKEN}"
         try:
             r = requests.get(api_url, headers=headers, timeout=25)
             r.raise_for_status()
@@ -347,13 +370,6 @@ def load_csv(analysis: int, filename: str) -> pd.DataFrame:
             raise FileNotFoundError(
                 f"Failed to load {filename}. Tried local, public raw, and API.\nraw={e_raw}; api={e_api}"
             )
-
-
-@st.cache_data(show_spinner=False)
-def load_data_file(filename: str, analysis: int = 3) -> pd.DataFrame:
-    """Fallback helper for legacy calls — defaults to Analysis 3 path."""
-    return load_csv(analysis, filename)
-
 
 # Analysis 1 loaders
 @st.cache_data(show_spinner=False)
@@ -961,10 +977,10 @@ def render_change_since_2017():
     a, b = st.columns(2, gap="large")
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
-        grid(_fmt(top_increase))
+        st.dataframe(_fmt(top_increase), hide_index=True, use_container_width=True)
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
-        grid(_fmt(top_decrease))
+        st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
 
 
 
@@ -1188,7 +1204,7 @@ def render_tradeoff_scenarios():
         M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else [])]
         .rename(columns={
             etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial",
-            te_col:"TE_annual", n_col:"Holdings", **({as_col: "ActiveShare %"} if as_col else {})
+            te_col:"TE_annual", n_col:"Holdings", **({"ActiveShare_%":"ActiveShare %"} if as_col else {})
         })
         .copy()
     )
@@ -1522,14 +1538,8 @@ def render_tradeoff_scenarios():
     st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
     # Scenario filter immediately under heading (smaller font via CSS)
-    sel_scn_changes = st.segmented_control(
-       "",
-       options=["Pragmatic Tilt", "Strict Exclusion"],
-       default="Pragmatic Tilt",
-       label_visibility="collapsed",
-       key="t3_changes_scn_seg"
-    )
-
+    sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
+                               horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
 
     # Load position deltas again for tables
     deltas2 = None
@@ -1601,10 +1611,10 @@ def render_tradeoff_scenarios():
             ta, tr = st.columns(2, gap="large")
             with ta:
                 st.caption("Top Added (Δ weight, pp)")
-                grid(_fmt_table(top_added))
+                st.dataframe(_fmt_table(top_added), hide_index=True, use_container_width=True)
             with tr:
                 st.caption("Top Removed (Δ weight, pp)")
-                grid(_fmt_table(top_removed))
+                st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
