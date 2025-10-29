@@ -245,6 +245,17 @@ st.markdown(
       background:#10131A !important; color:var(--text) !important;
       }}
 
+      /* === OVERRIDE: do NOT special-style the first data row anywhere === */
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > td,
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > th,
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > [role="row"]:first-child > [role="gridcell"],
+      [data-testid="stTable"] tbody tr:first-child > td,
+      [data-testid="stTable"] tbody tr:first-child > th {{
+      background: #0E1015 !important;    /* same as body cells */
+      color: var(--text) !important;
+      border-top: 1px solid #12151C !important;
+      }}
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -257,7 +268,7 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
-    bg, hdr, txt, bdr, first = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027", "#10131A"
+    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
     sty = (
         df.style
           .set_table_styles([
@@ -266,10 +277,9 @@ def style_dark_df(df: pd.DataFrame):
               {"selector":"tbody td","props":[("background-color",bg),("color",txt),("border-top",f"1px solid {bdr}"),("padding","6px 8px")]}
           ])
           .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
-          .apply(lambda s: [f"background-color: {first}; color: {txt}; border-top: 1px solid #12151C;"]*len(s)
-                          if s.name == 0 else [""]*len(s), axis=1)
     )
     return sty
+
 
 
 def grid(df: pd.DataFrame):
