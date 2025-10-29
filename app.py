@@ -1083,7 +1083,7 @@ def render_tradeoff_scenarios():
       /* info badge (slightly larger); Tooltip opens LEFT back over the chart */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
-        width:22px;height:22px;min-width:40px;border-radius:50%;
+        width:22px;height:22px;min-width:22px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:12px;
         margin-left:8px;position:relative;z-index:3;
       }
@@ -1094,7 +1094,7 @@ def render_tradeoff_scenarios():
         background:#0B0D12;color:var(--text);border:1px solid var(--border);
         padding:12px 14px;border-radius:10px;
         white-space:normal;line-height:1.35;
-        min-width:380px;max-width:620px;
+        min-width:380px;max-width:1200px;
         box-shadow:0 6px 16px rgba(0,0,0,.25);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;
