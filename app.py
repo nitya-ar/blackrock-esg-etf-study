@@ -11,11 +11,24 @@ from PIL import Image
 from pathlib import Path
 
 # HEADER
+from io import BytesIO
+
 _ICON_FILE = Path("Blackrock esg study icon.png")
-if _ICON_FILE.exists():
-    _icon_obj = Image.open(_ICON_FILE)
-else:
-    _icon_obj = str(_ICON_FILE)
+
+def _load_icon():
+    if _ICON_FILE.exists():
+        return Image.open(_ICON_FILE)
+    try:
+        repo = GITHUB_USER_REPO
+        branch = GITHUB_BRANCH
+        raw_url = f"https://raw.githubusercontent.com/{repo}/{branch}/Blackrock esg study icon.png"
+        r = requests.get(raw_url, timeout=10)
+        r.raise_for_status()
+        return Image.open(BytesIO(r.content))
+    except Exception:
+        return "🌿"
+
+_icon_obj = _load_icon()
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
