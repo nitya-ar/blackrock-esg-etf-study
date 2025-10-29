@@ -7,22 +7,48 @@ import pandas as pd
 import altair as alt
 import streamlit as st
 
-from PIL import Image
+# --- HEADER (must be first, before any st.* output)
+import os
+from io import BytesIO
 from pathlib import Path
+from PIL import Image
+import requests
+import streamlit as st
 
-# HEADER
-_ICON_FILE = Path("Blackrock esg study icon.png")
-if _ICON_FILE.exists():
-    _icon_obj = Image.open(_ICON_FILE)
-else:
-    _icon_obj = str(_ICON_FILE)
+# change this if your repo/path differs
+_GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
+
+def _load_icon():
+    here = Path(__file__).parent if "__file__" in globals() else Path.cwd()
+    candidates = [
+        Path("Blackrock esg study icon.png"),
+        Path("assets/Blackrock esg study icon.png"),
+        here / "Blackrock esg study icon.png",
+        here / "assets/Blackrock esg study icon.png",
+        Path("/mnt/data/Blackrock esg study icon.png"),
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                return Image.open(p)
+            except Exception:
+                pass
+    try:
+        r = requests.get(_GH_RAW, timeout=8)
+        r.raise_for_status()
+        return Image.open(BytesIO(r.content))
+    except Exception:
+        return "🌿"  # last-resort: emoji works as a favicon too
+
+icon_obj = _load_icon()
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=_icon_obj,
+    page_icon=icon_obj,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
 
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
