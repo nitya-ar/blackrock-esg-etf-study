@@ -1,4 +1,5 @@
 # --- HEADER (must be first, before any st.* output)
+import os
 import requests
 from io import BytesIO
 from pathlib import Path
@@ -19,13 +20,13 @@ def _load_icon():
         r.raise_for_status()
         return Image.open(BytesIO(r.content))
     except Exception:
-        return None  # fallback = Streamlit's default favicon
+        return None  # fallback → Streamlit default favicon
 
 icon_obj = _load_icon()
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=icon_obj,   # None => Streamlit default logo
+    page_icon=icon_obj,   # None => Streamlit default
     layout="wide",
     initial_sidebar_state="collapsed",
 )
