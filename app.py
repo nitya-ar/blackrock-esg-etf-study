@@ -905,10 +905,10 @@ def render_change_since_2017():
     a, b = st.columns(2, gap="large")
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
-        st.dataframe(_fmt(top_increase), hide_index=True, use_container_width=True)
+        grid(_fmt(top_increase))
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
-        st.dataframe(_fmt(top_decrease), hide_index=True, use_container_width=True)
+        grid(_fmt(top_decrease))
 
 # RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
@@ -1520,10 +1520,10 @@ def render_tradeoff_scenarios():
             ta, tr = st.columns(2, gap="large")
             with ta:
                 st.caption("Top Added (Δ weight, pp)")
-                st.dataframe(_fmt_table(top_added), hide_index=True, use_container_width=True)
+                grid(_fmt_table(top_added))
             with tr:
                 st.caption("Top Removed (Δ weight, pp)")
-                st.dataframe(_fmt_table(top_removed), hide_index=True, use_container_width=True)
+                grid(_fmt_table(top_removed))
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
