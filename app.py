@@ -222,18 +222,42 @@ st.markdown(
 
       :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
 
-      :root{{--cellbg:#0E1015;--celltext:var(--text);--cellborder:#12151C;}}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-selected="true"]>[role="gridcell"],
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:focus-within>[role="gridcell"]{{background:var(--cellbg)!important;color:var(--celltext)!important;}}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(odd)>[role="gridcell"],
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even)>[role="gridcell"]{{background:var(--cellbg)!important;}}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>[role="row"]:first-child>[role="gridcell"],
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"]>div:first-child>[role="gridcell"]{{background:var(--cellbg)!important;}}
-      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:hover>[role="gridcell"]{{background:var(--cellbg)!important;}}
-      [data-testid="stTable"] tbody tr>td,[data-testid="stTable"] tbody tr>th{{background:var(--cellbg)!important;color:var(--celltext)!important;border-top:1px solid var(--cellborder)!important;}}
-      [data-testid="stTable"] tbody tr:nth-child(odd)>td,[data-testid="stTable"] tbody tr:nth-child(even)>td{{background:var(--cellbg)!important;}}
-      [data-testid="stTable"] tbody tr:first-child>td,[data-testid="stTable"] tbody tr:first-child>th{{background:var(--cellbg)!important;}}
+      :root {{ --cellbg:#0E1015; --celltext:var(--text); --cellborder:#12151C; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-rowindex] > [role="gridcell"] {{
+        background: var(--cellbg) !important;
+        color: var(--celltext) !important;
+        border-top: 1px solid var(--cellborder) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"][aria-selected="true"] > [role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:focus-within > [role="gridcell"] {{
+        background: var(--cellbg) !important;
+        color: var(--celltext) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(odd) > [role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even) > [role="gridcell"] {{
+        background: var(--cellbg) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > [role="row"]:first-child > [role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > div:first-child > [role="gridcell"] {{
+        background: var(--cellbg) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:hover > [role="gridcell"] {{
+        background: var(--cellbg) !important;
+      }}
+      [data-testid="stTable"] tbody tr > td,
+      [data-testid="stTable"] tbody tr > th {{
+        background: var(--cellbg) !important;
+        color: var(--celltext) !important;
+        border-top: 1px solid var(--cellborder) !important;
+      }}
+      [data-testid="stTable"] tbody tr:nth-child(odd) > td,
+      [data-testid="stTable"] tbody tr:nth-child(even) > td {{
+        background: var(--cellbg) !important;
+      }}
+      [data-testid="stTable"] tbody tr:first-child > td,
+      [data-testid="stTable"] tbody tr:first-child > th {{
+        background: var(--cellbg) !important;
+      }}
     </style>
     """,
     unsafe_allow_html=True,
