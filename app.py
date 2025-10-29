@@ -639,7 +639,13 @@ def render_change_since_2017():
             '<div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>',
             unsafe_allow_html=True,
         )
-        weighting = st.segmented_control("Weighting", ["AUM-weighted", "Equal-weighted"], default="AUM-weighted", label_visibility="collapsed")
+       weighting = st.radio(
+           "Weighting",
+           options=["AUM-weighted", "Equal-weighted"],
+           horizontal=True,
+           label_visibility="collapsed",
+           index=0
+       )
 
     cohort = overlap if not sel_etfs else sel_etfs
     df = df_all[df_all[etf_col].astype(str).isin(cohort)].copy()
