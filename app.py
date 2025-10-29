@@ -1541,19 +1541,31 @@ def render_tradeoff_scenarios():
             deltas2 = None
 
     if deltas2 is not None:
-        # === tables fix: normalize header whitespace/invisible chars so _need() finds the columns ===
+        # normalize headers + create aliases/fallbacks if a required column is missing
         def _norm_col(s):
             return str(s).replace("\u200b", "").replace("\xa0", " ").strip()
         deltas2.columns = [_norm_col(c) for c in deltas2.columns]
-        # === end minimal fix ===
+
+        if "company_name" not in deltas2.columns and "Company" in deltas2.columns:
+            deltas2["company_name"] = deltas2["Company"]
+        if "company_ticker" not in deltas2.columns and "Ticker" in deltas2.columns:
+            deltas2["company_ticker"] = deltas2["Ticker"]
+        if "ETF_Ticker" not in deltas2.columns and "ETF" in deltas2.columns:
+            deltas2["ETF_Ticker"] = deltas2["ETF"]
+        if "delta" not in deltas2.columns and "Delta" in deltas2.columns:
+            deltas2["delta"] = deltas2["Delta"]
+        if "category" not in deltas2.columns and "Category" in deltas2.columns:
+            deltas2["category"] = deltas2["Category"]
+        if "category" not in deltas2.columns:
+            deltas2["category"] = ""  # final safety so table never crashes
 
         try:
             s_col  = _need(deltas2, "scenario")
             e_col  = _need(deltas2, "ETF_Ticker")
-            nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
-            tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
-            sec_col= "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
-            cat_col= "category" if "category" in deltas2.columns else _need(deltas2, "category")
+            nm_col = _need(deltas2, "company_name")
+            tk_col = _need(deltas2, "company_ticker")
+            sec_col= _need(deltas2, "Sector")
+            cat_col= _need(deltas2, "category")
             d_col  = _need(deltas2, "delta")
         except KeyError as err:
             deltas2 = None
