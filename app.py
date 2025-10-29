@@ -218,7 +218,7 @@ st.markdown(
       }}
       .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
 
-      label, .st-emotion-cache-1cypcdb, .st-emotion-cache-1qg05tj {{
+      label {{
         color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
       }}
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
@@ -259,6 +259,32 @@ st.markdown(
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
         background:#12151C !important; color:var(--text) !important;
         box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+      }}
+
+      /* ------- Robust cross-browser fixes for first-row/headers/hover ------- */
+      div[data-testid="stDataFrame"] [role="columnheader"],
+      div[data-testid="stDataframe"] [role="columnheader"],
+      div[data-testid="stTable"] thead th {{
+        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stTable"] tbody td,
+      div[data-testid="stTable"] tbody tr:nth-child(odd) td,
+      div[data-testid="stTable"] tbody tr:nth-child(even) td,
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+      div[data-testid="stTable"] tbody tr:first-child td {{
+        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
+      }}
+
+      div[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"],
+      div[data-testid="stDataFrame"] [role="row"][data-focused="true"] [role="gridcell"] {{
+        background:#10131A !important;
+      }}
+
+      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
+        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
       }}
     </style>
     """,
