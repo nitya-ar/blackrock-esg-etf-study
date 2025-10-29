@@ -1061,7 +1061,7 @@ def render_tradeoff_scenarios():
       .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
                    padding:12px 14px;height:160px;display:flex;flex-direction:column;justify-content:space-between;}
       .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
-      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.35;}
+      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.20;}
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
       .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
               display:flex;flex-direction:column;justify-content:center;}
@@ -1118,13 +1118,13 @@ def render_tradeoff_scenarios():
         st.markdown("""
         <div class="t3-scn-card">
           <div><h4>Pragmatic Tilt</h4>
-          <div class="desc">Moderately increases clean exposure while containing tracking error via ±2% sector balance and a 5% single-name cap.</div></div>
+          <div class="desc">Modestly raises clean exposure while maintaining benchmark alignment (low Tracking Error and ±2% sector balance) and preventing over-weighting of any single holding (5% cap).</div></div>
         </div>""", unsafe_allow_html=True)
     with c3:
         st.markdown("""
         <div class="t3-scn-card">
           <div><h4>Strict Exclusion</h4>
-          <div class="desc">Excludes all controversial names; rebalanced to sector neutrality with the same 5% single-name cap.</div></div>
+          <div class="desc">Excludes all controversial holdings and rebalances to maintain sector neutrality while preventing over-weighting of any single holding (5% cap).</div></div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
