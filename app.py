@@ -1933,88 +1933,52 @@ if mode == "Dashboard":
     with tab3:
         render_tradeoff_scenarios()
 
-# ===== FOOTER (drop-in) =====
-def _footer_last_updated():
-    import pandas as pd
-    dt_candidates = []
+# FOOTER
+gap(28)
+divider()
 
-    try:
-        ctx = load_context_summary()
-        for c in ["as_of_date", "as_of", "As-of", "As_of"]:
-            if c in ctx.columns:
-                dt_candidates += pd.to_datetime(ctx[c], errors="coerce").dropna().tolist()
-    except Exception:
-        pass
-
-    try:
-        aum = load_etf_aum_2025()
-        for c in ["Net Assets as of", "as_of", "as_of_date"]:
-            if c in aum.columns:
-                dt_candidates += pd.to_datetime(aum[c], errors="coerce").dropna().tolist()
-    except Exception:
-        pass
-
-    if dt_candidates:
-        d = max(dt_candidates)
-        return d.strftime("%b %d, %Y")
-    else:
-        return pd.Timestamp.today().strftime("%b %d, %Y")
-
-
-def _footer_data_coverage():
-    import pandas as pd
-    try:
-        efy = load_exposures_by_fund_year()
-        ycol = None
-        for c in efy.columns:
-            cl = c.lower()
-            if cl == "year" or cl.endswith("_year") or "year" in cl:
-                ycol = c
-                break
-        if ycol is not None:
-            yrs = pd.to_numeric(efy[ycol], errors="coerce").dropna().astype(int)
-            if not yrs.empty:
-                return f"{yrs.min()}–{yrs.max()}"
-    except Exception:
-        pass
-    return "2017–2025"
-
-
-_last_updated = _footer_last_updated()
-_coverage     = _footer_data_coverage()
+github_url = f"https://github.com/{GITHUB_USER_REPO}" if "GITHUB_USER_REPO" in globals() else "https://github.com/nitya-ar/blackrock-esg-etf-study"
+asof_str   = f" • Data as of {AUM_ASOF}" if "AUM_ASOF" in globals() and AUM_ASOF else ""
 
 st.markdown(
     f"""
     <style>
+      .footer-pre {{
+        margin-top: 14px;
+        margin-bottom: 6px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }}
+      .footer-pre a {{
+        color: var(--text);
+        text-decoration: none;
+        font-weight: 600;
+      }}
       .footer-wrap {{
         display:flex; align-items:center; justify-content:space-between; width:100%;
-        padding: 6px 0;
+        padding-top: 10px;   /* shifts content a bit down */
       }}
-      .footer-left  {{ color: var(--muted); font-size: 14px; white-space: nowrap; }}
-      .footer-mid   {{ color: var(--muted); font-size: 13px; opacity:.9; }}
-      .footer-right a {{
-        color: var(--text); text-decoration:none; font-size:15px; font-weight:500; opacity:.9;
+      .footer-left {{
+        color: var(--muted); font-size: 14px; white-space: nowrap;
       }}
-      .footer-right a:hover {{ opacity:1; }}
-      .footer-dot {{ margin: 0 10px; opacity:.55; }}
+      .footer-links a {{
+        color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9;
+      }}
+      .footer-links a:hover {{ opacity:1; }}
     </style>
+
+    <div class="footer-pre">
+      Explore the data, methodology, and full code on
+      <a href="{github_url}" target="_blank">GitHub</a>{asof_str}
+    </div>
+
     <div class="footer-wrap">
-      <div class="footer-left">
-        <strong>BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs</strong>
-        <span class="footer-dot">•</span>
-        Built by <strong>Nitya Arya</strong>
-      </div>
-      <div class="footer-mid">
-        Data coverage: <strong>{_coverage}</strong>
-        <span class="footer-dot">•</span>
-        Last updated: <strong>{_last_updated}</strong>
-        <span class="footer-dot">•</span>
-        Default view: AUM-weighted
-      </div>
-      <div class="footer-right" style="display:flex; gap:24px; align-items:center;">
-        <a href="https://github.com/nitya-ar/blackrock-esg-etf-study" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank" rel="noopener">LinkedIn</a>
-        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank" rel="noopener"><strong>Feedback</strong></a>
+      <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
+      <div class="footer-links" style="display:flex; gap:28px; align-items:center; justify-content:flex-end;">
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
+        <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
+        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
       </div>
     </div>
     """,
