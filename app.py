@@ -82,6 +82,7 @@ st.markdown(
         --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
         --accent:#C63C41;
+        --texted: #C63C41;
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
