@@ -1,19 +1,13 @@
 import os
-from io import StringIO
+from io import StringIO, BytesIO
 import urllib.parse
-
+import base64
 import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
-
-# --- HEADER (must be first)
-import base64
-from io import BytesIO
 from pathlib import Path
-import requests
 from PIL import Image
-import streamlit as st
 
 _GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
 
@@ -34,19 +28,18 @@ def _load_icon_bytes() -> bytes | None:
         Path("Blackrock esg study icon.png"),
         Path("assets/Blackrock esg study icon.png"),
         here / "Blackrock esg study icon.png",
-        here / "assets/Blackrock esg study icon.png",
+        here / "assets/Blackrock esg study icon.png"),
         Path("/mnt/data/Blackrock esg study icon.png"),
     ]
     for p in candidates:
         if p.exists():
-            # normalize via PIL to ensure valid PNG bytes
             try:
                 img = Image.open(p)
                 return _pil_to_png_bytes(img)
             except Exception:
                 b = _read_bytes(p)
-                if b: return b
-
+                if b:
+                    return b
     try:
         r = requests.get(_GH_RAW, timeout=8)
         r.raise_for_status()
@@ -63,7 +56,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# hard override if the browser still shows the Streamlit swirl
 if _icon_bytes:
     _b64 = base64.b64encode(_icon_bytes).decode()
     st.markdown(
@@ -81,7 +73,6 @@ if _icon_bytes:
         """,
         unsafe_allow_html=True,
     )
-
 
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
