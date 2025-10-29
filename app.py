@@ -1,32 +1,25 @@
-# --- HEADER (must be first, before any st.* output)
 import os
+from io import StringIO
+import urllib.parse
+
 import requests
-from io import BytesIO
-from pathlib import Path
-from PIL import Image
+import pandas as pd
+import altair as alt
 import streamlit as st
 
-ICON_LOCAL = Path("Blackrock esg study icon.png")
-ICON_GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
+from PIL import Image
+from pathlib import Path
 
-def _load_icon():
-    if ICON_LOCAL.exists():
-        try:
-            return Image.open(ICON_LOCAL)
-        except Exception:
-            pass
-    try:
-        r = requests.get(ICON_GH_RAW, timeout=10)
-        r.raise_for_status()
-        return Image.open(BytesIO(r.content))
-    except Exception:
-        return None  # fallback → Streamlit default favicon
-
-icon_obj = _load_icon()
+# HEADER
+_ICON_FILE = Path("Blackrock esg study icon.png")
+if _ICON_FILE.exists():
+    _icon_obj = Image.open(_ICON_FILE)
+else:
+    _icon_obj = str(_ICON_FILE)
 
 st.set_page_config(
     page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-    page_icon=icon_obj,   # None => Streamlit default
+    page_icon=_icon_obj,
     layout="wide",
     initial_sidebar_state="collapsed",
 )
