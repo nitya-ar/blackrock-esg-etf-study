@@ -1052,7 +1052,8 @@ def render_tradeoff_scenarios():
 
     # ---------- header ----------
     st.subheader("Tradeoff Scenarios")
-    st.caption( "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
+    st.caption(
+        "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
     )
 
     # ---------- scoped styles ----------
@@ -1065,7 +1066,7 @@ def render_tradeoff_scenarios():
       .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
       .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
               display:flex;flex-direction:column;justify-content:center;}
-      .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0;}
+      .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0; display:flex; align-items:center; gap:6px;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
 
       /* right aligned CSV line */
@@ -1079,11 +1080,11 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      /* info badge (stays on the RIGHT). Tooltip opens LEFT back over the chart */
+      /* info badge (slightly larger); Tooltip opens LEFT back over the chart */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
-        width:18px;height:18px;min-width:18px;border-radius:50%;
-        background:var(--primary);color:#fff;font-weight:700;font-size:11px;
+        width:22px;height:22px;min-width:22px;border-radius:50%;
+        background:var(--primary);color:#fff;font-weight:700;font-size:12px;
         margin-left:8px;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
@@ -1091,9 +1092,9 @@ def render_tradeoff_scenarios():
         content:attr(data-tip);
         position:absolute;right:0;left:auto;top:calc(100% + 8px);
         background:#0B0D12;color:var(--text);border:1px solid var(--border);
-        padding:10px 12px;border-radius:10px;
+        padding:12px 14px;border-radius:10px;
         white-space:normal;line-height:1.35;
-        min-width:340px;max-width:560px;
+        min-width:380px;max-width:620px;
         box-shadow:0 6px 16px rgba(0,0,0,.25);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;
@@ -1188,7 +1189,17 @@ def render_tradeoff_scenarios():
             tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>", unsafe_allow_html=True)
         with k3:
-            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='kpi kpi-neutral t3'>"
+                "<div class='label'>TE (ann.)"
+                "<span class='info-badge has-tip tip-left' "
+                "data-tip='Shows how much a scenario’s returns are expected to differ from the 2025 baseline (annualised). "
+                "Lower values indicate the portfolio stays closer to the original; higher values reflect more active deviation.'>i</span>"
+                "</div>"
+                f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
         with k4:
             lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
             st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
@@ -1225,7 +1236,6 @@ def render_tradeoff_scenarios():
         unsafe_allow_html=True
     )
 
-    # small breathing room before visuals
     st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     # =========================
@@ -1236,12 +1246,12 @@ def render_tradeoff_scenarios():
     # determine sector count for sizing
     sector_cols = [c for c in M.columns if c.startswith("sector_dev__")]
     n_sectors = len(sector_cols) if sector_cols else 8
-    H = max(230, 24 * n_sectors + 12)   # base for right charts so labels fit
-    H_RIGHT = H                          # each right chart height
-    H_LEFT_TOP = int(round(1.5 * H_RIGHT))   # so 2 left = 3 right
-    H_LEFT_BOTTOM = H_RIGHT + 130             # increased to align with Active Share bottom
+    H = max(230, 24 * n_sectors + 12)
+    H_RIGHT = H
+    H_LEFT_TOP = int(round(1.5 * H_RIGHT))
+    H_LEFT_BOTTOM = H_RIGHT + 130
 
-    # ---------- LEFT-1: (A) Scenario Composition (stacked bars)
+    # ---------- LEFT-1: Scenario Composition
     with left_col:
         st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div></div>', unsafe_allow_html=True)
 
@@ -1278,14 +1288,15 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-1: (B) Cleanliness Uplift vs TE (bubble)
+    # ---------- RIGHT-1: Cleanliness Uplift vs Tracking Error
     with right_col:
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
-            '<div class="info-badge has-tip tip-left" data-tip="How much cleaner for how much risk. '
-            'X = change in % Clean vs the 2025 baseline (pp). Y = annualized tracking error vs the original portfolio. '
-            'AUM is shown in the tooltip.">i</div>'
+            '<span class="info-badge has-tip tip-left" '
+            'data-tip="x-axis: increase in % Clean versus the 2025 baseline (percentage points). '
+            'y-axis: Tracking Error (annualised). Further right indicates a cleaner portfolio; higher values indicate more off-benchmark risk.">'
+            'i</span>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1328,7 +1339,7 @@ def render_tradeoff_scenarios():
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
                                                         range=[COLOR_PT, COLOR_SE])),
-                        size=alt.SizeValue(60),  # constant size; no legend
+                        size=alt.SizeValue(60),
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
                                  alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"),
@@ -1343,14 +1354,15 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- LEFT-2: (C) Turnover & Cost (grouped bars)
+    # ---------- LEFT-2: Turnover & Cost
     with left_col:
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Turnover & Cost</div>'
-            '<div class="info-badge has-tip tip-left" data-tip="Trading impact by scenario. '
-            'Turnover = 0.5 × Σ |Δ weight|. Cost (bps) = Turnover (%) × the round-trip cost slider. '
-            'This is a rough execution-cost proxy (excludes market impact).">i</div>'
+            '<span class="info-badge has-tip tip-left" '
+            'data-tip="Turnover measures how much the portfolio’s holdings change to reach the scenario; '
+            'Cost estimates trading expense using the Assumed round-trip cost (bps). Higher values imply more rebalancing and higher execution cost.">'
+            'i</span>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1412,13 +1424,15 @@ def render_tradeoff_scenarios():
         else:
             st.info("Turnover data not available (no position-deltas file detected).")
 
-    # ---------- RIGHT-2: (D) Sector Drift Heatmap
+    # ---------- RIGHT-2: Sector drift vs Baseline
     with right_col:
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Sector drift vs Baseline</div>'
-            '<div class="info-badge has-tip tip-left" data-tip="Where the portfolio’s sector mix shifts relative to the 2025 baseline. '
-            'Cells encode |weight drift| in percentage points; the tooltip shows the signed drift. Darker = larger deviation.">i</div>'
+            '<span class="info-badge has-tip tip-left" '
+            'data-tip="Shows how each sector’s weight shifts relative to the 2025 baseline. '
+            'Colour encodes the magnitude of the drift (|percentage points|); hover to see the signed drift value.">'
+            'i</span>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1473,13 +1487,15 @@ def render_tradeoff_scenarios():
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT-3: (E) Active Share vs % Clean (scatter)
+    # ---------- RIGHT-3: Active Share vs % Clean
     with right_col:
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Active Share vs % Clean</div>'
-            '<div class="info-badge has-tip tip-left" data-tip="How off-benchmark the portfolio is versus how clean it gets. '
-            'X = Active Share (%). Y = resulting % Clean for the scenario. AUM is shown in the tooltip.">i</div>'
+            '<span class="info-badge has-tip tip-left" '
+            'data-tip="x-axis: Active Share (how different the holdings are from the 2025 baseline). '
+            'y-axis: resulting % Clean in the scenario. Moving right means more deviation from the baseline; moving up means a cleaner portfolio.">'
+            'i</span>'
             '</div>',
             unsafe_allow_html=True
         )
@@ -1511,7 +1527,7 @@ def render_tradeoff_scenarios():
                             color=alt.Color("Scenario:N", title=None,
                                             scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
                                                             range=[COLOR_PT, COLOR_SE])),
-                            size=alt.SizeValue(60),  # constant size; no legend
+                            size=alt.SizeValue(60),
                             tooltip=[alt.Tooltip("Scenario:N"),
                                      alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
                                      alt.Tooltip("%Clean:Q", title="% Clean", format=".2f"),
@@ -1532,11 +1548,9 @@ def render_tradeoff_scenarios():
     st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
     st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
-    # Scenario filter immediately under heading (smaller font via CSS)
     sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
                                horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
 
-    # Load position deltas again for tables
     deltas2 = None
     for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
         try:
@@ -1572,7 +1586,6 @@ def render_tradeoff_scenarios():
         if use.empty:
             st.info("No position changes for the current selection.")
         else:
-            # AUM weights for “All”; otherwise weight=1
             if sel_etf == "All":
                 try:
                     AUM = load_etf_aum_2025()
