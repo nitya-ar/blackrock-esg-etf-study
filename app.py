@@ -260,6 +260,40 @@ div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
   background:#12151C !important; color:var(--text) !important;
   box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
 }}
+<style>
+/* Force consistent dark header + rows for BOTH table types */
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+:where([data-testid="stTable"]) thead th {
+  background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
+}
+
+/* Make every data row identical (kills zebra/focus/“first row” highlight) */
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+:where([data-testid="stTable"]) tbody td,
+:where([data-testid="stDataFrame"]) [role="row"][aria-rowindex="1"] [role="gridcell"],   /* first data row */
+:where([data-testid="stDataFrame"]) [role="row"]:nth-child(1) [role="gridcell"],        /* fallback */
+:where([data-testid="stTable"]) tbody tr:nth-child(1) td {                              /* static table */
+  background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
+}
+
+/* Kill any zebra striping coming from defaults */
+:where([data-testid="stTable"]) tbody tr:nth-child(odd) td,
+:where([data-testid="stTable"]) tbody tr:nth-child(even) td {
+  background:#0E1015 !important;
+}
+
+/* Some engines add a hover/focus row tint — neutralize it */
+:where([data-testid="stDataFrame"]) [role="row"]:hover [role="gridcell"],
+:where([data-testid="stDataFrame"]) [role="row"][data-focused="true"] [role="gridcell"] {
+  background:#10131A !important;
+}
+
+/* Ensure the grid container itself is dark */
+:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {
+  background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+}
+</style>
+
     </style>
     """,
     unsafe_allow_html=True,
