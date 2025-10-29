@@ -156,7 +156,6 @@ st.markdown(
       div[data-testid="stDataframe"] tbody tr td {{
         background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
       }}
-      div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
@@ -248,8 +247,6 @@ div[data-testid="stPopover"] div[role="dialog"] * {{
 .vega-tooltip, .vega-tooltip * {{
   background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
 }}
-
-div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
 
 div[data-testid="stSegmentedControl"] div[role="tablist"],
 div[data-testid="stSegmentedControl"] button[role="tab"],
