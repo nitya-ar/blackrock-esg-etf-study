@@ -225,65 +225,25 @@ st.markdown(
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
 
-:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
-
-[class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
-[data-baseweb="popover"] * , [data-baseweb="menu"] * {{
-  background: #10131A !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}}
-
-[role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
-[role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
-[role="option"][aria-selected="true"],
-[role="option"]:hover {{ background:#161A22 !important; }}
-
-div[data-testid="stPopover"] div[role="dialog"],
-div[data-testid="stPopover"] div[role="dialog"] * {{
-  background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
-}}
-
-.vega-tooltip, .vega-tooltip * {{
-  background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
-}}
-
-
-div[data-testid="stSegmentedControl"] div[role="tablist"],
-div[data-testid="stSegmentedControl"] button[role="tab"],
-div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-  background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
-}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-  background:#12151C !important; color:var(--text) !important;
-  box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
-}}
-
-:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
-
-[data-testid="stTable"] tbody tr:first-child > td {{
-  background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important;
-}}
-
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > [role="row"]:first-child > [role="gridcell"] {{
-  background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important;
-}}
-
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > div:first-child > [role="gridcell"] {{
-  background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important;
-}}
-
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] > [role="gridcell"] {{
-  background:#0E1015 !important; color:var(--text) !important;
-}}
-
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:nth-child(even) > [role="gridcell"] {{
-  background:#0E1015 !important;
-}}
-
+      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+      [data-testid="stTable"] tbody tr:first-child > td,
+      [data-testid="stTable"] tbody tr:first-child > th {{
+      background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+      }}
+      
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > td,
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) tbody tr:first-child > th {{
+      background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+      }}
+      
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > [role="row"]:first-child > [role="gridcell"],
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="rowgroup"] > div:first-child > [role="gridcell"] {{
+      background:#10131A !important; color:var(--text) !important; border-top:1px solid #12151C !important; background-clip:padding-box !important;
+      }}
+      
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"]:first-child > [role="gridcell"] {{
+      background:#10131A !important; color:var(--text) !important;
+      }}
 
     </style>
     """,
