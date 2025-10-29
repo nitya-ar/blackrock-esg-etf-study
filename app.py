@@ -292,6 +292,54 @@ st.markdown(
 )
 
 
+st.markdown("""
+<style>
+/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
+
+/* 1) Tables — ensure first data row never flips to white */
+div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+div[data-testid="stTable"] tbody tr:first-child td {
+  background: #0E1015 !important;
+  color: #E7EBF0 !important;
+}
+
+/* 2) Tab 2: segmented control (Weighting) hover/focus states */
+div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
+div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
+  background: #151923 !important;
+  color: var(--text) !important;
+}
+
+/* 3) Tab 3: radio group (Top Added / Top Removed) dark background */
+div[data-testid="stRadio"][data-baseweb="radio"] {
+  background: #0E1015 !important;
+  border-radius: 10px !important;
+}
+div[data-testid="stRadio"][data-baseweb="radio"] > div {
+  background: transparent !important;
+}
+div[data-baseweb="radio"] label {
+  color: var(--text) !important;
+}
+div[data-baseweb="radio"] svg {
+  background: #0E1015 !important;
+  border-radius: 50%;
+}
+div[data-baseweb="radio"] input:checked + label svg {
+  box-shadow: 0 0 0 2px var(--accent) inset !important;
+}
+
+/* 4) Altair/Vega tooltip — single, pinned dark theme */
+.vega-tooltip,
+.vega-tooltip * {
+  background: #0F1116 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
