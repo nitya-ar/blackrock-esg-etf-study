@@ -1520,7 +1520,7 @@ def render_tradeoff_scenarios():
         else:
             st.info("Column 'ActiveShare_%' not found in metrics.")
 
-st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
 st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
 sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
@@ -1601,6 +1601,7 @@ if deltas2 is not None:
             grid(_fmt_table(top_removed))
 else:
     st.info("Position deltas file not found; cannot compute Top Added / Removed.")
+
 
 
 # BODY
