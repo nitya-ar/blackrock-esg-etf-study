@@ -314,8 +314,12 @@ def style_dark_df(df: pd.DataFrame):
 
 
 
-def grid(df: pd.DataFrame):
-    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+def grid(df: pd.DataFrame, static: bool = False, height: int | None = None):
+    sty = style_dark_df(df)
+    if static:
+        st.table(sty.hide(axis="index"))
+    else:
+        st.dataframe(sty, use_container_width=True, hide_index=True, height=height)
 
 # LOADERS
 def _url_join(*parts: str) -> str:
@@ -931,10 +935,10 @@ def render_change_since_2017():
     a, b = st.columns(2, gap="large")
     with a:
         st.caption(f"Top 10 Increases — {start_year} → {end_year}")
-        grid(_fmt(top_increase))
+        grid(_fmt(top_increase)
     with b:
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
-        grid(_fmt(top_decrease))
+        grid(_fmt(top_decrease)
 
 # RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
