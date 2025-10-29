@@ -1520,88 +1520,88 @@ def render_tradeoff_scenarios():
         else:
             st.info("Column 'ActiveShare_%' not found in metrics.")
 
-            st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
-st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
 
-sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
-                           horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
+    st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
-deltas2 = None
-for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
-    try:
-        deltas2 = globals()[fn]().copy()
-        break
-    except Exception:
-        continue
-if deltas2 is None:
-    try:
-        deltas2 = load_data_file("scenario_position_deltas.csv").copy()
-    except Exception:
-        deltas2 = None
+    sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
+                               horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
 
-if deltas2 is not None:
-    try:
-        s_col  = _need(deltas2, "scenario")
-        e_col  = _need(deltas2, "ETF_Ticker")
-        nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
-        tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
-        sec_col= "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
-        cat_col= "category" if "category" in deltas2.columns else _need(deltas2, "category")
-        d_col  = _need(deltas2, "delta")
-    except KeyError as err:
-        deltas2 = None
-        st.info(f"Missing column in deltas: {err}")
+    deltas2 = None
+    for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
+        try:
+            deltas2 = globals()[fn]().copy()
+            break
+        except Exception:
+            continue
+    if deltas2 is None:
+        try:
+            deltas2 = load_data_file("scenario_position_deltas.csv").copy()
+        except Exception:
+            deltas2 = None
 
-if deltas2 is not None:
-    use = deltas2.copy()
-    use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
-    use = use[use["Scenario"] == sel_scn_changes]
-    if sel_etf != "All":
-        use = use[use[e_col].astype(str) == sel_etf]
+    if deltas2 is not None:
+        try:
+            s_col  = _need(deltas2, "scenario")
+            e_col  = _need(deltas2, "ETF_Ticker")
+            nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
+            tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
+            sec_col= "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
+            cat_col= "category" if "category" in deltas2.columns else _need(deltas2, "category")
+            d_col  = _need(deltas2, "delta")
+        except KeyError as err:
+            deltas2 = None
+            st.info(f"Missing column in deltas: {err}")
 
-    if use.empty:
-        st.info("No position changes for the current selection.")
-    else:
-        if sel_etf == "All":
-            try:
-                AUM = load_etf_aum_2025()
-                f = "ETF_Ticker" if "ETF_Ticker" in AUM.columns else "etf_ticker"
-                v = "ETF_AUM_USD" if "ETF_AUM_USD" in AUM.columns else ("AUM_USD" if "AUM_USD" in AUM.columns else None)
-                AUM = AUM[[f, v]].rename(columns={f: "ETF_Ticker", v: "ETF_AUM_USD"})
-                use = use.merge(AUM, on="ETF_Ticker", how="left")
-                use["__w__"] = pd.to_numeric(use["ETF_AUM_USD"], errors="coerce").fillna(1.0).clip(lower=0)
-            except Exception:
-                use["__w__"] = 1.0
+    if deltas2 is not None:
+        use = deltas2.copy()
+        use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+        use = use[use["Scenario"] == sel_scn_changes]
+        if sel_etf != "All":
+            use = use[use[e_col].astype(str) == sel_etf]
+
+        if use.empty:
+            st.info("No position changes for the current selection.")
         else:
-            use["__w__"] = 1.0
+            if sel_etf == "All":
+                try:
+                    AUM = load_etf_aum_2025()
+                    f = "ETF_Ticker" if "ETF_Ticker" in AUM.columns else "etf_ticker"
+                    v = "ETF_AUM_USD" if "ETF_AUM_USD" in AUM.columns else ("AUM_USD" if "AUM_USD" in AUM.columns else None)
+                    AUM = AUM[[f, v]].rename(columns={f: "ETF_Ticker", v: "ETF_AUM_USD"})
+                    use = use.merge(AUM, on="ETF_Ticker", how="left")
+                    use["__w__"] = pd.to_numeric(use["ETF_AUM_USD"], errors="coerce").fillna(1.0).clip(lower=0)
+                except Exception:
+                    use["__w__"] = 1.0
+            else:
+                use["__w__"] = 1.0
 
-        use["delta"] = pd.to_numeric(use[d_col], errors="coerce").fillna(0.0)
+            use["delta"] = pd.to_numeric(use[d_col], errors="coerce").fillna(0.0)
 
-        grp = (use.groupby([tk_col, nm_col, sec_col, cat_col])
-                  .apply(lambda d: pd.Series({
-                      "Δ weight (pp)": (d["delta"] * d["__w__"]).sum() / max(d["__w__"].sum(), 1e-9) * 100.0
-                  }))
-                  .reset_index()
-                  .rename(columns={tk_col:"Ticker", nm_col:"Company", sec_col:"Sector", cat_col:"Category"}))
+            grp = (use.groupby([tk_col, nm_col, sec_col, cat_col])
+                      .apply(lambda d: pd.Series({
+                          "Δ weight (pp)": (d["delta"] * d["__w__"]).sum() / max(d["__w__"].sum(), 1e-9) * 100.0
+                      }))
+                      .reset_index()
+                      .rename(columns={tk_col:"Ticker", nm_col:"Company", sec_col:"Sector", cat_col:"Category"}))
 
-        top_added   = grp.sort_values("Δ weight (pp)", ascending=False).head(10)
-        top_removed = grp.sort_values("Δ weight (pp)", ascending=True).head(10)
+            top_added   = grp.sort_values("Δ weight (pp)", ascending=False).head(10)
+            top_removed = grp.sort_values("Δ weight (pp)", ascending=True).head(10)
 
-        def _fmt_table(df):
-            out = df[["Company", "Ticker", "Sector", "Category", "Δ weight (pp)"]].copy()
-            out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
-            return out.reset_index(drop=True)
+            def _fmt_table(df):
+                out = df[["Company", "Ticker", "Sector", "Category", "Δ weight (pp)"]].copy()
+                out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
+                return out.reset_index(drop=True)
 
-        ta, tr = st.columns(2, gap="large")
-        with ta:
-            st.caption("Top Added (Δ weight, pp)")
-            grid(_fmt_table(top_added))
-        with tr:
-            st.caption("Top Removed (Δ weight, pp)")
-            grid(_fmt_table(top_removed))
-else:
-    st.info("Position deltas file not found; cannot compute Top Added / Removed.")
-
+            ta, tr = st.columns(2, gap="large")
+            with ta:
+                st.caption("Top Added (Δ weight, pp)")
+                grid(_fmt_table(top_added))
+            with tr:
+                st.caption("Top Removed (Δ weight, pp)")
+                grid(_fmt_table(top_removed))
+    else:
+        st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
 
 # BODY
