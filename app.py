@@ -639,8 +639,7 @@ def render_change_since_2017():
             '<div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>',
             unsafe_allow_html=True,
         )
-       weighting = st.radio(
-           "Weighting",
+       weighting = st.radio("Weighting",
            options=["AUM-weighted", "Equal-weighted"],
            horizontal=True,
            label_visibility="collapsed",
