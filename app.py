@@ -259,6 +259,54 @@ st.markdown(
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
       *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
       *::-webkit-scrollbar-track {{ background:#0B0D12; }}
+
+      /* ===== FORCE-DARK FOR PORTALS / MENUS / TOOLTIPS (cross-browser, incognito) ===== */
+
+/* Tell the UA we are dark so native widgets don't flip white in private/Incognito */
+:root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+/* BaseWeb popovers/menus are rendered in a body-level portal; keep them dark */
+[class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
+[data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+  background: #10131A !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}}
+
+/* Listbox rows in selects */
+[role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
+[role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
+[role="option"][aria-selected="true"],
+[role="option"]:hover {{ background:#161A22 !important; }}
+
+/* Streamlit’s “popover” wrapper sometimes used for select/multiselect */
+div[data-testid="stPopover"] div[role="dialog"],
+div[data-testid="stPopover"] div[role="dialog"] * {{
+  background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
+}}
+
+/* Keep Vega/Altair tooltips locked dark (extra guard) */
+.vega-tooltip, .vega-tooltip * {{
+  background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
+}}
+
+/* Dataframe FIRST ROW stays dark in all tabs */
+div[data-testid="stDataframe"] tbody tr:first-child td {{ background:#10131A !important; }}
+
+/* Segmented controls (incl. the Weighting AUM/EW toggle) — force fully dark in Safari/Incognito */
+div[data-testid="stSegmentedControl"] div[role="tablist"],
+div[data-testid="stSegmentedControl"] button[role="tab"],
+div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+  background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
+}}
+div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+  background:#12151C !important; color:var(--text) !important;
+  box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+}}
+
     </style>
     """,
     unsafe_allow_html=True,
