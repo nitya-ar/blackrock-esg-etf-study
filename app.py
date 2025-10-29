@@ -1080,27 +1080,32 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      /* info badge (slightly larger); Tooltip opens LEFT back over the chart */
+      /* info badge (larger) */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
         width:22px;height:22px;min-width:22px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:12px;
         margin-left:8px;position:relative;z-index:3;
       }
+
       .has-tip{position:relative;}
+      /* BOXED tooltip with wider defaults */
       .has-tip.tip-left::after{
         content:attr(data-tip);
-        position:absolute;right:0;left:auto;top:calc(100% + 8px);
+        position:absolute;right:0;left:auto;top:calc(100% + 10px);
         background:#0B0D12;color:var(--text);border:1px solid var(--border);
-        padding:12px 14px;border-radius:10px;
-        white-space:normal;line-height:1.35;
-        min-width:380px;max-width:1200px;
-        box-shadow:0 6px 16px rgba(0,0,0,.25);
+        border-radius:12px;padding:14px 16px;line-height:1.45;
+        white-space:normal;min-width:420px;max-width:720px;
+        box-shadow:0 10px 28px rgba(0,0,0,.35);
         opacity:0;pointer-events:none;transform:translateY(-4px);
-        transition:opacity .12s ease, transform .12s ease;
-        text-align:left;
+        transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;
       }
       .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
+
+      /* width modifiers (use alongside tip-left) */
+      .has-tip.tip-narrow::after{ min-width:320px; max-width:480px; }
+      .has-tip.tip-wide::after  { min-width:560px; max-width:880px; }
+      .has-tip.tip-full::after  { min-width:720px; max-width:1100px; }
 
       /* smaller radio for Top Added/Removed */
       div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
@@ -1192,9 +1197,8 @@ def render_tradeoff_scenarios():
             st.markdown(
                 "<div class='kpi kpi-neutral t3'>"
                 "<div class='label'>TE (ann.)"
-                "<span class='info-badge has-tip tip-left' "
-                "data-tip='Shows how much a scenario’s returns are expected to differ from the 2025 baseline (annualised). "
-                "Lower values indicate the portfolio stays closer to the original; higher values reflect more active deviation.'>i</span>"
+                "<span class='info-badge has-tip tip-left tip-narrow' "
+                "data-tip='Shows how much a scenario’s returns are expected to differ from the 2025 baseline (annualised). Lower values mean it stays closer to the original; higher values reflect more active deviation.'>i</span>"
                 "</div>"
                 f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
                 "</div>",
@@ -1293,7 +1297,7 @@ def render_tradeoff_scenarios():
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
-            '<span class="info-badge has-tip tip-left" '
+            '<span class="info-badge has-tip tip-left tip-wide" '
             'data-tip="x-axis: increase in % Clean versus the 2025 baseline (percentage points). '
             'y-axis: Tracking Error (annualised). Further right indicates a cleaner portfolio; higher values indicate more off-benchmark risk.">'
             'i</span>'
@@ -1359,7 +1363,7 @@ def render_tradeoff_scenarios():
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Turnover & Cost</div>'
-            '<span class="info-badge has-tip tip-left" '
+            '<span class="info-badge has-tip tip-left tip-wide" '
             'data-tip="Turnover measures how much the portfolio’s holdings change to reach the scenario; '
             'Cost estimates trading expense using the Assumed round-trip cost (bps). Higher values imply more rebalancing and higher execution cost.">'
             'i</span>'
@@ -1429,7 +1433,7 @@ def render_tradeoff_scenarios():
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Sector drift vs Baseline</div>'
-            '<span class="info-badge has-tip tip-left" '
+            '<span class="info-badge has-tip tip-left tip-wide" '
             'data-tip="Shows how each sector’s weight shifts relative to the 2025 baseline. '
             'Colour encodes the magnitude of the drift (|percentage points|); hover to see the signed drift value.">'
             'i</span>'
@@ -1492,7 +1496,7 @@ def render_tradeoff_scenarios():
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Active Share vs % Clean</div>'
-            '<span class="info-badge has-tip tip-left" '
+            '<span class="info-badge has-tip tip-left tip-wide" '
             'data-tip="x-axis: Active Share (how different the holdings are from the 2025 baseline). '
             'y-axis: resulting % Clean in the scenario. Moving right means more deviation from the baseline; moving up means a cleaner portfolio.">'
             'i</span>'
