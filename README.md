@@ -125,17 +125,15 @@ Together, the three sections build a unified exploration of alignment, evolution
 
 ---
 
-## **Recent Market Context**
+### **Recent Market Context**
 
-Recent developments highlight the ongoing importance of transparency in ESG investing:
+In 2025, questions around the credibility of ESG investing have intensified. A *DeSmog* investigation in **August 2025** (<u><i>[BlackRock’s Fossil Fuel Exposure Persists Despite ESG Claims](https://www.desmog.com/2025/08/12/blackrock-esg-fossil-fuel-greenwashing-report/)</i></u>, source: [www.desmog.com](https://www.desmog.com)) reported that several BlackRock ESG funds continued to hold major fossil-fuel producers despite sustainability branding, renewing debate over greenwashing.
 
-* **DeSmog (August 2025):** Reported that BlackRock increased exposure to fossil-fuel producers despite maintaining sustainability branding, reigniting greenwashing debates.
-* **Investment Company Institute (August 2025):** Estimated that ESG-criteria funds managed approximately **USD 605 billion** but experienced **net outflows**, reflecting investor uncertainty about ESG performance claims.
-* **Sustainalytics ESG Blog (2025):** Found that “light-green” European funds increased exposure to defense and aerospace companies, further blurring the ESG boundary.
+The **Investment Company Institute** (<u><i>[Trends in ESG Fund Flows, August 2025](https://www.ici.org/)</i></u>, source: [www.ici.org](https://www.ici.org)) estimated that ESG-labeled funds managed roughly **USD 605 billion** but faced net outflows as investor confidence in ESG performance weakened.
 
-These developments reinforce the purpose of this analysis — to measure **alignment empirically** rather than rely on label-based assumptions, and to clarify how large asset managers balance sustainability commitments with financial and benchmark constraints.
+A *Sustainalytics* analysis (<u><i>[ESG Insights Blog, 2025](https://www.sustainalytics.com/esg-research/)</i></u>, source: [www.sustainalytics.com](https://www.sustainalytics.com)) further found that European “light-green” funds increased exposure to defense and aerospace holdings, reflecting growing ambiguity in ESG classifications.
 
-*(Sources: DeSmog, August 2025; Investment Company Institute, August 2025; Sustainalytics ESG Blog, 2025)*
+Together, these developments reinforce the motivation behind this project—to evaluate ESG alignment through data-driven portfolio analysis rather than rely solely on fund labels or marketing claims.
 
 ---
 
