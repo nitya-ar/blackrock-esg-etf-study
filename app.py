@@ -389,29 +389,28 @@ div[data-baseweb="radio"] input:checked + label svg {
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("""
+st.markdown(f"""
 <style>
-/* make option labels muted by default, keep the selected one bright */
+  /* === Font fix for toggles === */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-/* segmented control: AUM-weighted / Equal-weighted */
-div[data-testid="stSegmentedControl"] button[role="tab"],
-div[data-testid="stSegmentedControl"] button[role="tab"] * {
-  color: var(--muted) !important;
-}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] * {
-  color: var(--text) !important;
-}
+  /* AUM-weighted / Equal-weighted segmented control */
+  div[data-testid="stSegmentedControl"] button[role="tab"],
+  div[data-testid="stSegmentedControl"] button[role="tab"] * {{
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px !important;
+  }}
 
-/* radio groups: Pragmatic Tilt / Strict Exclusion, etc. */
-div[data-baseweb="radio"] div[role="radio"] {
-  color: var(--muted) !important;
-}
-div[data-baseweb="radio"] div[role="radio"][aria-checked="true"] {
-  color: var(--text) !important;
-}
+  /* Pragmatic Tilt / Strict Exclusion radio */
+  div[data-testid="stRadio"][data-baseweb="radio"] label {{
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px !important;
+  }}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
