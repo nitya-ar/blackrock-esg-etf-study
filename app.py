@@ -389,6 +389,30 @@ div[data-baseweb="radio"] input:checked + label svg {
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* make option labels muted by default, keep the selected one bright */
+
+/* segmented control: AUM-weighted / Equal-weighted */
+div[data-testid="stSegmentedControl"] button[role="tab"],
+div[data-testid="stSegmentedControl"] button[role="tab"] * {
+  color: var(--muted) !important;
+}
+div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+div[data-testid="stSegmentedControl"] button[aria-selected="true"] * {
+  color: var(--text) !important;
+}
+
+/* radio groups: Pragmatic Tilt / Strict Exclusion, etc. */
+div[data-baseweb="radio"] div[role="radio"] {
+  color: var(--muted) !important;
+}
+div[data-baseweb="radio"] div[role="radio"][aria-checked="true"] {
+  color: var(--text) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 
 def divider():
