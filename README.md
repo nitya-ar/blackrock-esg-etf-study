@@ -5,8 +5,7 @@
 The complete interactive analysis is available here:  
 **>> [Open the Dashboard](https://blackrock-esg-etf-dashboard.streamlit.app/)**
 
-The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) from **2017 to 2025**.  
-It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
+The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) from **2017 to 2025**. It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
 
 ---
 
@@ -38,8 +37,7 @@ The research is guided by three central questions:
 ### **Methodology and Data Sources**
 
 1. **ETF Selection**  
-   Twenty iShares ESG ETFs were selected based on continuous data availability between 2017 and 2025 and substantial net assets, ensuring both analytical consistency and economic relevance.  
-   *(Source: [iShares ESG ETFs](https://www.ishares.com/us/products/etf-investments#/?productView=etf&ptrg=50%7C51%7C52%7C49&pageNumber=1&sortColumn=totalNetAssets&sortDirection=desc&dataView=keyFacts))*
+   Twenty iShares ESG ETFs were selected based on continuous data availability between 2017 and 2025 and substantial net assets, ensuring both analytical consistency and economic relevance. *(Source: [iShares ESG ETFs](https://www.ishares.com/us/products/etf-investments#/?productView=etf&ptrg=50%7C51%7C52%7C49&pageNumber=1&sortColumn=totalNetAssets&sortDirection=desc&dataView=keyFacts))*
 
 2. **Data Collection**  
    * **2025 Holdings:** Obtained directly from the iShares website, including security-level holdings, AUM, and price metadata. *(Source: [iShares.com](https://www.ishares.com/us))*  
