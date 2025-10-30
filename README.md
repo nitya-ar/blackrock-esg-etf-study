@@ -8,7 +8,7 @@ The complete interactive analysis is available here:
 <tr>
 <td width="72" valign="middle">
   <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-    <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/blackrock-esg-study-icon.png" alt="Dashboard icon" width="60">
+    <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/blackrock_esg_study_icon.png" alt="Dashboard icon" width="60">
   </a>
 </td>
 <td valign="middle">
