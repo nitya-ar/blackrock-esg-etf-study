@@ -548,7 +548,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-st.caption("Best viewed in dark-mode browsers for optimal visuals.")
 
 def kpi_card(label: str, value: str, tone: str = "neutral"):
     tone_class = {"red":"kpi-red","green":"kpi-green","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
