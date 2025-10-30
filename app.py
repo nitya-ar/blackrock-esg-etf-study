@@ -542,7 +542,7 @@ st.markdown(
         BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
       </h2>
       <div class="blx-muted" style="max-width:1400px; text-align:justify; text-justify:inter-word;">
-        ...
+        This project analyzes 20 BlackRock ETFs positioned as sustainable to evaluate how their holdings align with core sustainability themes from 2017 to 2025. It applies a consistent classification framework for 2025 that distinguishes companies considered clean from those associated with five controversial categories: fossil fuels, weapons, tobacco, prisons, and deforestation. The dashboard brings this analysis to life through three views: the 2025 Overview, which outlines current exposure to clean and controversial holdings; Change since 2017, which traces how these exposures have evolved; and Tradeoff Scenarios, which model cleaner portfolio versions to illustrate the relationship between sustainability alignment and investment performance.
       </div>
     </div>
     """,
