@@ -4,14 +4,37 @@
 
 The complete interactive analysis is available here:  
 
-<div align="left">
-  <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-    <img
-      src="https://img.shields.io/badge/Open_the_Dashboard-000000.png?style=for-the-badge&logo=streamlit&logoColor=white"
-      alt="Open the Dashboard"
-      width="360">
-  </a>
-</div>
+<a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
+  <svg width="900" height="180" viewBox="0 0 900 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Open the Dashboard">
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#0C0C0C"/>
+        <stop offset="100%" stop-color="#171717"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Card -->
+    <rect x="2" y="2" width="896" height="176" rx="22" fill="url(#bg)" stroke="#2A2A2A" stroke-width="4"/>
+
+    <!-- Left icon container -->
+    <rect x="28" y="28" width="124" height="124" rx="20" fill="#111" stroke="#2F2F2F" stroke-width="2"/>
+    <!-- Your icon inside (update the href if your path differs) -->
+    <image x="40" y="40" width="100" height="100"
+           href="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
+           preserveAspectRatio="xMidYMid meet"/>
+
+    <!-- Copy -->
+    <text x="178" y="78" fill="#B9C0CA" font-size="22" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial">Launch the interactive app</text>
+    <text x="178" y="130" fill="#FFFFFF" font-size="54" font-weight="700" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial">Open the Dashboard</text>
+
+    <!-- Arrow button -->
+    <g transform="translate(770,66)">
+      <rect width="96" height="48" rx="14" fill="#0F62FE"/>
+      <path d="M26 24 L60 24 M50 16 L60 24 L50 32" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>
+</a>
+
 
 
 The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) from **2017 to 2025**. It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
