@@ -291,7 +291,7 @@ st.markdown(
 
       div[data-testid="stPopover"] div[role="dialog"],
       div[data-testid="stPopover"] div[role="dialog"] * {{
-        background:#10131A !important; color:var(--text) !important; border-color:var(--border) !important;
+        background:#10131A !important; color:var(--text) !important; border-color: var(--border) !important;
       }}
 
       .vega-tooltip, .vega-tooltip * {{
@@ -341,7 +341,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 st.markdown("""
 <style>
 /* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
@@ -386,6 +385,8 @@ div[data-baseweb="radio"] input:checked + label svg {
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
+</style>
+""", unsafe_allow_html=True)
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -405,8 +406,6 @@ def style_dark_df(df: pd.DataFrame):
           .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
     )
     return sty
-
-
 
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
