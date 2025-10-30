@@ -98,7 +98,7 @@ The analytical framework evaluates the credibility, evolution, and practical tra
    * **Pragmatic Tilt:** increases Clean exposure while maintaining sector and regional neutrality within ±2%, limiting annualized tracking error (TE) to 2%, and capping single-name weights at 5%.
    * **Strict Exclusion:** removes all Controversial holdings and rebalances under the same ±2% neutrality and 5% cap to minimize TE.
 
-These parameters reflect realistic institutional constraints, allowing a fair comparison of how stronger ESG alignment affects diversification, concentration, and tracking precision.
+     These parameters reflect realistic institutional constraints, allowing a fair comparison of how stronger ESG alignment affects diversification, concentration, and tracking precision.
 
 5. **Weighting Perspectives**
    Results are presented under two complementary views. The **Equal-Weighted** view treats all ETFs equally, highlighting structural differences, while the **AUM-Weighted** view scales results by fund size, capturing the real capital-weighted impact of investor exposure.
