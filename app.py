@@ -6,7 +6,6 @@ import requests
 import pandas as pd
 import altair as alt
 import streamlit as st
-st.caption("Best viewed in dark-mode browsers for optimal visuals.")
 from pathlib import Path
 from PIL import Image
 
