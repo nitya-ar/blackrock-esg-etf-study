@@ -137,9 +137,9 @@ These developments reinforce the relevance of this analysis—to evaluate ESG al
 
 ---
 
-## Author
+## **Author**
 
-Nitya Arya  
-[GitHub](https://github.com/nitya-ar)
-[LinkedIn](https://www.linkedin.com/in/nitya-arya/)
+**Nitya Arya**
+[LinkedIn](https://www.linkedin.com/in/nitya-arya/) | [GitHub](https://github.com/nitya-ar)
+
 ---
