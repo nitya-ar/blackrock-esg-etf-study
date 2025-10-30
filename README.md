@@ -10,7 +10,7 @@ It enables users to examine the extent to which these funds align with sustainab
 
 ---
 
-### **Overview and Motivation**
+### **Overview**
 
 The rapid expansion of ESG investing has created a large universe of funds promoted as sustainable or socially responsible. However, evidence from *Morningstar’s* 2023 report [*<span style="text-decoration: underline; color: inherit;">ESG Funds Lose Their Sheen</span>*](https://www.morningstar.in/posts/74907/esg-funds-lose-their-sheen.aspx) shows that many of these funds continue to hold exposures similar to their conventional benchmarks, including significant positions in fossil fuel and defense-related companies. This raises important questions about whether ESG labeling reflects genuine portfolio transformation or primarily serves as a marketing distinction.
 
