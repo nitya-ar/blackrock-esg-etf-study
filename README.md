@@ -8,7 +8,7 @@ The complete interactive analysis is available here:
 
 <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
   <img src="https://img.shields.io/badge/OPEN_THE_DASHBOARD-000000?style=for-the-badge&logo=streamlit&logoColor=white&labelColor=000000" 
-       alt="Open the Dashboard" height="65">
+       alt="Open the Dashboard" height="100">
 </a>
 
 </div>
