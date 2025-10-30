@@ -390,34 +390,43 @@ div[data-baseweb="radio"] input:checked + label svg {
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+<style id="toggle-typography-overrides">
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap');
 
-  /* Segmented control: "AUM-weighted" / "Equal-weighted" */
-  div[data-testid="stSegmentedControl"] button[role="tab"] {{
+  /* ===== Segmented control: AUM-weighted / Equal-weighted ===== */
+  :where(div[data-testid="stSegmentedControl"]) :where(button[role="tab"]) {{
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-    color: var(--muted) !important;          /* unselected */
     font-weight: 600 !important;
     letter-spacing: .2px !important;
   }}
-  div[data-testid="stSegmentedControl"] button[role="tab"] * {{
-    color: inherit !important;               /* force children to inherit */
+  :where(div[data-testid="stSegmentedControl"]) :where(button[role="tab"]) * {{
+    font-family: inherit !important;
+    color: inherit !important;
   }}
-  div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"],
-  div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"] * {{
-    color: var(--text) !important;           /* selected */
+  :where(div[data-testid="stSegmentedControl"]) :where(button[role="tab"]:not([aria-selected="true"])) {{
+    color: var(--muted) !important;     /* unselected */
+  }}
+  :where(div[data-testid="stSegmentedControl"]) :where(button[role="tab"][aria-selected="true"]) {{
+    color: var(--text) !important;      /* selected   */
   }}
 
-  /* Radio: "Pragmatic Tilt" / "Strict Exclusion" */
-  div[data-testid="stRadio"][data-baseweb="radio"] label {{
+  /* ===== Radio: Pragmatic Tilt / Strict Exclusion ===== */
+  :where(div[data-testid="stRadio"][data-baseweb="radio"]) :where(label) {{
     font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-    color: var(--muted) !important;          /* default */
     font-weight: 600 !important;
     letter-spacing: .2px !important;
+    color: var(--muted) !important;     /* default */
   }}
-  /* BaseWeb renders as input + label; use sibling selector for checked state */
-  div[data-testid="stRadio"][data-baseweb="radio"] input:checked + label {{
-    color: var(--text) !important;           /* selected */
+
+  /* Modern browsers (Chrome, Safari 17+): use :has() */
+  :where(div[data-testid="stRadio"][data-baseweb="radio"]) :where(label:has(input:checked)) {{
+    color: var(--text) !important;      /* selected */
+  }}
+
+  /* Fallback for others: try common DOM orders */
+  div[data-baseweb="radio"] input:checked + label,
+  div[data-baseweb="radio"] input:checked ~ label {{
+    color: var(--text) !important;
   }}
 </style>
 """, unsafe_allow_html=True)
