@@ -386,9 +386,6 @@ div[data-baseweb="radio"] input:checked + label svg {
   color: var(--text) !important;
   border-color: var(--border) !important;
 }
-</style>
-""", unsafe_allow_html=True)
-
 st.markdown(f"""
 <style id="toggle-text-overrides">
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap');
