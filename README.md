@@ -20,18 +20,18 @@ The analysis examines 20 iShares ESG ETFs selected for their consistent data ava
 
 ---
 
-## **Objectives**
+### **Objectives**
 
-The research is organized around three central questions:
+The research is guided by three central questions:
 
-**1. Alignment in 2025**
-To what extent are BlackRock’s ESG ETFs invested in companies associated with controversial activities such as fossil-fuel extraction, weapons manufacturing, tobacco production, private prisons, or deforestation?
+1. **Alignment in 2025**
+   To what extent are BlackRock’s ESG ETFs invested in companies linked to controversial activities such as fossil-fuel extraction, weapons manufacturing, tobacco production, private prisons, or deforestation?
 
-**2. Evolution from 2017 to 2025**
-How have these exposures changed over time? Do the data indicate measurable progress toward cleaner holdings?
+2. **Evolution from 2017 to 2025**
+   How have these exposures changed over time, and do the data reveal meaningful progress toward cleaner, more sustainable holdings?
 
-**3. Tradeoffs**
-What are the diversification and tracking-error implications of constructing alternative portfolios with stronger sustainability alignment?
+3. **Tradeoffs**
+   What diversification and tracking-error implications arise when constructing alternative portfolios with stronger sustainability alignment?
 
 ---
 
