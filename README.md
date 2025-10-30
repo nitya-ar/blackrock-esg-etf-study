@@ -7,7 +7,7 @@ The complete interactive analysis is available here:
 <div align="left">
   <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
     <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/dashboard_link.svg"
-         alt="Open the Dashboard" width="1200">
+         alt="Open the Dashboard" width="900">
   </a>
 </div>
 
