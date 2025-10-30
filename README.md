@@ -127,24 +127,19 @@ Together, the three sections build a unified exploration of alignment, evolution
 
 ### **Recent Market Context**
 
-In 2025, scrutiny around the authenticity of ESG investing intensified. A *DeSmog* investigation published in **August 2025** (<u><i>[BlackRock’s Fossil Fuel Exposure Persists Despite ESG Claims](https://www.desmog.com/2025/08/12/blackrock-esg-fossil-fuel-greenwashing-report/)</i></u>) revealed that several BlackRock ESG funds continued to hold major fossil-fuel producers despite sustainability branding, renewing debate over greenwashing and benchmark-linked investing.
+In 2025, scrutiny over the credibility of ESG investing intensified as new evidence questioned the link between fund labels and actual holdings. A *DeSmog* investigation (<u><i>[BlackRock Pivots from Sustainability Evangelists to Fossil Fuel Funders](https://www.desmog.com/2025/08/01/blackrock-pivots-from-sustainability-evangelists-to-fossil-fuel-funders/)</i></u>) found that several BlackRock ESG funds retained significant fossil fuel exposure, reigniting debate over the limits of passive ESG strategies.
 
-The **Investment Company Institute** reported in **August 2025** (<u><i>[Trends in ESG Fund Flows](https://www.ici.org/research/stats/trends)</i></u>) that ESG-designated funds collectively managed around **USD 605 billion** but experienced net outflows, reflecting growing investor skepticism toward ESG claims.
+The **Investment Company Institute’s** **ESG Investing Report (August 2025)** (<u><i>[ESG Investing – August 2025](https://www.ici.org/research/stats/esg_investing)</i></u>) estimated that ESG-labeled funds managed around **USD 605 billion** but saw continued net outflows, reflecting investor doubts about authenticity and impact.
 
-Meanwhile, *Sustainalytics* noted in its **2025 ESG Insights Blog** (<u><i>[Light Green Funds and the Expanding ESG Boundary](https://www.sustainalytics.com/esg-research/)</i></u>) that many European funds labeled as sustainable increased exposure to defense and aerospace companies, further blurring the ESG definition.
+At the same time, *Sustainalytics* (<u><i>[EU ESG Funds’ Exposure to Defence Continues to Increase](https://www.sustainalytics.com/esg-research/resource/investors-esg-blog/eu-esg-funds--exposure-to-defense-continues-to-increase)</i></u>) reported that many European ESG funds increased exposure to defense and aerospace companies, showing widening interpretations of ESG criteria.
 
-These developments highlight why this analysis focuses on measuring alignment empirically—testing whether portfolios marketed as ESG truly reflect sustainability in their underlying holdings.
-
+These developments reinforce the relevance of this analysis—to evaluate ESG alignment through data-driven portfolio evidence and assess how BlackRock balances sustainability positioning with benchmark and performance constraints.
 
 ---
 
-## **Authorship and Disclaimer**
+## Author
 
-**Prepared by:** *Nitya Arya*
-
-This study was conducted independently to evaluate ESG portfolio alignment and transparency in passively managed funds.
-All data are publicly available from **SEC EDGAR filings**, **iShares disclosures**, **As You Sow** datasets, and **Yahoo Finance**.
-
-This work is **not affiliated with or endorsed by BlackRock, iShares, or As You Sow** and is intended solely for academic and research purposes.
-
+Nitya Arya  
+[GitHub](https://github.com/nitya-ar)
+[LinkedIn](https://www.linkedin.com/in/nitya-arya/)
 ---
