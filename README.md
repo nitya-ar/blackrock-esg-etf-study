@@ -4,13 +4,10 @@
 
 The complete interactive analysis is available here:  
 
-<div align="center">
-  <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-    <img src="assets/blackrock-esg-study-icon.png" alt="Open the Dashboard" width="80">
-    <br/>
-    <strong style="font-size:1.35rem;">Open the Dashboard</strong>
-  </a>
-</div>
+<img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/blackrock-esg-study-icon.png" alt="Dashboard icon" width="64">
+
+## ➜ <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">Open the Dashboard</a>
+
 
 The dashboard presents a unified view of portfolio composition, historical ESG alignment, and simulated cleaner scenarios for BlackRock’s ESG-branded exchange-traded funds (ETFs) from **2017 to 2025**. It enables users to examine the extent to which these funds align with sustainability principles, observe how exposures to controversial sectors have changed, and evaluate the quantitative tradeoffs that accompany cleaner portfolio construction.
 
