@@ -1,0 +1,6 @@
+streamlit>=1.38  # dashboard optimized for dark mode; best viewed with browser dark theme enabled
+pandas>=2.2
+numpy>=1.26
+altair>=5.3
+pillow>=10.3
+requests>=2.32
