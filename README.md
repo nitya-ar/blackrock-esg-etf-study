@@ -4,9 +4,18 @@
 
 The complete interactive analysis is available here:  
 
-<a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-  <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/dashboard_cta.png" alt="Open the Dashboard">
-</a>
+<table>
+<tr>
+<td width="56" valign="middle">
+  <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
+    <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/blackrock_esg_study_icon.png" alt="Icon" width="56">
+  </a>
+</td>
+<td valign="middle">
+  <h1><a href="https://blackrock-esg-etf-dashboard.streamlit.app/">Open the Dashboard →</a></h1>
+</td>
+</tr>
+</table>
 
 
 
