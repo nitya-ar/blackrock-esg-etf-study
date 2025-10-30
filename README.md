@@ -10,22 +10,13 @@ It enables users to examine the extent to which these funds align with sustainab
 
 ---
 
-## **Overview and Motivation**
+### **Overview and Motivation**
 
-The acceleration of ESG investing has produced a large universe of funds marketed as sustainable or socially responsible. However, evidence suggests that many such funds retain exposures similar to their conventional benchmarks.
-This raises concern about whether ESG labels reflect genuine portfolio transformation or simply marketing differentiation.
+The rapid expansion of ESG investing has created a large universe of funds promoted as sustainable or socially responsible. However, evidence from *Morningstar’s* 2023 report *<u>ESG Funds Lose Their Sheen</u>* ([www.morningstar.in/posts/74907/esg-funds-lose-their-sheen.aspx](http://www.morningstar.in/posts/74907/esg-funds-lose-their-sheen.aspx)) shows that many of these funds continue to hold exposures similar to their conventional benchmarks, including significant positions in fossil fuel and defense-related companies. This raises important questions about whether ESG labeling reflects genuine portfolio transformation or primarily serves as a marketing distinction.
 
-**BlackRock** was selected as the focus of this study because of its **dominant position** in global asset management and leadership in promoting ESG integration.
-Its scale, disclosure quality, and market influence make it a representative case for understanding how large, passively managed ESG products operationalize sustainability objectives within benchmark-constrained frameworks.
+BlackRock was chosen as the focus of this study because of its global scale, market influence, and central role in shaping ESG investing. As the world’s largest asset manager and a leading provider of ESG-branded ETFs through its iShares platform, it represents a critical case for understanding how large, passively managed portfolios incorporate sustainability narratives within benchmark-constrained frameworks.
 
-**Twenty iShares ESG ETFs** were analyzed, selected based on:
-
-* Continuous data availability between **2017 and 2025** through public regulatory filings.
-* Significant **net assets**, ensuring that each fund is economically material.
-
-This approach ensures both **analytical consistency** and **relevance**.
-
-The project’s objective is to **quantify alignment** between portfolio holdings and stated sustainability claims, track how that alignment has evolved, and evaluate the **tradeoffs** between improving ESG purity and maintaining benchmark fidelity.
+The analysis examines 20 iShares ESG ETFs selected for their consistent data availability between 2017 and 2025 and substantial net assets, ensuring that the findings are both reliable and economically meaningful.
 
 ---
 
