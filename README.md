@@ -4,18 +4,29 @@
 
 The complete interactive analysis is available here:  
 
-<table>
-<tr>
-<td width="56" valign="middle">
-  <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-    <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/blackrock_esg_study_icon.png" alt="Icon" width="56">
-  </a>
-</td>
-<td valign="middle">
-  <h1><a href="https://blackrock-esg-etf-dashboard.streamlit.app/">Open the Dashboard →</a></h1>
-</td>
-</tr>
-</table>
+<a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
+  <svg width="720" height="120" viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Open the Dashboard">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#0A0A0A"/>
+        <stop offset="100%" stop-color="#151515"/>
+      </linearGradient>
+    </defs>
+    <rect x="1.5" y="1.5" rx="16" ry="16" width="717" height="117" fill="url(#g)" stroke="#2A2A2A" stroke-width="3"/>
+    <!-- Left pill -->
+    <rect x="18" y="24" rx="12" ry="12" width="96" height="72" fill="#111" stroke="#2F2F2F"/>
+    <circle cx="66" cy="60" r="18" fill="#E13F3F"/>
+    <circle cx="66" cy="60" r="10" fill="#FFFFFF"/>
+    <!-- Text -->
+    <text x="138" y="52" fill="#B9C0CA" font-size="18" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" letter-spacing=".5">Launch the interactive app</text>
+    <text x="138" y="88" fill="#FFFFFF" font-size="36" font-weight="700" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">Open the Dashboard</text>
+    <!-- Arrow -->
+    <g transform="translate(640,42)">
+      <rect x="0" y="0" rx="10" ry="10" width="64" height="36" fill="#0F62FE" opacity="0.95"/>
+      <path d="M18 18 L34 18 M28 12 L34 18 L28 24" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>
+</a>
 
 
 
