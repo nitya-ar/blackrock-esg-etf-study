@@ -35,22 +35,46 @@ The research is guided by three central questions:
 
 ---
 
-## **Methodology and Data Sources**
+### **Methodology and Data Sources**
 
-Holdings were collected from **Form N-PORT-P**, **Form N-CSR**, and **Form N-CSRS** filings submitted to the **U.S. Securities and Exchange Commission (SEC)** through the **EDGAR** database for reporting years **2017–2025**.
-These filings provide detailed annual and semi-annual portfolio holdings for registered investment companies.
+1. **ETF Selection**
+   Twenty iShares ESG ETFs were selected based on continuous data availability between 2017 and 2025 and substantial net assets, ensuring both analytical consistency and economic relevance. *(Source: [iShares ESG ETFs](https://www.ishares.com/us/products/etf-investments#/?productView=etf&ptrg=50%7C51%7C52%7C49&pageNumber=1&sortColumn=totalNetAssets&sortDirection=desc&dataView=keyFacts))*
 
-Company-level ESG classifications were integrated from **As You Sow** datasets, which identify firms involved in:
+2. **Data Collection**
 
-* Fossil fuels
-* Tobacco
-* Weapons
-* Prisons
-* Deforestation
+   * **2025 Holdings:** Obtained directly from the iShares website, including security-level holdings, AUM, and price metadata. *(Source: [iShares.com](https://www.ishares.com/us))*
+   * **2017–2024 Holdings:** Extracted from SEC **N-CSR** and **N-CSRS** filings (annual and semiannual reports) using Python, followed by extensive manual cleaning to correct issuer names, share classes, and duplicates. *(Source: [SEC EDGAR Database](https://www.sec.gov/edgar/search/))*
+   * **Prices:** ETF and benchmark price histories retrieved from Yahoo Finance for consistent time-series comparison. *(Source: [Yahoo Finance](https://finance.yahoo.com/))*
 
-and from the **Clean200** list of global companies with the highest clean-energy revenues.
+3. **Standardization**
+   Each holding was standardized by ticker and canonical company name to ensure that the same issuer was consistently identified across all ETFs and years. This enabled accurate longitudinal analysis and integration with ESG classification and pricing data.
 
-ETF and benchmark price series, along with fund **assets under management (AUM)** and metadata, were obtained from **iShares public disclosures** and **Yahoo Finance**.
+4. **ESG Classification**
+   Company-level classifications were integrated from two independent sources:
+
+   * **As You Sow** datasets identifying companies involved in fossil fuels, weapons, tobacco, prisons, and deforestation. *(Source: [As You Sow](https://www.asyousow.org/))*
+   * **Clean200** list highlighting global companies with the highest clean-energy revenues. *(Source: [Clean200](https://www.clean200.org/))*
+     Classification logic:
+   * A company is **Controversial** if it appears in any of the five exclusion lists.
+   * A company is **Clean** if it appears in *Clean200* and not in any controversial screen.
+   * Remaining firms are categorized as **Other**.
+
+5. **Aggregation and Weighting**
+   Holdings within each ETF and year were normalized to sum to 100 percent. Two complementary aggregation methods were applied:
+
+   * **Equal-Weighted (EW):** each ETF contributes equally, showing structural composition differences.
+   * **AUM-Weighted:** ETFs are scaled by their net assets, reflecting capital-weighted influence.
+     This dual perspective captures both composition and economic significance.
+
+6. **Processed and Final Data**
+   Cleaned, classified, and normalized data were consolidated into a unified dataset covering 2017–2025. Intermediate steps such as ticker mapping, category assignment, and exposure aggregation were performed in Python and exported as standardized CSV and Excel files for transparency.
+
+7. **Analytical Integration**
+   The final datasets power three layers of analysis featured in the dashboard:
+
+   * **2025 Snapshot:** composition and alignment view for the latest year.
+   * **Change Since 2017:** trend analysis showing shifts in clean vs. controversial exposures.
+   * **Trade-Off Scenarios:** portfolio simulations (Baseline, Pragmatic Tilt, Strict Exclusion) demonstrating the tradeoff between cleaner holdings and benchmark tracking error.
 
 ---
 
