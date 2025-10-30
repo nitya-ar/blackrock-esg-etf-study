@@ -4,14 +4,9 @@
 
 The complete interactive analysis is available here:  
 
-<div align="left">
-  <a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
-    <img
-      src="https://img.shields.io/badge/Open_the_Dashboard-000000.png?style=for-the-badge&logo=streamlit&logoColor=white"
-      alt="Open the Dashboard"
-      height="72">
-  </a>
-</div>
+<a href="https://blackrock-esg-etf-dashboard.streamlit.app/">
+  <img src="https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/assets/dashboard_cta.png" alt="Open the Dashboard">
+</a>
 
 
 
