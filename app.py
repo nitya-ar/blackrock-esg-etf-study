@@ -1026,12 +1026,35 @@ def render_change_since_2017():
             '<div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>',
             unsafe_allow_html=True,
         )
-        weighting = st.radio(
+        st.markdown("""
+        <style>
+          /* Segmented control typography and colours to match tab headers */
+          div[data-testid="stSegmentedControl"] button[role="tab"],
+          div[data-testid="stSegmentedControl"] button[role="tab"] * {
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+            font-weight: 600 !important;
+            font-size: 14.5px !important;
+            letter-spacing: .2px !important;
+          }
+          div[data-testid="stSegmentedControl"] button[role="tab"]:not([aria-selected="true"]),
+          div[data-testid="stSegmentedControl"] button[role="tab"]:not([aria-selected="true"]) * {
+            color: var(--muted) !important;
+            -webkit-text-fill-color: var(--muted) !important;
+          }
+          div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"],
+          div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"] * {
+            color: var(--text) !important;
+            -webkit-text-fill-color: var(--text) !important;
+          }
+        </style>
+        """, unsafe_allow_html=True)
+        weighting = st.segmented_control(
             "Weighting",
             options=["AUM-weighted", "Equal-weighted"],
-            horizontal=True,
+            default="AUM-weighted",
             label_visibility="collapsed",
-            index=0,
+            help=None,
+            key="t2_weighting_seg"
         )
 
     cohort = overlap if not sel_etfs else sel_etfs
