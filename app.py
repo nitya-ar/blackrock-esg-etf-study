@@ -8,17 +8,6 @@ import altair as alt
 import streamlit as st
 from pathlib import Path
 from PIL import Image
-alt.themes.enable("dark")
-
-st.markdown("""
-<style>
-:root, html, body, [data-testid="stAppViewContainer"] {
-  background: #0B0D12 !important;
-  color: #E6EAF2 !important;
-  color-scheme: only dark;
-}
-</style>
-""", unsafe_allow_html=True)
 
 _GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
 
@@ -127,18 +116,6 @@ alt.themes.register("custom_dark", _alt_dark)
 alt.themes.enable("custom_dark")
 
 # STYLES
-st.markdown("""
-<style>
-[data-testid="stDataFrame"] div[role="columnheader"] {
-  background: #131722 !important; color: #E6EAF2 !important;
-  border-bottom: 1px solid #232938 !important;
-}
-[data-testid="stDataFrame"] div[role="row"][data-rowindex="0"] > div[role="gridcell"] {
-  background: #131722 !important; color: #E6EAF2 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
 st.markdown(
     f"""
     <style>
