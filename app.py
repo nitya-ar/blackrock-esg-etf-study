@@ -1019,35 +1019,73 @@ def render_change_since_2017():
 
     with topA:
         sel_etfs = st.multiselect("ETF", overlap, default=[])
-
+        
     with topC:
-        st.markdown(
-            '<div class="chart-head"><div class="chart-title">Weighting</div>'
-            '<div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("""
+    st.markdown(
+        """
         <style>
-          /* Segmented control typography and colours to match tab headers */
-          div[data-testid="stSegmentedControl"] button[role="tab"],
-          div[data-testid="stSegmentedControl"] button[role="tab"] * {
-            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
-            font-weight: 600 !important;
-            font-size: 14.5px !important;
-            letter-spacing: .2px !important;
+          .t2-weighting-wrap { display:flex; flex-direction:column; gap:6px; }
+          .t2-head { display:flex; align-items:center; gap:8px; }
+          .t2-title { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+                      font-weight:700; font-size:14px; color: var(--text); }
+          .t2-badges { display:flex; gap:10px; align-items:center; }
+          .t2-badge {
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            font-weight:600; font-size:14px; letter-spacing:.2px;
+            padding:6px 10px; border-radius:999px; border:1px solid var(--border);
+            color: var(--muted); background: transparent;
+            user-select:none;
           }
-          div[data-testid="stSegmentedControl"] button[role="tab"]:not([aria-selected="true"]),
-          div[data-testid="stSegmentedControl"] button[role="tab"]:not([aria-selected="true"]) * {
-            color: var(--muted) !important;
-            -webkit-text-fill-color: var(--muted) !important;
+          .t2-badge.active {
+            color: var(--text);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary) inset;
           }
-          div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"],
-          div[data-testid="stSegmentedControl"] button[role="tab"][aria-selected="true"] * {
-            color: var(--text) !important;
-            -webkit-text-fill-color: var(--text) !important;
+          .t2-help {
+            width:18px;height:18px;border-radius:50%;
+            display:inline-flex;align-items:center;justify-content:center;
+            font-size:12px;font-weight:700;color: var(--text);
+            border:1px solid var(--border);
           }
         </style>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
+
+    options = ["AUM-weighted", "Equal-weighted"]
+    default_idx = 0 if st.session_state.get("t2_weighting", "AUM-weighted") == "AUM-weighted" else 1
+
+    selected = st.selectbox(
+        "Weighting",
+        options=options,
+        index=default_idx,
+        label_visibility="collapsed",
+        key="t2_weighting_select",
+    )
+
+    st.session_state["t2_weighting"] = selected
+
+    aum_active   = "active" if selected == "AUM-weighted" else ""
+    equal_active = "active" if selected == "Equal-weighted" else ""
+
+    st.markdown(
+        f"""
+        <div class="t2-weighting-wrap">
+          <div class="t2-head">
+            <div class="t2-title">Weighting</div>
+            <div class="t2-help" title="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div>
+          </div>
+          <div class="t2-badges">
+            <span class="t2-badge {aum_active}">AUM-weighted</span>
+            <span class="t2-badge {equal_active}">Equal-weighted</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    weighting = st.session_state["t2_weighting"]
+
         weighting = st.segmented_control(
             "Weighting",
             options=["AUM-weighted", "Equal-weighted"],
