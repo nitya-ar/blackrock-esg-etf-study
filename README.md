@@ -78,24 +78,32 @@ The research is guided by three central questions:
 
 ---
 
-## **Analytical Framework**
+### **Analytical Framework**
 
-Each holding was standardized by **ticker** and **canonical company name** to enable longitudinal analysis.
-ESG classifications were merged at the company level, and portfolio exposures were computed as **weight-adjusted proportions** of Clean, Controversial, and Other holdings.
+The analytical framework evaluates the credibility, evolution, and practical tradeoffs of sustainability alignment within BlackRock’s ESG-branded ETFs. It integrates company-level ESG classifications, portfolio holdings, and market data to assess both composition and performance implications within a consistent structure.
 
-Time-series trends were calculated under both **equal-weight** and **asset-weighted** frameworks to separate compositional effects from size dynamics.
+1. **Alignment Measurement**
+   For each ETF and year, the proportion of portfolio weight classified as **Clean**, **Controversial**, or **Other** is calculated using a standardized binary classification system. This quantifies how much of each portfolio is allocated to companies aligned with clean energy versus those associated with controversial industries.
 
-### **2025 Counterfactual Scenarios**
+2. **Consistent Classification Across Time**
+   The Clean and Controversial labels are derived from the **2025 ESG classification dataset**, applied retroactively to all historical holdings from 2017 to 2024. This approach, adopted due to the absence of consistent historical ESG data, ensures a constant evaluation framework across all years so that observed changes reflect true shifts in portfolio composition rather than differences in data quality or methodology.
 
-Two alternative portfolio designs were modeled to evaluate the practical constraints of cleaner construction:
+3. **Evolution of Alignment**
+   Using this consistent framework, the analysis tracks year-by-year changes in Clean and Controversial exposure from 2017 through 2025 to evaluate whether BlackRock’s ESG ETFs have progressively improved in sustainability alignment.
 
-**• Pragmatic Tilt**
-Increases exposure to Clean200 constituents while maintaining sector and regional neutrality within ±2 percentage points and limiting expected tracking error to **2% annualized**.
+4. **Tradeoff Analysis**
+   Three portfolio scenarios are modeled to assess the relationship between ESG purity and benchmark fidelity:
 
-**• Strict Exclusion**
-Eliminates all controversial companies and refills the portfolio to 100% weight while minimizing tracking error relative to the original composition.
+   * **Baseline:** replicates each ETF’s benchmark composition.
+   * **Pragmatic Tilt:** increases Clean exposure while maintaining sector and regional neutrality within ±2%, limiting annualized tracking error (TE) to 2%, and capping single-name weights at 5%.
+   * **Strict Exclusion:** removes all Controversial holdings and rebalances under the same ±2% neutrality and 5% cap to minimize TE.
+These parameters reflect realistic institutional constraints, allowing a fair comparison of how stronger ESG alignment affects diversification, concentration, and tracking precision.
 
-Tracking error was estimated using a **covariance-based ex-ante approach** derived from historical ETF and benchmark returns.
+5. **Weighting Perspectives**
+   Results are presented under two complementary views. The **Equal-Weighted** view treats all ETFs equally, highlighting structural differences, while the **AUM-Weighted** view scales results by fund size, capturing the real capital-weighted impact of investor exposure.
+
+6. **Integration into Dashboard**
+   The outputs from these analyses power the Streamlit dashboard’s three modules — *2025 Overview*, *Change Since 2017*, and *Tradeoff Scenarios* — enabling users to interactively explore composition, historical change, and the measurable tradeoffs between cleaner portfolios and benchmark alignment.
 
 ---
 
