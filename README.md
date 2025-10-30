@@ -108,37 +108,20 @@ The analytical framework evaluates the credibility, evolution, and practical tra
 
 ---
 
-## **Dashboard Overview**
+### **Dashboard Overview**
 
-The **Streamlit dashboard** serves as the primary medium for presenting results. It is divided into three analytical sections:
+The Streamlit dashboard brings the analysis to life by translating the study’s data and results into an interactive, visual format. It allows users to explore how BlackRock’s ESG ETFs align with sustainability principles, how that alignment has changed over time, and what tradeoffs arise when constructing cleaner portfolios.
 
-### **1. 2025 Overview**
+1. **2025 Overview**
+   This section provides a clear snapshot of the current ESG ETF landscape. It shows how fund assets are distributed across Clean, Controversial, and Other holdings, highlights exposure to each controversial screen, and identifies the largest clean and controversial positions. It establishes the baseline understanding of where BlackRock’s ESG ETFs stand today.
 
-Summarizes the current composition of each ESG ETF, displaying:
+2. **Change Since 2017**
+   This section tracks the evolution of ESG alignment from 2017 to 2025 using a consistent classification framework. It shows whether exposure to controversial industries has declined and whether clean holdings have expanded, distinguishing between structural changes and AUM-driven shifts in capital allocation.
 
-* Clean vs Controversial vs Other holdings
-* Exposure by individual screen
-* Sector and regional distributions
-* Top holdings
+3. **Tradeoff Scenarios**
+   This section models alternative portfolio constructions to test the balance between stronger ESG alignment and investment practicality. It compares the actual 2025 portfolios with two simulated alternatives (Pragmatic Tilt and Strict Exclusion) to show how cleaner holdings affect diversification, tracking error, and portfolio costs within realistic investment limits.
 
-### **2. Change Since 2017**
-
-Illustrates the evolution of alignment over time, showing:
-
-* Aggregate and fund-specific trends in clean and controversial exposure
-* Comparisons between earlier years and 2025
-* Major additions and removals in holdings
-
-### **3. Tradeoff Scenarios**
-
-Presents the simulated cleaner portfolios alongside the original 2025 baseline, comparing them on:
-
-* Key alignment metrics
-* Tracking error and diversification impacts
-
-This section quantifies the **measurable cost** of increasing ESG purity within realistic portfolio constraints.
-
-The dashboard employs a **dark, professional visual design** and a consistent analytical structure to support intuitive interpretation and comparison.
+Together, the three sections build a unified exploration of alignment, evolution, and tradeoffs. Helping users understand both the current state of BlackRock’s ESG ETFs and the measurable implications of moving toward cleaner portfolios.
 
 ---
 
