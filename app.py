@@ -1,5 +1,3 @@
-Final Code 
-
 import os
 from io import StringIO, BytesIO
 import urllib.parse
@@ -95,30 +93,27 @@ COLORS = {
     "other": "#768397",
 }
 
-def _alt_auto():
+def _alt_dark():
     return {
         "config": {
             "background": "transparent",
-            "view": {"fill": "transparent", "stroke": "var(--border)"},
+            "view": {"fill": "transparent", "stroke": COLORS["border"]},
             "axis": {
-                "labelColor": "var(--text)",
-                "titleColor": "var(--muted)",
-                "domainColor": "var(--grid)",
-                "tickColor":   "var(--grid)",
+                "labelColor": COLORS["text"],
+                "titleColor": COLORS["muted"],
+                "domainColor": "#2A2F36",
+                "tickColor":   "#2A2F36",
                 "grid": True,
-                "gridColor": "var(--grid)",
+                "gridColor": "#222831",
                 "gridOpacity": 0.45
             },
-            "legend": {"labelColor": "var(--text)", "titleColor": "var(--muted)"},
-            "title": {"color": "var(--text)"},
-            "range": {
-                "category": [COLORS["clean"], COLORS["contro"], COLORS["other"]]
-            }
+            "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
+            "title": {"color": COLORS["text"]},
         }
     }
 
-alt.themes.register("custom_auto", _alt_auto)
-alt.themes.enable("custom_auto")
+alt.themes.register("custom_dark", _alt_dark)
+alt.themes.enable("custom_dark")
 
 st.markdown(
     f"""
@@ -126,34 +121,30 @@ st.markdown(
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
       :root {{
-        --bg: #F7F8FA;
-        --card: #FFFFFF;
-        --border: #E3E8EF;
-        --text: #0B0D12;
-        --muted: #5B6573;
+        --bg: {COLORS['bg']};
+        --card: {COLORS['card']};
+        --border: {COLORS['border']};
+        --text: {COLORS['text']};
+        --muted: {COLORS.get('muted','#A9B4C2')};
         --primary: {COLORS['primary']};
         --clean: {COLORS.get('clean','#0E8F66')};
         --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
-        --grid: #D8DFE7;
         --accent:#C63C41;
-        --texted:#E7EBF0;
       }}
 
-      @media (prefers-color-scheme: dark) {{
+      @media (prefers-color-scheme: light) {{
         :root {{
-          --bg: {COLORS['bg']};
-          --card: {COLORS['card']};
-          --border: {COLORS['border']};
-          --text: {COLORS['text']};
-          --muted: {COLORS.get('muted','#A9B4C2')};
-          --primary: {COLORS['primary']};
-          --clean: {COLORS.get('clean','#0E8F66')};
-          --contro:{COLORS.get('contro','#C63C41')};
-          --other: {COLORS.get('other','#768397')};
-          --grid: #222831;
-          --accent:#C63C41;
-          --texted:#E7EBF0;
+          --bg: #FFFFFF;
+          --card: #FAFBFC;
+          --border: #E4E8EE;
+          --text: #0C1116;
+          --muted: #475467;
+          --primary: #006FD6;
+          --clean: #1E9068;
+          --contro: #C63C41;
+          --other: #667085;
+          --accent: #C63C41;
         }}
       }}
 
@@ -172,28 +163,27 @@ st.markdown(
         border-radius: 14px; padding: 14px 16px;
       }}
       .kpi {{
-        background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
+        background: linear-gradient(180deg, rgba(0,0,0,.04), rgba(0,0,0,0));
         border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
         box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
       }}
-      @media (prefers-color-scheme: dark) {{
-        .kpi {{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset; }}
+      @media (prefers-color-scheme: light) {{
+        .kpi {{ background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0)); }}
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
       .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.10), rgba(0,0,0,0)); border-color: rgba(198,60,65,0.35); }}
       .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.10), rgba(0,0,0,0)); border-color: rgba(14,143,102,0.35); }}
-      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0)); border-color: rgba(0,0,0,0.06); }}
-      @media (prefers-color-scheme: dark) {{
-        .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-color: rgba(0,0,0,0.08); }}
+      @media (prefers-color-scheme: light) {{
+        .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0)); border-color: #E4E8EE; }}
       }}
 
       .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
-
-      .vega-tooltip, .vega-tooltip * {{ background: var(--card) !important; color:var(--text) !important; border-color:var(--border) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:#E7EBF0 !important; border-color:#1C2027 !important; }}
+      @media (prefers-color-scheme: light) {{
+        .vega-tooltip, .vega-tooltip * {{ background:#FFFFFF !important; color:#0C1116 !important; border-color:#E4E8EE !important; }}
       }}
 
       .info-badge {{
@@ -218,16 +208,18 @@ st.markdown(
       .has-tip::after {{
         content: attr(data-tip);
         position:absolute; right:0; top:calc(100% + 8px);
-        background: var(--card); color:var(--text); border:1px solid var(--border);
+        background:#0B0D12; color:#E7EBF0; border:1px solid #1C2027;
         padding:6px 10px; border-radius:8px; white-space:nowrap;
         opacity:0; transform:translateY(6px); pointer-events:none;
         transition:opacity .15s ease, transform .15s ease;
-        box-shadow:0 10px 24px rgba(0,0,0,.12); z-index:99999;
-      }}
-      @media (prefers-color-scheme: dark) {{
-        .has-tip::after {{ background:#0B0D12; box-shadow:0 10px 24px rgba(0,0,0,.45); }}
+        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
       }}
       .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
+      @media (prefers-color-scheme: light) {{
+        .has-tip::after {{
+          background:#FFFFFF; color:#0C1116; border:1px solid #E4E8EE; box-shadow:0 10px 24px rgba(0,0,0,.10);
+        }}
+      }}
 
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
         background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
@@ -235,29 +227,29 @@ st.markdown(
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
       div[data-testid="stDataframe"] thead tr th {{
-        background: #F2F5F9 !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important;
-      }}
-      @media (prefers-color-scheme: dark) {{
-        :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-        div[data-testid="stDataframe"] thead tr th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
       div[data-testid="stDataframe"] tbody tr td {{
-        background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important;
+        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
       }}
-      @media (prefers-color-scheme: dark) {{
+      @media (prefers-color-scheme: light) {{
+        :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+        div[data-testid="stDataframe"] thead tr th {{
+          background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important;
+        }}
         :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
-        div[data-testid="stDataframe"] tbody tr td {{ background:#0E1015 !important; border-top:1px solid #12151C !important; }}
+        div[data-testid="stDataframe"] tbody tr td {{
+          background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important;
+        }}
       }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-      :where([data-testid="stTable"]) thead th {{ background:#F2F5F9 !important; color:var(--text) !important; border-bottom:1px solid var(--border) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        :where([data-testid="stTable"]) thead th {{ background:#11151C !important; border-bottom:1px solid #2A2F36 !important; }}
-      }}
-      :where([data-testid="stTable"]) tbody td {{ background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; border-top:1px solid #12151C !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important; }}
+      @media (prefers-color-scheme: light) {{
+        :where([data-testid="stTable"]) thead th {{ background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important; }}
+        :where([data-testid="stTable"]) tbody td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important; }}
       }}
 
       [data-baseweb="select"], [data-baseweb="input"] {{
@@ -269,90 +261,108 @@ st.markdown(
       [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
       [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
         outline:none !important; border:1px solid var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
       }}
       [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
       [data-baseweb="menu"] {{
-        background:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:#10131A !important; color:#E7EBF0 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
       }}
-      [data-baseweb="menu"] li {{ color:var(--text) !important; }}
-      [data-baseweb="menu"] li:hover {{ background:rgba(0,0,0,0.04) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+      [data-baseweb="menu"] li {{ color:#E7EBF0 !important; }}
+      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+      @media (prefers-color-scheme: light) {{
+        [data-baseweb="menu"] {{ background:#FFFFFF !important; color:#0C1116 !important; border:1px solid #E4E8EE !important; }}
+        [data-baseweb="menu"] li {{ color:#0C1116 !important; }}
+        [data-baseweb="menu"] li:hover {{ background:#F6F7F9 !important; }}
       }}
 
       [data-baseweb="slider"] > div {{ background:transparent !important; }}
-      [data-baseweb="slider"] div[role="presentation"] {{ background:var(--border) !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
       [data-baseweb="slider"] [role="slider"] {{
         background:var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.12) !important; border:0 !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
       }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
+      @media (prefers-color-scheme: light) {{
+        [data-baseweb="slider"] div[role="presentation"] {{ background:#E4E8EE !important; }}
+      }}
 
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background:var(--card) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
       div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-        background:var(--card) !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
       }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"],
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:var(--card) !important; color:var(--text) !important;
+        background:#12151C !important; color:var(--text) !important;
         border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
       }}
+      @media (prefers-color-scheme: light) {{
+        div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+          background:#FFFFFF !important; border:1px solid #E4E8EE !important;
+        }}
+        div[data-testid="stSegmentedControl"] button[role="tab"],
+        div[data-testid="stSegmentedControl"] button[role="tab"] * {{
+          background:#FFFFFF !important; color:#475467 !important;
+        }}
+        div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+        div[data-testid="stSegmentedControl"] button[aria-selected="true"] * {{
+          background:#F7F9FB !important; color:#0C1116 !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+        }}
+      }}
 
-      .stTabs [data-baseweb="tab-list"] {{ background:var(--card) !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
       .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
       .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
+      @media (prefers-color-scheme: light) {{
+        .stTabs [data-baseweb="tab-list"] {{ background:#FFFFFF !important; border-bottom:1px solid #E4E8EE !important; }}
+      }}
 
       .stDownloadButton > button, .stButton > button {{
-        background:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      .stDownloadButton > button:hover, .stButton > button:hover {{ background:rgba(0,0,0,0.04) !important; border-color:var(--border) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+      @media (prefers-color-scheme: light) {{
+        .stDownloadButton > button, .stButton > button {{
+          background:#FFFFFF !important; color:#0C1116 !important; border:1px solid #E4E8EE !important;
+        }}
+        .stDownloadButton > button:hover, .stButton > button:hover {{ background:#F7F9FB !important; border-color:#D7DDE6 !important; }}
       }}
 
       label {{ color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px; }}
+
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
-      *::-webkit-scrollbar-thumb {{ background:var(--border); border-radius: 8px; }}
-      *::-webkit-scrollbar-track {{ background:var(--bg); }}
+      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background:#0B0D12; }}
+      @media (prefers-color-scheme: light) {{
+        *::-webkit-scrollbar-thumb {{ background:#D0D7E2; }}
+        *::-webkit-scrollbar-track {{ background:#F2F4F7; }}
+      }}
 
       [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
       [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
-        background: var(--card) !important;
-        color: var(--text) !important;
-        border-color: var(--border) !important;
+        background: #10131A !important;
+        color: #E7EBF0 !important;
+        border-color: #1C2027 !important;
       }}
-
-      [role="listbox"] {{ background:var(--card) !important; border:1px solid var(--border) !important; }}
-      [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
-      [role="option"][aria-selected="true"],
-      [role="option"]:hover {{ background:rgba(0,0,0,0.04) !important; }}
-      @media (prefers-color-scheme: dark) {{
-        [role="option"][aria-selected="true"], [role="option"]:hover {{ background:#161A22 !important; }}
-      }}
-
-      div[data-testid="stPopover"] div[role="dialog"],
-      div[data-testid="stPopover"] div[role="dialog"] * {{
-        background:var(--card) !important; color:var(--text) !important; border-color: var(--border) !important;
+      @media (prefers-color-scheme: light) {{
+        [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
+        [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+          background: #FFFFFF !important;
+          color: #0C1116 !important;
+          border-color: #E4E8EE !important;
+        }}
       }}
 
       div[data-testid="stDataFrame"] [role="columnheader"],
       div[data-testid="stDataframe"] [role="columnheader"],
       div[data-testid="stTable"] thead th {{
-        background:#F2F5F9 !important; color:var(--text) !important; border-bottom:1px solid var(--border) !important;
+        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
       }}
-      @media (prefers-color-scheme: dark) {{
-        div[data-testid="stDataFrame"] [role="columnheader"],
-        div[data-testid="stDataframe"] [role="columnheader"],
-        div[data-testid="stTable"] thead th {{ background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important; }}
-      }}
-
       div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
       div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
       div[data-testid="stTable"] tbody td,
@@ -360,18 +370,23 @@ st.markdown(
       div[data-testid="stTable"] tbody tr:nth-child(even) td,
       div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
       div[data-testid="stTable"] tbody tr:first-child td {{
-        background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important;
+        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
       }}
-      @media (prefers-color-scheme: dark) {{
+      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
+        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+      }}
+      @media (prefers-color-scheme: light) {{
+        div[data-testid="stDataFrame"] [role="columnheader"],
+        div[data-testid="stDataframe"] [role="columnheader"],
+        div[data-testid="stTable"] thead th {{ background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important; }}
         div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
         div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
         div[data-testid="stTable"] tbody td,
         div[data-testid="stTable"] tbody tr:nth-child(odd) td,
         div[data-testid="stTable"] tbody tr:nth-child(even) td,
         div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-        div[data-testid="stTable"] tbody tr:first-child td {{
-          background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
-        }}
+        div[data-testid="stTable"] tbody tr:first-child td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important; }}
+        div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{ background:#FFFFFF !important; border:1px solid #E4E8EE !important; }}
       }}
     </style>
     """,
@@ -382,27 +397,51 @@ st.markdown("""
 <style>
 div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
 div[data-testid="stTable"] tbody tr:first-child td {
-  background: var(--card) !important;
-  color: var(--text) !important;
+  background: #0E1015 !important;
+  color: #E7EBF0 !important;
+}
+@media (prefers-color-scheme: light) {
+  div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+  div[data-testid="stTable"] tbody tr:first-child td {
+    background: #FFFFFF !important;
+    color: #0C1116 !important;
+  }
 }
 div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
 div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
-  background: rgba(0,0,0,0.04) !important;
+  background: #151923 !important;
   color: var(--text) !important;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
-  div[data-testid="stSegmentedControl"] button[role="tab"]:focus { background: #151923 !important; }
-  div[data-testid="stRadio"][data-baseweb="radio"] { background: #0E1015 !important; border-radius: 10px !important; }
-  div[data-baseweb="radio"] svg { background: #0E1015 !important; border-radius: 50%; }
-  div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
+  div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
+    background: #EEF2F7 !important;
+    color: #0C1116 !important;
+  }
 }
-div[data-baseweb="radio"] > div { background: transparent !important; }
+div[data-testid="stRadio"][data-baseweb="radio"] {
+  background: #0E1015 !important;
+  border-radius: 10px !important;
+}
+div[data-testid="stRadio"][data-baseweb="radio"] > div { background: transparent !important; }
 div[data-baseweb="radio"] label { color: var(--text) !important; }
+div[data-baseweb="radio"] svg { background: #0E1015 !important; border-radius: 50%; }
+div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
+@media (prefers-color-scheme: light) {
+  div[data-testid="stRadio"][data-baseweb="radio"] { background: #FFFFFF !important; }
+  div[data-baseweb="radio"] svg { background: #FFFFFF !important; }
+}
 .vega-tooltip, .vega-tooltip * {
-  background: var(--card) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
+  background: #0F1116 !important;
+  color: #E7EBF0 !important;
+  border-color: #1C2027 !important;
+}
+@media (prefers-color-scheme: light) {
+  .vega-tooltip, .vega-tooltip * {
+    background: #FFFFFF !important;
+    color: #0C1116 !important;
+    border-color: #E4E8EE !important;
+  }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -414,7 +453,7 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
-    bg, hdr, txt, bdr = "var(--card)", "var(--card)", "var(--text)", "var(--border)"
+    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
     sty = (
         df.style
           .set_table_styles([
@@ -588,7 +627,6 @@ def usd_fmt(x):
     except: return "-"
 
 divider()
-
 mode = "Dashboard"
 divider()
 
@@ -960,8 +998,7 @@ def render_change_since_2017():
                 d = (
                     d.groupby([yscr, "Category"])
                     .apply(lambda g: (g["value"] * g["aum_usd"]).sum() / g["aum_usd"].sum() if g["aum_usd"].sum() > 0 else np.nan)
-                    .reset_index(name="value")
-                )
+                    ).reset_index(name="value")
             else:
                 d = d.groupby([yscr, "Category"], as_index=False)["value"].mean()
 
@@ -1065,7 +1102,7 @@ def render_change_since_2017():
         unsafe_allow_html=True,
     )
 
-    mv = movers.copy()
+    mv = load_top_movers_with_names().copy()
     ya   = _pick_exact(mv, "year_a") or _pick(mv, "year_a")
     yb   = _pick_exact(mv, "year_b") or _pick(mv, "year_b")
     ecol = _pick_exact(mv, "etf_ticker") or _pick(mv, "etf")
@@ -1088,6 +1125,7 @@ def render_change_since_2017():
 
     mv = mv[(mv[ya] == start_year) & (mv[yb] == end_year)].copy()
     if ecol is not None:
+        cohort = overlap if not sel_etfs else sel_etfs
         mv = mv[mv[ecol].astype(str).isin(set(cohort))]
 
     if delta_pre is not None:
@@ -1100,6 +1138,8 @@ def render_change_since_2017():
     if ecol is None:
         mv["__wETF__"] = 1.0
     else:
+        df_all = by_fund
+        aum_col = _pick(df_all, "market_total_value_usd", "aum", "net_assets")
         if weighting == "AUM-weighted" and aum_col in df_all.columns:
             aum_map = (
                 df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
@@ -1120,14 +1160,8 @@ def render_change_since_2017():
         * pd.to_numeric(mv["__wETF__"], errors="coerce").fillna(0.0)
     )
 
-    name_col = None
-    if nm25 is not None:
-        name_col = nm25
-    elif hld is not None:
-        name_col = hld
-    mv["Company"] = (
-        mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
-    )
+    name_col = nm25 if nm25 is not None else hld
+    mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
     mv["Ticker"] = mv[tick].astype(str)
     mv["Category"] = mv[cls_col].astype(str) if cls_col else "Unknown"
 
@@ -1145,12 +1179,11 @@ def render_change_since_2017():
 
     a, b = st.columns(2, gap="large")
     with a:
-        st.caption("Top 10 Increases — {0} → {1}".format(start_year, end_year))
+        st.caption(f"Top 10 Increases — {start_year} → {end_year}")
         grid(_fmt(top_increase))
     with b:
-        st.caption("Top 10 Decreases — {0} → {1}".format(start_year, end_year))
+        st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         grid(_fmt(top_decrease))
-
 
 def render_tradeoff_scenarios():
     import numpy as np
@@ -1212,9 +1245,7 @@ def render_tradeoff_scenarios():
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
 
     st.subheader("Tradeoff Scenarios")
-    st.caption(
-        "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
-    )
+    st.caption("This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance.")
 
     st.markdown("""
     <style>
@@ -1227,43 +1258,39 @@ def render_tradeoff_scenarios():
               display:flex;flex-direction:column;justify-content:center;}
       .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0; display:flex; align-items:center; gap:6px;}
       .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
-
       .t3-dl-inline-wrap{ display:flex; justify-content:flex-end; align-items:center; margin:6px 0 12px; }
       .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
       .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
                           text-decoration:none; vertical-align:baseline; transition:.12s ease; }
       .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
-
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
-
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
         width:22px;height:22px;min-width:22px;border-radius:50%;
         background:var(--primary);color:#fff;font-weight:700;font-size:12px;
         margin-left:8px;position:relative;z-index:3;
       }
-
       .has-tip{position:relative;}
       .has-tip.tip-left::after{
         content:attr(data-tip);
         position:absolute;right:0;left:auto;top:calc(100% + 10px);
-        background:var(--card);color:var(--text);border:1px solid var(--border);
+        background:#0B0D12;color:#E7EBF0;border:1px solid #1C2027;
         border-radius:12px;padding:14px 16px;line-height:1.45;
         white-space:normal;min-width:420px;max-width:720px;
-        box-shadow:0 10px 28px rgba(0,0,0,.18);
+        box-shadow:0 10px 28px rgba(0,0,0,.35);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;
       }
-      @media (prefers-color-scheme: dark) {{
-        .has-tip.tip-left::after{{ background:#0B0D12; box-shadow:0 10px 28px rgba(0,0,0,.35); }}
-      }}
-      .has-tip.tip-left:hover::after{{opacity:1;transform:translateY(0);}}
-      .has-tip.tip-narrow::after{{ min-width:320px; max-width:480px; }}
-      .has-tip.tip-wide::after  {{ min-width:560px; max-width:880px; }}
-      .has-tip.tip-full::after  {{ min-width:720px; max-width:1100px; }}
+      .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
+      .has-tip.tip-narrow::after{ min-width:320px; max-width:480px; }
+      .has-tip.tip-wide::after  { min-width:560px; max-width:880px; }
+      .has-tip.tip-full::after  { min-width:720px; max-width:1100px; }
       div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
+      @media (prefers-color-scheme: light){
+        .has-tip.tip-left::after{ background:#FFFFFF; color:#0C1116; border:1px solid #E4E8EE; box-shadow:0 10px 28px rgba(0,0,0,.10); }
+      }
     </style>
     """, unsafe_allow_html=True)
 
@@ -1487,7 +1514,7 @@ def render_tradeoff_scenarios():
                         y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=["#C77DBB", "#A47ADC"])),
+                                                        range=[COLOR_PT, COLOR_SE])),
                         size=alt.SizeValue(80),
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
@@ -1562,7 +1589,7 @@ def render_tradeoff_scenarios():
                         y=alt.Y("Value:Q", title=None, axis=alt.Axis(format=".1f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=["#C77DBB", "#A47ADC"])),
+                                                        range=[COLOR_PT, COLOR_SE])),
                         tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
                     ).properties(height=H_LEFT_BOTTOM, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
@@ -1674,7 +1701,7 @@ def render_tradeoff_scenarios():
                             y=alt.Y("%Clean:Q", title="% Clean (scenario)", axis=alt.Axis(format=".1f")),
                             color=alt.Color("Scenario:N", title=None,
                                             scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                            range=["#C77DBB", "#A47ADC"])),
+                                                            range=[COLOR_PT, COLOR_SE])),
                             size=alt.SizeValue(80),
                             tooltip=[alt.Tooltip("Scenario:N"),
                                      alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
