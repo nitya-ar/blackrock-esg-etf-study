@@ -81,212 +81,312 @@ LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", 
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-with st.sidebar:
-    theme_mode = st.radio("Theme", ["Auto", "Light", "Dark"], index=0)
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-:root{
-  --bg:#ffffff; --card:#f7f8fa; --border:#e4e7eb; --text:#0b0d12; --muted:#667084;
-  --primary:#0066cc; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
-  --header:#eff2f6; --row:#ffffff; --tooltip:#ffffff; --grid:#e9edf2;
-}
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#0A0B0D; --card:#0F1116; --border:#1C2027; --text:#E7EBF0; --muted:#97A2B0;
-    --primary:#00A3FF; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
-    --header:#11151C; --row:#0E1015; --tooltip:#0F1116; --grid:#222831;
-  }
-}
-html[data-theme="light"]{
-  color-scheme: light;
-  --bg:#ffffff; --card:#f7f8fa; --border:#e4e7eb; --text:#0b0d12; --muted:#667084;
-  --primary:#0066cc; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
-  --header:#eff2f6; --row:#ffffff; --tooltip:#ffffff; --grid:#e9edf2;
-}
-html[data-theme="dark"]{
-  color-scheme: dark;
-  --bg:#0A0B0D; --card:#0F1116; --border:#1C2027; --text:#E7EBF0; --muted:#97A2B0;
-  --primary:#00A3FF; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
-  --header:#11151C; --row:#0E1015; --tooltip:#0F1116; --grid:#222831;
-}
-
-html, body, [data-testid="stAppViewContainer"]{
-  background-color:var(--bg)!important; color:var(--text)!important;
-  font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-}
-h1, h2, h3, h4, h5{ color:var(--text); letter-spacing:.1px; }
-.blx-divider{ border-top:1px solid var(--border); margin:10px 0 24px 0; }
-.blx-muted{ color:var(--muted); }
-
-.blx-card{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:14px; padding:14px 16px; }
-.kpi{ background:linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,0)); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:0 0 0 1px rgba(0,0,0,0) inset; }
-.kpi .label{ font-size:12px; color:var(--muted); margin-bottom:6px; }
-.kpi .value{ font-size:30px; font-weight:700; line-height:1.05; }
-.kpi.kpi-red{ background:linear-gradient(180deg, rgba(198,60,65,0.12), rgba(0,0,0,0)); border-color:rgba(198,60,65,0.35); }
-.kpi.kpi-green{ background:linear-gradient(180deg, rgba(14,143,102,0.12), rgba(0,0,0,0)); border-color:rgba(14,143,102,0.35); }
-.kpi.kpi-neutral{ background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-color:rgba(0,0,0,0.08); }
-
-.stAltairChart, .stVegaLiteChart, .stPlotlyChart{ background:var(--card)!important; border:1px solid var(--border)!important; }
-.vega-embed, .stAltairChart{ background:transparent!important; }
-.vega-tooltip, .vega-tooltip *{ background:var(--tooltip)!important; color:var(--text)!important; border-color:var(--border)!important; }
-
-.info-badge{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; min-width:22px; border-radius:50%;
-  background:transparent!important; color:var(--muted)!important; border:2px solid var(--muted)!important;
-  font-weight:700; font-size:12px; margin-left:8px; vertical-align:text-bottom;
-}
-.chart-head{ display:flex; align-items:center; }
-.chart-head .chart-title{ flex:1 1 auto; }
-.chart-head .info-badge{ margin-left:auto; }
-.info-badge:hover, .info-badge:focus{ box-shadow:0 0 0 3px rgba(198,60,65,0.22); outline:none; }
-.has-tip{ position:relative; }
-.has-tip::after{
-  content: attr(data-tip);
-  position:absolute; right:0; top:calc(100% + 8px);
-  background:var(--bg); color:var(--text); border:1px solid var(--border);
-  padding:6px 10px; border-radius:8px; white-space:nowrap;
-  opacity:0; transform:translateY(6px); pointer-events:none;
-  transition:opacity .15s ease, transform .15s ease;
-  box-shadow:0 10px 24px rgba(0,0,0,.25); z-index:99999;
-}
-.has-tip:hover::after, .has-tip:focus::after{ opacity:1; transform:translateY(0); }
-
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]){
-  background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important;
-}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"]{ background:var(--card)!important; }
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-div[data-testid="stDataframe"] thead tr th{
-  background:var(--header)!important; color:var(--text)!important; border-bottom:1px solid var(--border)!important;
-}
-:where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
-div[data-testid="stDataframe"] tbody tr td{
-  background:var(--row)!important; color:var(--text)!important; border-top:1px solid var(--border)!important;
-}
-
-:where([data-testid="stTable"]) table{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important; }
-:where([data-testid="stTable"]) thead th{ background:var(--header)!important; color:var(--text)!important; border-bottom:1px solid var(--border)!important; }
-:where([data-testid="stTable"]) tbody td{ background:var(--row)!important; color:var(--text)!important; border-top:1px solid var(--border)!important; }
-
-[data-baseweb="select"], [data-baseweb="input"]{
-  border:1px solid var(--border)!important; border-radius:10px!important; background:var(--card)!important;
-}
-[data-baseweb="select"] > div, [data-baseweb="input"] > div{
-  background:var(--card)!important; border-radius:10px!important; box-shadow:none!important; border:none!important;
-}
-[data-baseweb="select"] > div *, [data-baseweb="input"] > div *{ background:transparent!important; color:var(--text)!important; }
-[data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within{
-  outline:none!important; border:1px solid var(--accent)!important;
-  box-shadow:0 0 0 3px rgba(198,60,65,0.28)!important;
-}
-[data-baseweb="input"] input::placeholder{ color:var(--muted)!important; opacity:1!important; }
-[data-baseweb="menu"]{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:12px!important; }
-[data-baseweb="menu"] li{ color:var(--text)!important; }
-[data-baseweb="menu"] li:hover{ background:var(--header)!important; }
-
-[data-baseweb="slider"] > div{ background:transparent!important; }
-[data-baseweb="slider"] div[role="presentation"]{ background:var(--border)!important; }
-[data-baseweb="slider"] div[role="presentation"] > div{ background:var(--accent)!important; }
-[data-baseweb="slider"] [role="slider"]{ background:var(--accent)!important; box-shadow:0 0 0 3px rgba(198,60,65,0.18)!important; border:0!important; }
-[data-baseweb="slider"] *{ color:var(--text)!important; }
-
-div[data-testid="stSegmentedControl"] div[role="tablist"]{
-  background:var(--row)!important; border:1px solid var(--border)!important; border-radius:12px!important;
-}
-div[data-testid="stSegmentedControl"] button[role="tab"],
-div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-div[data-testid="stSegmentedControl"] button[role="tab"] > * > *{
-  background:var(--row)!important; color:var(--muted)!important; border:none!important; box-shadow:none!important;
-}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
-div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > *{
-  background:var(--header)!important; color:var(--text)!important;
-  border:none!important; box-shadow: inset 0 0 0 1px var(--accent)!important;
-}
-
-.stTabs [data-baseweb="tab-list"]{ background:var(--row)!important; border-bottom:1px solid var(--border)!important; }
-.stTabs [data-baseweb="tab"]{ background:transparent!important; color:var(--muted)!important; border-color:transparent!important; box-shadow:none!important; }
-.stTabs [data-baseweb="tab"][aria-selected="true"]{ color:var(--text)!important; border-color:transparent!important; box-shadow: inset 0 -2px 0 var(--accent)!important; }
-
-.stDownloadButton > button, .stButton > button{
-  background:var(--header)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:12px!important;
-}
-.stDownloadButton > button:hover, .stButton > button:hover{ background:var(--row)!important; border-color:var(--border)!important; }
-
-label{ color:var(--muted)!important; font-size:13px!important; letter-spacing:.2px; }
-*::-webkit-scrollbar{ width:10px; height:10px; }
-*::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
-*::-webkit-scrollbar-track{ background:var(--bg); }
-
-[class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"], [data-baseweb="popover"] *, [data-baseweb="menu"] *{
-  background:var(--card)!important; color:var(--text)!important; border-color:var(--border)!important;
-}
-[role="listbox"]{ background:var(--card)!important; border:1px solid var(--border)!important; }
-[role="option"]{ background:transparent!important; color:var(--text)!important; }
-[role="option"][aria-selected="true"], [role="option"]:hover{ background:var(--header)!important; }
-
-div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-div[data-testid="stTable"] tbody tr:first-child td{
-  background:var(--row)!important; color:var(--text)!important;
-}
-div[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"],
-div[data-testid="stDataFrame"] [role="row"][data-focused="true"] [role="gridcell"]{
-  background:var(--header)!important;
-}
-div[data-testid="stDataFrame"], div[data-testid="stDataframe"]{
-  background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-if theme_mode in ("Light", "Dark"):
-    st.markdown(
-        f"""<script>document.documentElement.setAttribute('data-theme', '{theme_mode.lower()}');</script>""",
-        unsafe_allow_html=True
-    )
-else:
-    st.markdown("""<script>document.documentElement.removeAttribute('data-theme');</script>""",
-                unsafe_allow_html=True)
-
-# ---- Palette shim (fixes NameError by mapping to CSS variables) ----
 COLORS = {
-    "bg": "var(--bg)",
-    "card": "var(--card)",
-    "border": "var(--border)",
-    "text": "var(--text)",
-    "muted": "var(--muted)",
-    "primary": "var(--primary)",
-    "clean": "var(--clean)",
-    "contro": "var(--contro)",
-    "other": "var(--other)",
+    "bg": "#0A0B0D",
+    "card": "#0F1116",
+    "border": "#1C2027",
+    "text": "#E7EBF0",
+    "muted": "#97A2B0",
+    "primary": "#00A3FF",
+    "clean": "#0E8F66",
+    "contro": "#C63C41",
+    "other": "#768397",
 }
 
-def _alt_auto():
+def _alt_dark():
     return {
         "config": {
             "background": "transparent",
-            "view": {"fill": "transparent", "stroke": "var(--border)"},
+            "view": {"fill": "transparent", "stroke": COLORS["border"]},
             "axis": {
-                "labelColor": "var(--text)",
-                "titleColor": "var(--muted)",
-                "domainColor": "var(--border)",
-                "tickColor": "var(--border)",
+                "labelColor": COLORS["text"],
+                "titleColor": COLORS["muted"],
+                "domainColor": "#2A2F36",
+                "tickColor":   "#2A2F36",
                 "grid": True,
-                "gridColor": "var(--grid)",
+                "gridColor": "#222831",
                 "gridOpacity": 0.45
             },
-            "legend": {"labelColor": "var(--text)", "titleColor": "var(--muted)"},
-            "title": {"color": "var(--text)"},
+            "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
+            "title": {"color": COLORS["text"]},
         }
     }
 
-alt.themes.register("custom_auto", _alt_auto)
-alt.themes.enable("custom_auto")
+alt.themes.register("custom_dark", _alt_dark)
+alt.themes.enable("custom_dark")
+
+# STYLES
+st.markdown(
+    f"""
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+      :root {{
+        --bg: {COLORS['bg']};
+        --card: {COLORS['card']};
+        --border: {COLORS['border']};
+        --text: {COLORS['text']};
+        --muted: {COLORS.get('muted','#A9B4C2')};
+        --primary: {COLORS['primary']};
+        --clean: {COLORS.get('clean','#0E8F66')};
+        --contro:{COLORS.get('contro','#C63C41')};
+        --other: {COLORS.get('other','#4062FF')};
+        --accent:#C63C41;
+      }}
+
+      html, body, [data-testid="stAppViewContainer"] {{
+        background-color: var(--bg) !important;
+        color: var(--text) !important;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }}
+      h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
+      .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
+      .blx-muted {{ color: var(--muted); }}
+
+      .blx-card {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px; padding: 14px 16px;
+      }}
+      .kpi {{
+        background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+        border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+      }}
+      .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
+      .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+
+      .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
+
+      /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
+      .info-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:50%;
+        background: transparent !important;
+        color: var(--texted) !important;
+        border: 2px solid var(--texted) !important;
+        font-weight:700; font-size:12px;
+        margin-left:8px; vertical-align:text-bottom;
+      }}
+      .chart-head {{ display:flex; align-items:center; }}
+      .chart-head .chart-title {{ flex:1 1 auto; }}
+      .chart-head .info-badge {{ margin-left:auto; }}
+
+      .info-badge:hover, .info-badge:focus {{
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+        outline: none;
+      }}
+
+      .has-tip {{ position:relative; }}
+      .has-tip::after {{
+        content: attr(data-tip);
+        position:absolute; right:0; top:calc(100% + 8px);
+        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        padding:6px 10px; border-radius:8px; white-space:nowrap;
+        opacity:0; transform:translateY(6px); pointer-events:none;
+        transition:opacity .15s ease, transform .15s ease;
+        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+      }}
+      .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
+
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      div[data-testid="stDataframe"] thead tr th {{
+        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
+        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+      }}
+
+      :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
+
+      [data-baseweb="select"], [data-baseweb="input"] {{
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
+      }}
+      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+        background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
+      }}
+      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
+      [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
+        outline:none !important; border:1px solid var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
+      }}
+      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
+      [data-baseweb="menu"] {{
+        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      [data-baseweb="menu"] li {{ color:var(--text) !important; }}
+      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+
+      [data-baseweb="slider"] > div {{ background:transparent !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
+      [data-baseweb="slider"] [role="slider"] {{
+        background:var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+      }}
+      [data-baseweb="slider"] * {{ color:var(--text) !important; }}
+
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[disabled],
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
+      div[data-testid="stSegmentedControl"] button[disabled] > *,
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
+      }}
+
+      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
+
+      .stDownloadButton > button, .stButton > button {{
+        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+
+      label {{
+        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
+      }}
+      *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background:#0B0D12; }}
+
+      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+
+      [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
+      [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+        background: #10131A !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }}
+
+      [role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
+      [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
+      [role="option"][aria-selected="true"],
+      [role="option"]:hover {{ background:#161A22 !important; }}
+
+      div[data-testid="stPopover"] div[role="dialog"],
+      div[data-testid="stPopover"] div[role="dialog"] * {{
+        background:#10131A !important; color:var(--text) !important; border-color: var(--border) !important;
+      }}
+
+      .vega-tooltip, .vega-tooltip * {{
+        background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
+      }}
+
+      div[data-testid="stSegmentedControl"] div[role="tablist"],
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background:#12151C !important; color:var(--text) !important;
+        box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+      }}
+
+      /* ------- Robust cross-browser fixes for first-row/headers/hover ------- */
+      div[data-testid="stDataFrame"] [role="columnheader"],
+      div[data-testid="stDataframe"] [role="columnheader"],
+      div[data-testid="stTable"] thead th {{
+        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
+      }}
+
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stTable"] tbody td,
+      div[data-testid="stTable"] tbody tr:nth-child(odd) td,
+      div[data-testid="stTable"] tbody tr:nth-child(even) td,
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+      div[data-testid="stTable"] tbody tr:first-child td {{
+        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
+      }}
+
+      div[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"],
+      div[data-testid="stDataFrame"] [role="row"][data-focused="true"] [role="gridcell"] {{
+        background:#10131A !important;
+      }}
+
+      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
+        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+      }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown("""
+<style>
+/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
+
+/* 1) Tables — ensure first data row never flips to white */
+div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+div[data-testid="stTable"] tbody tr:first-child td {
+  background: #0E1015 !important;
+  color: #E7EBF0 !important;
+}
+
+/* 2) Tab 2: segmented control (Weighting) hover/focus states */
+div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
+div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
+  background: #151923 !important;
+  color: var(--text) !important;
+}
+
+/* 3) Tab 3: radio group (Top Added / Top Removed) dark background */
+div[data-testid="stRadio"][data-baseweb="radio"] {
+  background: #0E1015 !important;
+  border-radius: 10px !important;
+}
+div[data-testid="stRadio"][data-baseweb="radio"] > div {
+  background: transparent !important;
+}
+div[data-baseweb="radio"] label {
+  color: var(--text) !important;
+}
+div[data-baseweb="radio"] svg {
+  background: #0E1015 !important;
+  border-radius: 50%;
+}
+div[data-baseweb="radio"] input:checked + label svg {
+  box-shadow: 0 0 0 2px var(--accent) inset !important;
+}
+
+/* 4) Altair/Vega tooltip — single, pinned dark theme */
+.vega-tooltip,
+.vega-tooltip * {
+  background: #0F1116 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -295,20 +395,22 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
+    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
     sty = (
         df.style
           .set_table_styles([
-              {"selector":"table","props":[("background-color","var(--row)"),("color","var(--text)"),("border-collapse","collapse"),("border","1px solid var(--border)")]},
-              {"selector":"thead th","props":[("background-color","var(--header)"),("color","var(--text)"),("border-bottom","1px solid var(--border)"),("padding","6px 8px")]},
-              {"selector":"tbody td","props":[("background-color","var(--row)"),("color","var(--text)"),("border-top","1px solid var(--border)"),("padding","6px 8px")]}
+              {"selector":"table","props":[("background-color",bg),("color",txt),("border-collapse","collapse"),("border",f"1px solid {bdr}")]},
+              {"selector":"thead th","props":[("background-color",hdr),("color",txt),("border-bottom",f"1px solid {bdr}"),("padding","6px 8px")]},
+              {"selector":"tbody td","props":[("background-color",bg),("color",txt),("border-top",f"1px solid {bdr}"),("padding","6px 8px")]}
           ])
-          .set_properties(**{"background-color":"var(--row)", "color":"var(--text)", "border-color":"var(--border)"})
+          .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
     )
     return sty
 
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
+# LOADERS
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
@@ -385,30 +487,54 @@ def load_explorer():
     return df, df_disp, tags
 
 @st.cache_data(show_spinner=False)
-def load_exposures_by_fund_year(): return load_csv(2, "exposures_by_fund_year.csv")
-@st.cache_data(show_spinner=False)
-def load_aggregate_trends():  return load_csv(2, "aggregate_exposure_trends.csv")
-@st.cache_data(show_spinner=False)
-def load_dispersion_stats():  return load_csv(2, "exposure_dispersion_stats.csv")
-@st.cache_data(show_spinner=False)
-def load_screen_trends():     return load_csv(2, "aggregate_screen_trends.csv")
-@st.cache_data(show_spinner=False)
-def load_year_compare():      return load_csv(2, "year_compare_summary.csv")
-@st.cache_data(show_spinner=False)
-def load_top_movers_with_names(): return load_csv(2, "top_movers_with_names.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_specs():    return load_csv(3, "scenario_specs.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_metrics():  return load_csv(3, "scenario_portfolio_metrics.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_deltas():   return load_csv(3, "scenario_position_deltas.csv")
-@st.cache_data(show_spinner=False)
-def load_returns_top():       return load_csv(3, "returns_top_per_etf_2025.csv")
-@st.cache_data(show_spinner=False)
-def load_covariance_daily():  return load_csv(3, "covariance_2025.csv")
-@st.cache_data(show_spinner=False)
-def load_etf_aum_2025():      return load_csv(3, "etf_aum_2025.csv")
+def load_exposures_by_fund_year():
+    return load_csv(2, "exposures_by_fund_year.csv")
 
+@st.cache_data(show_spinner=False)
+def load_aggregate_trends():
+    return load_csv(2, "aggregate_exposure_trends.csv")
+
+@st.cache_data(show_spinner=False)
+def load_dispersion_stats():
+    return load_csv(2, "exposure_dispersion_stats.csv")
+
+@st.cache_data(show_spinner=False)
+def load_screen_trends():
+    return load_csv(2, "aggregate_screen_trends.csv")
+
+@st.cache_data(show_spinner=False)
+def load_year_compare():
+    return load_csv(2, "year_compare_summary.csv")
+
+@st.cache_data(show_spinner=False)
+def load_top_movers_with_names():
+    return load_csv(2, "top_movers_with_names.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_specs():
+    return load_csv(3, "scenario_specs.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_metrics():
+    return load_csv(3, "scenario_portfolio_metrics.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_deltas():
+    return load_csv(3, "scenario_position_deltas.csv")
+
+@st.cache_data(show_spinner=False)
+def load_returns_top():
+    return load_csv(3, "returns_top_per_etf_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_covariance_daily():
+    return load_csv(3, "covariance_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_etf_aum_2025():
+    return load_csv(3, "etf_aum_2025.csv")
+
+# HEADER CONTENT
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -445,14 +571,9 @@ def usd_fmt(x):
     except: return "-"
 
 divider()
+
 mode = "Dashboard"
 divider()
-
-# -------------------- RENDER fns + BODY (unchanged from your version) --------------------
-# paste your existing render_change_since_2017(), render_tradeoff_scenarios(), tabs, footer, etc.
-# Everything below remains the same as your provided code.
-# ........................................................................................
-
 
 # RENDER: Change since 2017
 def render_change_since_2017():
