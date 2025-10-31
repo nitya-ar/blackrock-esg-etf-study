@@ -413,47 +413,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# FINAL OVERRIDES ONLY (your two tweaks)
 st.markdown("""
 <style>
-div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-div[data-testid="stTable"] tbody tr:first-child td {
-  background: #0E1015 !important;
-  color: #E7EBF0 !important;
-}
+/* Light theme: force all tables to pure white (wrapper, headers, cells, borders) */
 @media (prefers-color-scheme: light) {
-  div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-  div[data-testid="stTable"] tbody tr:first-child td {
-    background: #FFFFFF !important;
-    color: #0C1116 !important;
-  }
-}
-div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
-div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
-  background: #151923 !important;
-  color: var(--text) !important;
-}
-@media (prefers-color-scheme: light) {
-  div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
-  div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
-    background: #EEF2F7 !important;
-    color: #0C1116 !important;
-  }
-}
-.vega-tooltip, .vega-tooltip * {
-  background: #0F1116 !important;
-  color: #E7EBF0 !important;
-  border-color: #1C2027 !important;
-}
-@media (prefers-color-scheme: light) {
-  .vega-tooltip, .vega-tooltip * {
-    background: #FFFFFF !important;
-    color: #0C1116 !important;
-    border-color: #E4E8EE !important;
-  }
-<style>
-/* LIGHT THEME: tables should look white */
-@media (prefers-color-scheme: light) {
-  /* st.dataframe / AgGrid wrapper */
   div[data-testid="stDataFrame"],
   div[data-testid="stDataframe"],
   div[data-testid="stTable"] {
@@ -461,8 +425,6 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
     border:1px solid #EDF2F8 !important;
     border-radius:12px !important;
   }
-
-  /* headers -> white, subtle divider */
   div[data-testid="stDataFrame"] [role="columnheader"],
   div[data-testid="stDataframe"] [role="columnheader"],
   div[data-testid="stTable"] thead th {
@@ -470,8 +432,6 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
     color:#0C1116 !important;
     border-bottom:1px solid #EDF2F8 !important;
   }
-
-  /* body cells -> white, ultra-light row lines */
   div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
   div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
   div[data-testid="stTable"] tbody td {
@@ -481,9 +441,8 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
   }
 }
 
-/* LIGHT THEME: make chart gridlines much lighter everywhere */
+/* Light theme: make chart gridlines much lighter */
 @media (prefers-color-scheme: light) {
-  /* Vega/Altair gridlines + axes */
   .vega-embed .role-axis-grid {
     stroke:#F3F6FA !important;
     opacity:.28 !important;
@@ -495,7 +454,6 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
   }
 }
 </style>
-
 """, unsafe_allow_html=True)
 
 def divider():
@@ -682,6 +640,7 @@ divider()
 mode = "Dashboard"
 divider()
 
+# RENDER: Change since 2017
 def render_change_since_2017():
     import numpy as np
     import pandas as pd
@@ -1237,6 +1196,7 @@ def render_change_since_2017():
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         grid(_fmt(top_decrease))
 
+# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
