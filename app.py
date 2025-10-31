@@ -987,9 +987,9 @@ def render_change_since_2017():
             d["screen_category"]
             .astype(str)
             .str.strip()
-            .replace({"Prison": "Prisons", "Fossil_fuel": "Fossil Fuel", "Clean200": "Clean"})
+            .replace({"Prison": "Prisons", "Fossil_fuel": "Fossil Fuel"})
         )
-        keep = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+        keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
         d = d[d["Category"].isin(keep)]
 
         if etf_scr and yscr:
@@ -1006,7 +1006,7 @@ def render_change_since_2017():
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
-            SCREEN_DOMAIN = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+            SCREEN_DOMAIN = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
             SCREEN_COLORS = [
                 "var(--clean)",
                 "var(--scr-prisons)",
