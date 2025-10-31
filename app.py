@@ -74,15 +74,7 @@ if _icon_bytes:
         unsafe_allow_html=True,
     )
 
-# ---------- Theme detection (auto from OS, persisted in ?theme=) ----------
-try:
-    q = st.query_params
-    get_param = q.get
-    set_params = q.update
-except Exception:
-    get_param = st.experimental_get_query_params
-    def set_params(d): st.experimental_set_query_params(**d)
-
+# ---------- Theme detection (auto from OS; persisted in ?theme=) ----------
 st.markdown("""
 <script>
 (function(){
@@ -108,9 +100,20 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-params = get_param()
-THEME = (params["theme"] if isinstance(params.get("theme"), str) else (params.get("theme",[None])[0])) or "dark"
-THEME = "dark" if str(THEME).lower().strip() not in ("light","dark") else str(THEME).lower().strip()
+try:
+    params = st.experimental_get_query_params()
+except Exception:
+    params = {}
+
+theme_param = None
+val = params.get("theme")
+if isinstance(val, list) and val:
+    theme_param = val[0]
+elif isinstance(val, str):
+    theme_param = val
+THEME = str(theme_param or "dark").lower().strip()
+if THEME not in ("dark", "light"):
+    THEME = "dark"
 
 PALETTE = {
     "dark": dict(
@@ -129,7 +132,7 @@ PALETTE = {
 COLORS = PALETTE[THEME]
 BAR_STROKE = COLORS["bar_stroke"]
 
-# ---------- Altair themes for both modes ----------
+# ---------- Altair themes (readable axes/labels in both modes) ----------
 def _alt_theme_dark():
     return {
         "config": {
@@ -143,6 +146,8 @@ def _alt_theme_dark():
                 "grid": True,
                 "gridColor": "#222831",
                 "gridOpacity": 0.45,
+                "labelFontSize": 12,
+                "titleFontSize": 12
             },
             "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
             "title": {"color": COLORS["text"]},
@@ -162,6 +167,8 @@ def _alt_theme_light():
                 "grid": True,
                 "gridColor": "#EDF2F7",
                 "gridOpacity": 1.0,
+                "labelFontSize": 12,
+                "titleFontSize": 12
             },
             "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
             "title": {"color": COLORS["text"]},
@@ -172,7 +179,7 @@ alt.themes.register("custom_dark", _alt_theme_dark)
 alt.themes.register("custom_light", _alt_theme_light)
 alt.themes.enable("custom_dark" if THEME=="dark" else "custom_light")
 
-# ---------- Global CSS (dual-theme variables; no forced dark) ----------
+# ---------- Global CSS (dual-theme vars; no forced color-scheme) ----------
 st.markdown(f"""
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -201,11 +208,6 @@ st.markdown(f"""
   .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
   .blx-muted {{ color: var(--muted); }}
 
-  .blx-card {{
-    background: var(--card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 14px; padding: 14px 16px;
-  }}
   .kpi {{
     background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
     border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
@@ -215,9 +217,11 @@ st.markdown(f"""
   .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
   .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
   .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
-  .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+  .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0)); border-color: rgba(0,0,0,0.06); }}
 
-  .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+  .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{
+    background: var(--card) !important; border: 1px solid var(--border) !important;
+  }}
   .vega-embed, .stAltairChart {{ background: transparent !important; }}
   .vega-tooltip, .vega-tooltip * {{ background: var(--tooltip-bg) !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
@@ -362,7 +366,7 @@ divider()
 mode = "Dashboard"
 divider()
 
-# ---------- TAB 1: 2025 Overview ----------
+# ---------- TAB 1 ----------
 def render_tab1():
     st.subheader("2025 Overview")
 
@@ -543,13 +547,14 @@ def render_tab1():
     csv_bytes = df_f.to_csv(index=False).encode("utf-8")
     st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
 
-# ---------- TAB 2 and TAB 3 stubs (drop your existing functions if you want them unchanged) ----------
+# ---------- Tab 2 & 3 placeholders (paste your full themed funcs if needed) ----------
 def render_change_since_2017():
     st.subheader("Change since 2017")
-    st.info("This tab uses your existing logic. If you want me to paste the full themed version here as well, say “paste Tab 2 themed”.")
+    st.info("Say “paste Tab 2 themed” if you want the full dual-theme version here.")
+
 def render_tradeoff_scenarios():
     st.subheader("Tradeoff Scenarios")
-    st.info("This tab uses your existing logic. If you want me to paste the full themed version here as well, say “paste Tab 3 themed”.")
+    st.info("Say “paste Tab 3 themed” if you want the full dual-theme version here.")
 
 # ---------- BODY ----------
 if mode == "Dashboard":
