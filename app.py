@@ -200,12 +200,13 @@ st.markdown(
         .vega-tooltip, .vega-tooltip * {{ background:#FFFFFF !important; color:#0C1116 !important; border-color:#E4E8EE !important; }}
       }}
 
+      /* INFO BADGE — EXACTLY LIKE CODE 1 */
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:50%;
-        background: transparent !important;
-        color: var(--texted) !important;
-        border: 2px solid var(--texted) !important;
+        background: var(--card) !important;
+        color: var(--muted) !important;
+        border: 1px solid var(--muted) !important;
         font-weight:700; font-size:12px;
         margin-left:8px; vertical-align:text-bottom;
       }}
@@ -214,8 +215,8 @@ st.markdown(
       .chart-head .info-badge {{ margin-left:auto; }}
 
       .info-badge:hover, .info-badge:focus{{
-      box-shadow:0 0 0 3px rgba(198,60,65,0.22);
-      outline:none;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.22);
+        outline:none;
       }}
 
       .has-tip {{ position:relative; }}
@@ -807,9 +808,10 @@ def render_change_since_2017():
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
     with k1:
+        # CHANGE #2: use standard kpi-neutral (no custom inline bg) so light theme shading matches others
         st.markdown(
             f"""
-            <div class="kpi kpi-neutral" style="background:linear-gradient(180deg, rgba(231,235,240,0.06), rgba(255,255,255,0));">
+            <div class="kpi kpi-neutral">
               <div class="label">Net improvement (Clean − Controversial)</div>
               <div class="value">{(net_delta if net_delta is not None else 0):+,.1f} pp</div>
             </div>
@@ -1271,13 +1273,14 @@ def render_tradeoff_scenarios():
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
+      /* INFO BADGE — EXACTLY LIKE CODE 1 (tab 3 scope too) */
       .info-badge{
-      display:inline-flex;align-items:center;justify-content:center;
-      width:22px;height:22px;min-width:22px;border-radius:50%;
-      background:transparent !important;
-      color:var(--texted) !important;
-      border:2px solid var(--texted) !important;
-      font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
+        display:inline-flex;align-items:center;justify-content:center;
+        width:22px;height:22px;min-width:22px;border-radius:50%;
+        background: var(--card) !important;
+        color: var(--muted) !important;
+        border: 1px solid var(--muted) !important;
+        font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
       .has-tip.tip-left::after{content:attr(data-tip);position:absolute;right:0;left:auto;top:calc(100% + 10px);
@@ -1445,7 +1448,7 @@ def render_tradeoff_scenarios():
             ]
         comp_df = pd.DataFrame(comp_rows)
         if not comp_df.empty and comp_df["Value"].notna().any():
-            comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=scen_order, ordered=True)
+            comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
             comp_chart = (
                 alt.Chart(comp_df)
