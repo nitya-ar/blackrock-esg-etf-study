@@ -1,4 +1,5 @@
-# HEADER
+Final Code 
+
 import os
 from io import StringIO, BytesIO
 import urllib.parse
@@ -75,23 +76,6 @@ if _icon_bytes:
         unsafe_allow_html=True,
     )
 
-# THEME MODE DETECTION (no UI): ?theme=light or env/secret ESG_LIGHT=1 forces light palette
-def _get_query_param(name: str, default: str = "") -> str:
-    try:
-        q = st.query_params
-        if isinstance(q, dict) and name in q:
-            v = q.get(name)
-            if isinstance(v, list):
-                return (v[0] if v else default) or default
-            return v or default
-    except Exception:
-        pass
-    return default
-
-_force_light = str(st.secrets.get("ESG_LIGHT", os.getenv("ESG_LIGHT", ""))).strip().lower() in ("1","true","yes","y")
-_theme_param = _get_query_param("theme", "").strip().lower()
-IS_LIGHT = _force_light or (_theme_param == "light")
-
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
 DASH_BASE_PATH   = st.secrets.get("ESG_DASH_PATH", os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard"))
@@ -99,8 +83,7 @@ LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", 
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-# DARK PALETTE (unchanged)
-COLORS_DARK = {
+COLORS = {
     "bg": "#0A0B0D",
     "card": "#0F1116",
     "border": "#1C2027",
@@ -110,100 +93,68 @@ COLORS_DARK = {
     "clean": "#0E8F66",
     "contro": "#C63C41",
     "other": "#768397",
-    "axisDomain": "#2A2F36",
-    "grid": "#222831",
-    "texted": "#E7EBF0"
 }
 
-# LIGHT PALETTE (new)
-COLORS_LIGHT = {
-    "bg": "#FFFFFF",
-    "card": "#FFFFFF",
-    "border": "#E3E8EF",
-    "text": "#0B0F18",
-    "muted": "#475467",
-    "primary": "#0B5FFF",
-    "clean": "#13795B",
-    "contro": "#C63C41",
-    "other": "#667085",
-    "axisDomain": "#CBD5E1",
-    "grid": "#E9EDF3",
-    "texted": "#3A3F47"
-}
-
-COLORS = COLORS_LIGHT if IS_LIGHT else COLORS_DARK
-
-def _alt_dark():
+def _alt_auto():
     return {
         "config": {
             "background": "transparent",
-            "view": {"fill": "transparent", "stroke": COLORS_DARK["border"]},
+            "view": {"fill": "transparent", "stroke": "var(--border)"},
             "axis": {
-                "labelColor": COLORS_DARK["text"],
-                "titleColor": COLORS_DARK["muted"],
-                "domainColor": COLORS_DARK["axisDomain"],
-                "tickColor":   COLORS_DARK["axisDomain"],
+                "labelColor": "var(--text)",
+                "titleColor": "var(--muted)",
+                "domainColor": "var(--grid)",
+                "tickColor":   "var(--grid)",
                 "grid": True,
-                "gridColor": COLORS_DARK["grid"],
+                "gridColor": "var(--grid)",
                 "gridOpacity": 0.45
             },
-            "legend": {"labelColor": COLORS_DARK["text"], "titleColor": COLORS_DARK["muted"]},
-            "title": {"color": COLORS_DARK["text"]},
+            "legend": {"labelColor": "var(--text)", "titleColor": "var(--muted)"},
+            "title": {"color": "var(--text)"},
             "range": {
-                "category": [COLORS_DARK["clean"], COLORS_DARK["contro"], COLORS_DARK["other"]]
+                "category": [COLORS["clean"], COLORS["contro"], COLORS["other"]]
             }
         }
     }
 
-def _alt_light():
-    return {
-        "config": {
-            "background": "transparent",
-            "view": {"fill": "transparent", "stroke": COLORS_LIGHT["border"]},
-            "axis": {
-                "labelColor": COLORS_LIGHT["text"],
-                "titleColor": COLORS_LIGHT["muted"],
-                "domainColor": COLORS_LIGHT["axisDomain"],
-                "tickColor":   COLORS_LIGHT["axisDomain"],
-                "grid": True,
-                "gridColor": COLORS_LIGHT["grid"],
-                "gridOpacity": 0.8
-            },
-            "legend": {"labelColor": COLORS_LIGHT["text"], "titleColor": COLORS_LIGHT["muted"]},
-            "title": {"color": COLORS_LIGHT["text"]},
-            "range": {
-                "category": [COLORS_LIGHT["clean"], COLORS_LIGHT["contro"], COLORS_LIGHT["other"]]
-            },
-            "mark": {
-                "stroke": None
-            }
-        }
-    }
+alt.themes.register("custom_auto", _alt_auto)
+alt.themes.enable("custom_auto")
 
-alt.themes.register("custom_dark", _alt_dark)
-alt.themes.register("custom_light", _alt_light)
-alt.themes.enable("custom_light" if IS_LIGHT else "custom_dark")
-
-# STYLES
 st.markdown(
     f"""
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
       :root {{
-        --bg: {COLORS['bg']};
-        --card: {COLORS['card']};
-        --border: {COLORS['border']};
-        --text: {COLORS['text']};
-        --muted: {COLORS.get('muted','#A9B4C2')};
+        --bg: #F7F8FA;
+        --card: #FFFFFF;
+        --border: #E3E8EF;
+        --text: #0B0D12;
+        --muted: #5B6573;
         --primary: {COLORS['primary']};
         --clean: {COLORS.get('clean','#0E8F66')};
         --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
+        --grid: #D8DFE7;
         --accent:#C63C41;
-        --axisDomain:{COLORS.get('axisDomain', COLORS['border'])};
-        --grid:{COLORS.get('grid', COLORS['border'])};
-        --texted:{COLORS.get('texted', COLORS['text'])};
+        --texted:#E7EBF0;
+      }}
+
+      @media (prefers-color-scheme: dark) {{
+        :root {{
+          --bg: {COLORS['bg']};
+          --card: {COLORS['card']};
+          --border: {COLORS['border']};
+          --text: {COLORS['text']};
+          --muted: {COLORS.get('muted','#A9B4C2')};
+          --primary: {COLORS['primary']};
+          --clean: {COLORS.get('clean','#0E8F66')};
+          --contro:{COLORS.get('contro','#C63C41')};
+          --other: {COLORS.get('other','#768397')};
+          --grid: #222831;
+          --accent:#C63C41;
+          --texted:#E7EBF0;
+        }}
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
@@ -213,7 +164,7 @@ st.markdown(
       }}
       h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
       .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
-        .blx-muted {{ color: var(--muted); }}
+      .blx-muted {{ color: var(--muted); }}
 
       .blx-card {{
         background: var(--card) !important;
@@ -221,20 +172,29 @@ st.markdown(
         border-radius: 14px; padding: 14px 16px;
       }}
       .kpi {{
-        background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+        background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
         border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        .kpi {{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset; }}
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
-      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
-      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
-      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.10), rgba(0,0,0,0)); border-color: rgba(198,60,65,0.35); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.10), rgba(0,0,0,0)); border-color: rgba(14,143,102,0.35); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0)); border-color: rgba(0,0,0,0.06); }}
+      @media (prefers-color-scheme: dark) {{
+        .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      }}
 
       .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
 
-      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
+      .vega-tooltip, .vega-tooltip * {{ background: var(--card) !important; color:var(--text) !important; border-color:var(--border) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
+      }}
 
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
@@ -248,16 +208,24 @@ st.markdown(
       .chart-head {{ display:flex; align-items:center; }}
       .chart-head .chart-title {{ flex:1 1 auto; }}
       .chart-head .info-badge {{ margin-left:auto; }}
-      .info-badge:hover, .info-badge:focus {{ box-shadow: 0 0 0 3px rgba(198,60,65,0.22); outline: none; }}
+
+      .info-badge:hover, .info-badge:focus {{
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+        outline: none;
+      }}
+
       .has-tip {{ position:relative; }}
       .has-tip::after {{
         content: attr(data-tip);
         position:absolute; right:0; top:calc(100% + 8px);
-        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        background: var(--card); color:var(--text); border:1px solid var(--border);
         padding:6px 10px; border-radius:8px; white-space:nowrap;
         opacity:0; transform:translateY(6px); pointer-events:none;
         transition:opacity .15s ease, transform .15s ease;
-        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+        box-shadow:0 10px 24px rgba(0,0,0,.12); z-index:99999;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        .has-tip::after {{ background:#0B0D12; box-shadow:0 10px 24px rgba(0,0,0,.45); }}
       }}
       .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
@@ -267,19 +235,33 @@ st.markdown(
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
       div[data-testid="stDataframe"] thead tr th {{
-        background: #11151C !important; color: var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+        background: #F2F5F9 !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+        div[data-testid="stDataframe"] thead tr th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
       div[data-testid="stDataframe"] tbody tr td {{
-        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+        background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+        div[data-testid="stDataframe"] tbody tr td {{ background:#0E1015 !important; border-top:1px solid #12151C !important; }}
       }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
-      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
+      :where([data-testid="stTable"]) thead th {{ background:#F2F5F9 !important; color:var(--text) !important; border-bottom:1px solid var(--border) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        :where([data-testid="stTable"]) thead th {{ background:#11151C !important; border-bottom:1px solid #2A2F36 !important; }}
+      }}
+      :where([data-testid="stTable"]) tbody td {{ background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; border-top:1px solid #12151C !important; }}
+      }}
 
       [data-baseweb="select"], [data-baseweb="input"] {{
-        border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background:var(--card) !important;
       }}
       [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
         background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
@@ -287,97 +269,88 @@ st.markdown(
       [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
       [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
         outline:none !important; border:1px solid var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important;
       }}
       [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
       [data-baseweb="menu"] {{
-        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       [data-baseweb="menu"] li {{ color:var(--text) !important; }}
-      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+      [data-baseweb="menu"] li:hover {{ background:rgba(0,0,0,0.04) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+      }}
 
       [data-baseweb="slider"] > div {{ background:transparent !important; }}
-      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:var(--border) !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
       [data-baseweb="slider"] [role="slider"] {{
         background:var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.12) !important; border:0 !important;
       }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:var(--card) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
       div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+        background:var(--card) !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
       }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"],
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:#12151C !important; color:var(--text) !important;
+        background:var(--card) !important; color:var(--text) !important;
         border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
       }}
-      div[data-testid="stSegmentedControl"] button[disabled],
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
-      div[data-testid="stSegmentedControl"] button[disabled] > *,
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
-        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
-      }}
 
-      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab-list"] {{ background:var(--card) !important; border-bottom:1px solid var(--border) !important; }}
       .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
       .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
 
       .stDownloadButton > button, .stButton > button {{
-        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:rgba(0,0,0,0.04) !important; border-color:var(--border) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+      }}
 
       label {{ color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px; }}
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
-      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
-      *::-webkit-scrollbar-track {{ background:#0B0D12; }}
-
-      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: {"light" if IS_LIGHT else "dark"} !important; }}
+      *::-webkit-scrollbar-thumb {{ background:var(--border); border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background:var(--bg); }}
 
       [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
       [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
-        background: #10131A !important;
+        background: var(--card) !important;
         color: var(--text) !important;
         border-color: var(--border) !important;
       }}
 
-      [role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
+      [role="listbox"] {{ background:var(--card) !important; border:1px solid var(--border) !important; }}
       [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
       [role="option"][aria-selected="true"],
-      [role="option"]:hover {{ background:#161A22 !important; }}
+      [role="option"]:hover {{ background:rgba(0,0,0,0.04) !important; }}
+      @media (prefers-color-scheme: dark) {{
+        [role="option"][aria-selected="true"], [role="option"]:hover {{ background:#161A22 !important; }}
+      }}
 
       div[data-testid="stPopover"] div[role="dialog"],
       div[data-testid="stPopover"] div[role="dialog"] * {{
-        background:#10131A !important; color:var(--text) !important; border-color: var(--border) !important;
-      }}
-
-      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
-
-      div[data-testid="stSegmentedControl"] div[role="tablist"],
-      div[data-testid="stSegmentedControl"] button[role="tab"],
-      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-        background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
-      }}
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:#12151C !important; color:var(--text) !important;
-        box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
+        background:var(--card) !important; color:var(--text) !important; border-color: var(--border) !important;
       }}
 
       div[data-testid="stDataFrame"] [role="columnheader"],
       div[data-testid="stDataframe"] [role="columnheader"],
       div[data-testid="stTable"] thead th {{
-        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
+        background:#F2F5F9 !important; color:var(--text) !important; border-bottom:1px solid var(--border) !important;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        div[data-testid="stDataFrame"] [role="columnheader"],
+        div[data-testid="stDataframe"] [role="columnheader"],
+        div[data-testid="stTable"] thead th {{ background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important; }}
       }}
 
       div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
@@ -387,70 +360,49 @@ st.markdown(
       div[data-testid="stTable"] tbody tr:nth-child(even) td,
       div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
       div[data-testid="stTable"] tbody tr:first-child td {{
-        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
+        background:#FFFFFF !important; color:var(--text) !important; border-top:1px solid var(--border) !important;
       }}
-
-      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
-        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+      @media (prefers-color-scheme: dark) {{
+        div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
+        div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
+        div[data-testid="stTable"] tbody td,
+        div[data-testid="stTable"] tbody tr:nth-child(odd) td,
+        div[data-testid="stTable"] tbody tr:nth-child(even) td,
+        div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+        div[data-testid="stTable"] tbody tr:first-child td {{
+          background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
+        }}
       }}
-
-      /* ===== LIGHT OVERRIDES (activate when ?theme=light or ESG_LIGHT=1) ===== */
-      {"".join([
-      """
-      html.light, body.light, body.light [data-testid="stAppViewContainer"] { background-color: #FFFFFF !important; }
-      body.light .stAltairChart, body.light .stVegaLiteChart, body.light .stPlotlyChart { background:#FFFFFF !important; border:1px solid #E3E8EF !important; }
-      body.light .vega-tooltip, body.light .vega-tooltip * { background:#FFFFFF !important; color:#0B0F18 !important; border-color:#E3E8EF !important; }
-      body.light .info-badge { color: var(--texted) !important; border-color: var(--texted) !important; }
-      body.light :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) { background:#FFFFFF !important; border:1px solid #E3E8EF !important; }
-      body.light :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
-      body.light :where([data-testid="stTable"]) thead th { background:#F8FAFC !important; color:#0B0F18 !important; border-bottom:1px solid #E3E8EF !important; }
-      body.light :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
-      body.light :where([data-testid="stTable"]) tbody td { background:#FFFFFF !important; color:#0B0F18 !important; border-top:1px solid #F2F4F7 !important; }
-      body.light div[data-testid="stSegmentedControl"] div[role="tablist"] { background:#FFFFFF !important; border:1px solid #E3E8EF !important; }
-      body.light div[data-testid="stSegmentedControl"] button[role="tab"] { color:#475467 !important; }
-      body.light div[data-testid="stSegmentedControl"] button[aria-selected="true"] { color:#0B0F18 !important; box-shadow: inset 0 0 0 1px #0B5FFF !important; }
-      body.light .stDownloadButton > button, body.light .stButton > button { background:#F8FAFC !important; color:#0B0F18 !important; border:1px solid #E3E8EF !important; }
-      """
-      ])}
     </style>
-    <script>
-      (function() {{
-        const forceLight = {str(IS_LIGHT).lower()};
-        if (forceLight) document.body.classList.add('light');
-      }})();
-    </script>
     """,
     unsafe_allow_html=True,
 )
 
 st.markdown("""
 <style>
-/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
 div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
 div[data-testid="stTable"] tbody tr:first-child td {
-  background: #0E1015 !important;
-  color: #E7EBF0 !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
 }
 div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
 div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
-  background: #151923 !important;
+  background: rgba(0,0,0,0.04) !important;
   color: var(--text) !important;
 }
-div[data-testid="stRadio"][data-baseweb="radio"] {
-  background: #0E1015 !important;
-  border-radius: 10px !important;
+@media (prefers-color-scheme: dark) {
+  div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
+  div[data-testid="stSegmentedControl"] button[role="tab"]:focus { background: #151923 !important; }
+  div[data-testid="stRadio"][data-baseweb="radio"] { background: #0E1015 !important; border-radius: 10px !important; }
+  div[data-baseweb="radio"] svg { background: #0E1015 !important; border-radius: 50%; }
+  div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
 }
-div[data-testid="stRadio"][data-baseweb="radio"] > div { background: transparent !important; }
+div[data-baseweb="radio"] > div { background: transparent !important; }
 div[data-baseweb="radio"] label { color: var(--text) !important; }
-div[data-baseweb="radio"] svg { background: #0E1015 !important; border-radius: 50%; }
-div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
-.vega-tooltip, .vega-tooltip * { background: #0F1116 !important; color: var(--text) !important; border-color: var(--border) !important; }
-
-/* LIGHT: ensure tables never look empty */
-body.light div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-body.light div[data-testid="stTable"] tbody tr:first-child td {
-  background: #FFFFFF !important;
-  color: #0B0F18 !important;
+.vega-tooltip, .vega-tooltip * {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -462,10 +414,7 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
-    if IS_LIGHT:
-        bg, hdr, txt, bdr = "#FFFFFF", "#F8FAFC", "#0B0F18", "#E3E8EF"
-    else:
-        bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
+    bg, hdr, txt, bdr = "var(--card)", "var(--card)", "var(--text)", "var(--border)"
     sty = (
         df.style
           .set_table_styles([
@@ -480,36 +429,6 @@ def style_dark_df(df: pd.DataFrame):
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
-# CHART HELPERS (remove dark outlines in LIGHT)
-def _bar_mark():
-    if IS_LIGHT:
-        return dict(opacity=0.92, strokeOpacity=0, strokeWidth=0)
-    return dict(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6)
-
-def _area_band_mark():
-    if IS_LIGHT:
-        return dict(opacity=0.1, strokeOpacity=0)
-    return dict(opacity=0.1)
-
-def _line_mark():
-    if IS_LIGHT:
-        return dict(strokeWidth=2.5)
-    return dict(strokeWidth=3)
-
-def _point_mark():
-    if IS_LIGHT:
-        return dict(size=90, filled=True)
-    return dict(size=110, filled=True)
-
-def _zero_rule(h):
-    return (
-        alt.Chart(pd.DataFrame({"y": [0]}))
-        .mark_rule(opacity=0.35 if not IS_LIGHT else 0.5, stroke=COLORS["grid"])
-        .encode(y="y:Q")
-        .properties(height=h)
-    )
-
-# LOADERS
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
@@ -633,7 +552,6 @@ def load_covariance_daily():
 def load_etf_aum_2025():
     return load_csv(3, "etf_aum_2025.csv")
 
-# HEADER CONTENT
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -674,7 +592,6 @@ divider()
 mode = "Dashboard"
 divider()
 
-# RENDER: Change since 2017
 def render_change_since_2017():
     import numpy as np
     import pandas as pd
@@ -727,7 +644,7 @@ def render_change_since_2017():
     def _zero_rule(h):
         return (
             alt.Chart(pd.DataFrame({"y": [0]}))
-            .mark_rule(opacity=0.35 if not IS_LIGHT else 0.5, stroke="#E9EDF3" if IS_LIGHT else "#222831")
+            .mark_rule(opacity=0.35)
             .encode(y="y:Q")
             .properties(height=h)
         )
@@ -841,8 +758,8 @@ def render_change_since_2017():
                 scale=alt.Scale(domain=y_dom, zero=False, nice=True),
             ),
         )
-        line = base.mark_line(**_line_mark(), color=color)
-        pts  = base.mark_point(**_point_mark(), color=color)
+        line = base.mark_line(color=color, strokeWidth=3)
+        pts  = base.mark_point(color=color, size=110, filled=True)
         return alt.layer(_zero_rule(height), line, pts).resolve_scale(y="shared").properties(height=height)
 
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
@@ -939,7 +856,7 @@ def render_change_since_2017():
         band_df = pd.concat([band_clean, band_contro], ignore_index=True)
         band_layer = (
             alt.Chart(band_df)
-            .mark_area(**_area_band_mark())
+            .mark_area(opacity=0.10)
             .encode(
                 x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
                 y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=y_dom, zero=False, nice=True)),
@@ -988,8 +905,8 @@ def render_change_since_2017():
             alt.layer(
                 _zero_rule(H),
                 band_layer,
-                base_comb.mark_line(**_line_mark(), clip=True),
-                base_comb.mark_point(**_point_mark(), clip=True),
+                base_comb.mark_line(clip=True),
+                base_comb.mark_point(clip=True, filled=True),
             ).resolve_scale(y="shared"),
             use_container_width=True,
         )
@@ -1084,8 +1001,8 @@ def render_change_since_2017():
             st.altair_chart(
                 alt.layer(
                     _zero_rule(H),
-                    base.mark_line(**_line_mark(), opacity=0.95),
-                    base.mark_point(**_point_mark(), opacity=0.95),
+                    base.mark_line(strokeWidth=2, opacity=0.95),
+                    base.mark_point(size=40, opacity=0.95, filled=True),
                 ).resolve_scale(y="shared"),
                 use_container_width=True,
             )
@@ -1115,10 +1032,10 @@ def render_change_since_2017():
             comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
             comp_chart = (
                 alt.Chart(comp_df)
-                .mark_bar(**_bar_mark())
+                .mark_bar(opacity=0.92)
                 .encode(
                     x=alt.X("Year:N", title=None),
-                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True, gridColor=COLORS["grid"]), title="Portfolio share"),
+                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True), title="Portfolio share"),
                     color=alt.Color(
                         "Category:N",
                         title=None,
@@ -1183,10 +1100,10 @@ def render_change_since_2017():
     if ecol is None:
         mv["__wETF__"] = 1.0
     else:
-        if weighting == "AUM-weighted" and "market_total_value_usd" in df_all.columns:
+        if weighting == "AUM-weighted" and aum_col in df_all.columns:
             aum_map = (
                 df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
-                .groupby(etf_col, as_index=True)["market_total_value_usd"]
+                .groupby(etf_col, as_index=True)[aum_col]
                 .first()
                 .astype(float)
             )
@@ -1228,14 +1145,13 @@ def render_change_since_2017():
 
     a, b = st.columns(2, gap="large")
     with a:
-        st.caption(f"Top 10 Increases — {start_year} → {end_year}")
+        st.caption("Top 10 Increases — {0} → {1}".format(start_year, end_year))
         grid(_fmt(top_increase))
     with b:
-        st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
+        st.caption("Top 10 Decreases — {0} → {1}".format(start_year, end_year))
         grid(_fmt(top_decrease))
 
 
-# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1322,23 +1238,31 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      .info-badge{ /* stays bound to --texted, do not touch */ }
+      .info-badge{
+        display:inline-flex;align-items:center;justify-content:center;
+        width:22px;height:22px;min-width:22px;border-radius:50%;
+        background:var(--primary);color:#fff;font-weight:700;font-size:12px;
+        margin-left:8px;position:relative;z-index:3;
+      }
 
       .has-tip{position:relative;}
       .has-tip.tip-left::after{
         content:attr(data-tip);
         position:absolute;right:0;left:auto;top:calc(100% + 10px);
-        background:#0B0D12;color:var(--text);border:1px solid var(--border);
+        background:var(--card);color:var(--text);border:1px solid var(--border);
         border-radius:12px;padding:14px 16px;line-height:1.45;
         white-space:normal;min-width:420px;max-width:720px;
-        box-shadow:0 10px 28px rgba(0,0,0,.35);
+        box-shadow:0 10px 28px rgba(0,0,0,.18);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;
       }
-      .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
-      .has-tip.tip-narrow::after{ min-width:320px; max-width:480px; }
-      .has-tip.tip-wide::after  { min-width:560px; max-width:880px; }
-      .has-tip.tip-full::after  { min-width:720px; max-width:1100px; }
+      @media (prefers-color-scheme: dark) {{
+        .has-tip.tip-left::after{{ background:#0B0D12; box-shadow:0 10px 28px rgba(0,0,0,.35); }}
+      }}
+      .has-tip.tip-left:hover::after{{opacity:1;transform:translateY(0);}}
+      .has-tip.tip-narrow::after{{ min-width:320px; max-width:480px; }}
+      .has-tip.tip-wide::after  {{ min-width:560px; max-width:880px; }}
+      .has-tip.tip-full::after  {{ min-width:720px; max-width:1100px; }}
       div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
     </style>
     """, unsafe_allow_html=True)
@@ -1497,7 +1421,7 @@ def render_tradeoff_scenarios():
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
             comp_chart = (
                 alt.Chart(comp_df)
-                .mark_bar(**_bar_mark())
+                .mark_bar(opacity=0.92)
                 .encode(
                     x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
                     y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
@@ -1563,7 +1487,7 @@ def render_tradeoff_scenarios():
                         y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=[COLOR_PT, COLOR_SE])),
+                                                        range=["#C77DBB", "#A47ADC"])),
                         size=alt.SizeValue(80),
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
@@ -1601,7 +1525,7 @@ def render_tradeoff_scenarios():
                 continue
         if deltas is None:
             try:
-                deltas = load_data_file("scenario_position_deltas.csv").copy()  # type: ignore
+                deltas = load_data_file("scenario_position_deltas.csv").copy()
             except Exception:
                 deltas = None
 
@@ -1631,14 +1555,14 @@ def render_tradeoff_scenarios():
 
                 bars = (
                     alt.Chart(long)
-                    .mark_bar(**_bar_mark())
+                    .mark_bar(opacity=0.92)
                     .encode(
                         x=alt.X("Metric:N", title=None, axis=alt.Axis(labelAngle=0)),
                         xOffset=alt.X("Scenario:N", title=None),
                         y=alt.Y("Value:Q", title=None, axis=alt.Axis(format=".1f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=[COLOR_PT, COLOR_SE])),
+                                                        range=["#C77DBB", "#A47ADC"])),
                         tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
                     ).properties(height=H_LEFT_BOTTOM, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
@@ -1692,8 +1616,6 @@ def render_tradeoff_scenarios():
             if not _np.isfinite(dom) or dom <= 0: dom = 0.1
             lo  = max(dom * 0.15, 0.01)
 
-            light_range = ["#DDE4FF", "#3B44DB"] if IS_LIGHT else ["#B9B7F5", "#3B44DB"]
-
             heat = (
                 alt.Chart(heat_df)
                 .mark_rect()
@@ -1701,7 +1623,7 @@ def render_tradeoff_scenarios():
                     x=alt.X("Scenario:N", title=None, sort=["Pragmatic Tilt","Strict Exclusion"], axis=alt.Axis(labelAngle=0)),
                     y=alt.Y("Sector:N",   title=None, axis=alt.Axis(labelAngle=0, labelLimit=1000)),
                     color=alt.Color("|Drift|:Q", title="Drift (|pp|)",
-                                    scale=alt.Scale(domain=[lo, dom], range=light_range)),
+                                    scale=alt.Scale(domain=[lo, dom], range=["#B9B7F5", "#3B44DB"])),
                     tooltip=[alt.Tooltip("Scenario:N"),
                              alt.Tooltip("Sector:N"),
                              alt.Tooltip("Drift_pp:Q", title="Signed drift (pp)", format=".2f"),
@@ -1752,7 +1674,7 @@ def render_tradeoff_scenarios():
                             y=alt.Y("%Clean:Q", title="% Clean (scenario)", axis=alt.Axis(format=".1f")),
                             color=alt.Color("Scenario:N", title=None,
                                             scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                            range=[COLOR_PT, COLOR_SE])),
+                                                            range=["#C77DBB", "#A47ADC"])),
                             size=alt.SizeValue(80),
                             tooltip=[alt.Tooltip("Scenario:N"),
                                      alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
@@ -1807,20 +1729,19 @@ def render_tradeoff_scenarios():
             deltas2["category"] = ""
 
         try:
-            s_col  = "scenario" if "scenario" in deltas2.columns else _need(deltas2, "scenario")
-            e_col  = "ETF_Ticker" if "ETF_Ticker" in deltas2.columns else _need(deltas2, "ETF_Ticker")
-            nm_col = "company_name" if "company_name" in deltas2.columns else _need(deltas2, "company_name")
-            tk_col = "company_ticker" if "company_ticker" in deltas2.columns else _need(deltas2, "company_ticker")
-            sec_col= "Sector" if "Sector" in deltas2.columns else _need(deltas2, "Sector")
-            cat_col= "category"
-            d_col  = "delta" if "delta" in deltas2.columns else _need(deltas2, "delta")
+            s_col  = _need(deltas2, "scenario")
+            e_col  = _need(deltas2, "ETF_Ticker")
+            nm_col = _need(deltas2, "company_name")
+            tk_col = _need(deltas2, "company_ticker")
+            sec_col= _need(deltas2, "Sector")
+            cat_col= _need(deltas2, "category")
+            d_col  = _need(deltas2, "delta")
         except KeyError as err:
             deltas2 = None
             st.info(f"Missing column in deltas: {err}")
 
     if deltas2 is not None:
         use = deltas2.copy()
-        scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
         use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
         use = use[use["Scenario"] == sel_scn_changes]
         if sel_etf != "All":
@@ -1869,8 +1790,6 @@ def render_tradeoff_scenarios():
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
-
-# BODY
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
@@ -1922,7 +1841,7 @@ if mode == "Dashboard":
                 color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
                                         range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
 
-                chart = alt.Chart(comp).mark_bar(**_bar_mark()).encode(
+                chart = alt.Chart(comp).mark_bar(opacity=0.92).encode(
                     x=alt.X("sum(share):Q", stack="normalize",
                             axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
                     y=alt.Y("Group:N", title=None, axis=None),
@@ -1967,7 +1886,7 @@ if mode == "Dashboard":
                 lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
             )
 
-            chart2 = alt.Chart(scr_all).mark_bar(**_bar_mark()).encode(
+            chart2 = alt.Chart(scr_all).mark_bar(opacity=0.92).encode(
                 x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
                 y=alt.Y("screen_category:N", sort="-x", title=None),
                 color=alt.Color("color:N", legend=None, scale=None),
@@ -2061,7 +1980,6 @@ if mode == "Dashboard":
     with tab3:
         render_tradeoff_scenarios()
 
-# FOOTER
 gap(28)
 divider()
 
@@ -2076,7 +1994,7 @@ st.markdown(
         align-items: center;
         gap: 12px;
         padding: 12px 14px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.04));
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.02));
         border: 1px solid var(--border);
         border-radius: 12px;
       }}
@@ -2104,9 +2022,6 @@ st.markdown(
         .footer-cta {{ flex-wrap: wrap; gap:10px; }}
         .footer-wrap {{ flex-direction: column; gap: 8px; align-items: flex-start; }}
       }}
-
-      /* Light footer contrasts */
-      body.light .footer-cta {{ background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0.00)); }}
     </style>
 
     <div class="footer-cta">
