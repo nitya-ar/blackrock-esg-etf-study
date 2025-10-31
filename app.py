@@ -1365,10 +1365,10 @@ def render_tradeoff_scenarios():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
         k1, k2, k3, k4 = st.columns(4)
         with k1:
-            tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
+            tone_cls = "kpi kpi-neutral t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>", unsafe_allow_html=True)
         with k2:
-            tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
+            tone_cls = "kpi kpi-neutral t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>", unsafe_allow_html=True)
         with k3:
             st.markdown(
