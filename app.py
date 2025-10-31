@@ -81,56 +81,25 @@ LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", 
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
-# ------------- THEME (auto light/dark + optional manual override) -------------
-# Manual override control (sidebar stays collapsed by default)
 with st.sidebar:
     theme_mode = st.radio("Theme", ["Auto", "Light", "Dark"], index=0)
 
-# Inject CSS variables for LIGHT as default, then override for DARK via media query.
-# Also support explicit override with html[data-theme="light|dark"].
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-/* LIGHT (default) */
 :root{
-  --bg:#ffffff;
-  --card:#f7f8fa;
-  --border:#e4e7eb;
-  --text:#0b0d12;
-  --muted:#667084;
-  --primary:#0066cc;
-  --clean:#0E8F66;
-  --contro:#C63C41;
-  --other:#768397;
-  --accent:#C63C41;
-  --header:#eff2f6;
-  --row:#ffffff;
-  --tooltip:#ffffff;
-  --grid:#e9edf2;
+  --bg:#ffffff; --card:#f7f8fa; --border:#e4e7eb; --text:#0b0d12; --muted:#667084;
+  --primary:#0066cc; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
+  --header:#eff2f6; --row:#ffffff; --tooltip:#ffffff; --grid:#e9edf2;
 }
-
-/* DARK (auto if system prefers dark) */
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#0A0B0D;
-    --card:#0F1116;
-    --border:#1C2027;
-    --text:#E7EBF0;
-    --muted:#97A2B0;
-    --primary:#00A3FF;
-    --clean:#0E8F66;
-    --contro:#C63C41;
-    --other:#768397;
-    --accent:#C63C41;
-    --header:#11151C;
-    --row:#0E1015;
-    --tooltip:#0F1116;
-    --grid:#222831;
+    --bg:#0A0B0D; --card:#0F1116; --border:#1C2027; --text:#E7EBF0; --muted:#97A2B0;
+    --primary:#00A3FF; --clean:#0E8F66; --contro:#C63C41; --other:#768397; --accent:#C63C41;
+    --header:#11151C; --row:#0E1015; --tooltip:#0F1116; --grid:#222831;
   }
 }
-
-/* Manual override hooks */
 html[data-theme="light"]{
   color-scheme: light;
   --bg:#ffffff; --card:#f7f8fa; --border:#e4e7eb; --text:#0b0d12; --muted:#667084;
@@ -144,33 +113,26 @@ html[data-theme="dark"]{
   --header:#11151C; --row:#0E1015; --tooltip:#0F1116; --grid:#222831;
 }
 
-/* Base app */
 html, body, [data-testid="stAppViewContainer"]{
   background-color:var(--bg)!important; color:var(--text)!important;
   font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 h1, h2, h3, h4, h5{ color:var(--text); letter-spacing:.1px; }
-
 .blx-divider{ border-top:1px solid var(--border); margin:10px 0 24px 0; }
 .blx-muted{ color:var(--muted); }
 
-/* Cards, KPIs */
 .blx-card{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:14px; padding:14px 16px; }
-.kpi{ background:linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,0));
-      border:1px solid var(--border); border-radius:16px; padding:18px 20px;
-      box-shadow:0 0 0 1px rgba(0,0,0,0) inset; }
+.kpi{ background:linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,0)); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow:0 0 0 1px rgba(0,0,0,0) inset; }
 .kpi .label{ font-size:12px; color:var(--muted); margin-bottom:6px; }
 .kpi .value{ font-size:30px; font-weight:700; line-height:1.05; }
 .kpi.kpi-red{ background:linear-gradient(180deg, rgba(198,60,65,0.12), rgba(0,0,0,0)); border-color:rgba(198,60,65,0.35); }
 .kpi.kpi-green{ background:linear-gradient(180deg, rgba(14,143,102,0.12), rgba(0,0,0,0)); border-color:rgba(14,143,102,0.35); }
 .kpi.kpi-neutral{ background:linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-color:rgba(0,0,0,0.08); }
 
-/* Charts + tooltip */
 .stAltairChart, .stVegaLiteChart, .stPlotlyChart{ background:var(--card)!important; border:1px solid var(--border)!important; }
 .vega-embed, .stAltairChart{ background:transparent!important; }
 .vega-tooltip, .vega-tooltip *{ background:var(--tooltip)!important; color:var(--text)!important; border-color:var(--border)!important; }
 
-/* Info badges */
 .info-badge{
   display:inline-flex; align-items:center; justify-content:center;
   width:22px; height:22px; min-width:22px; border-radius:50%;
@@ -193,7 +155,6 @@ h1, h2, h3, h4, h5{ color:var(--text); letter-spacing:.1px; }
 }
 .has-tip:hover::after, .has-tip:focus::after{ opacity:1; transform:translateY(0); }
 
-/* DataFrames */
 :where([data-testid="stDataFrame"], [data-testid="stDataframe"]){
   background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important;
 }
@@ -207,12 +168,10 @@ div[data-testid="stDataframe"] tbody tr td{
   background:var(--row)!important; color:var(--text)!important; border-top:1px solid var(--border)!important;
 }
 
-/* Tables */
 :where([data-testid="stTable"]) table{ background:var(--card)!important; border:1px solid var(--border)!important; border-radius:12px!important; }
 :where([data-testid="stTable"]) thead th{ background:var(--header)!important; color:var(--text)!important; border-bottom:1px solid var(--border)!important; }
 :where([data-testid="stTable"]) tbody td{ background:var(--row)!important; color:var(--text)!important; border-top:1px solid var(--border)!important; }
 
-/* Inputs */
 [data-baseweb="select"], [data-baseweb="input"]{
   border:1px solid var(--border)!important; border-radius:10px!important; background:var(--card)!important;
 }
@@ -229,14 +188,12 @@ div[data-testid="stDataframe"] tbody tr td{
 [data-baseweb="menu"] li{ color:var(--text)!important; }
 [data-baseweb="menu"] li:hover{ background:var(--header)!important; }
 
-/* Slider */
 [data-baseweb="slider"] > div{ background:transparent!important; }
 [data-baseweb="slider"] div[role="presentation"]{ background:var(--border)!important; }
 [data-baseweb="slider"] div[role="presentation"] > div{ background:var(--accent)!important; }
 [data-baseweb="slider"] [role="slider"]{ background:var(--accent)!important; box-shadow:0 0 0 3px rgba(198,60,65,0.18)!important; border:0!important; }
 [data-baseweb="slider"] *{ color:var(--text)!important; }
 
-/* Segmented control */
 div[data-testid="stSegmentedControl"] div[role="tablist"]{
   background:var(--row)!important; border:1px solid var(--border)!important; border-radius:12px!important;
 }
@@ -252,24 +209,20 @@ div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > *{
   border:none!important; box-shadow: inset 0 0 0 1px var(--accent)!important;
 }
 
-/* Tabs */
 .stTabs [data-baseweb="tab-list"]{ background:var(--row)!important; border-bottom:1px solid var(--border)!important; }
 .stTabs [data-baseweb="tab"]{ background:transparent!important; color:var(--muted)!important; border-color:transparent!important; box-shadow:none!important; }
 .stTabs [data-baseweb="tab"][aria-selected="true"]{ color:var(--text)!important; border-color:transparent!important; box-shadow: inset 0 -2px 0 var(--accent)!important; }
 
-/* Buttons */
 .stDownloadButton > button, .stButton > button{
   background:var(--header)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:12px!important;
 }
 .stDownloadButton > button:hover, .stButton > button:hover{ background:var(--row)!important; border-color:var(--border)!important; }
 
-/* Labels + scrollbar */
 label{ color:var(--muted)!important; font-size:13px!important; letter-spacing:.2px; }
 *::-webkit-scrollbar{ width:10px; height:10px; }
 *::-webkit-scrollbar-thumb{ background:var(--border); border-radius:8px; }
 *::-webkit-scrollbar-track{ background:var(--bg); }
 
-/* Popovers/menus/listbox */
 [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"], [data-baseweb="popover"] *, [data-baseweb="menu"] *{
   background:var(--card)!important; color:var(--text)!important; border-color:var(--border)!important;
 }
@@ -277,7 +230,6 @@ label{ color:var(--muted)!important; font-size:13px!important; letter-spacing:.2
 [role="option"]{ background:transparent!important; color:var(--text)!important; }
 [role="option"][aria-selected="true"], [role="option"]:hover{ background:var(--header)!important; }
 
-/* Safari/private hardening */
 div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
 div[data-testid="stTable"] tbody tr:first-child td{
   background:var(--row)!important; color:var(--text)!important;
@@ -292,23 +244,28 @@ div[data-testid="stDataFrame"], div[data-testid="stDataframe"]{
 </style>
 """, unsafe_allow_html=True)
 
-# Apply manual override (sets html[data-theme], which beats prefers-color-scheme)
 if theme_mode in ("Light", "Dark"):
     st.markdown(
-        f"""<script>
-            document.documentElement.setAttribute('data-theme', '{theme_mode.lower()}');
-        </script>""",
+        f"""<script>document.documentElement.setAttribute('data-theme', '{theme_mode.lower()}');</script>""",
         unsafe_allow_html=True
     )
 else:
-    st.markdown(
-        """<script>
-            document.documentElement.removeAttribute('data-theme');
-        </script>""",
-        unsafe_allow_html=True
-    )
+    st.markdown("""<script>document.documentElement.removeAttribute('data-theme');</script>""",
+                unsafe_allow_html=True)
 
-# Altair theme uses CSS variables so it auto-swaps with light/dark
+# ---- Palette shim (fixes NameError by mapping to CSS variables) ----
+COLORS = {
+    "bg": "var(--bg)",
+    "card": "var(--card)",
+    "border": "var(--border)",
+    "text": "var(--text)",
+    "muted": "var(--muted)",
+    "primary": "var(--primary)",
+    "clean": "var(--clean)",
+    "contro": "var(--contro)",
+    "other": "var(--other)",
+}
+
 def _alt_auto():
     return {
         "config": {
@@ -331,7 +288,6 @@ def _alt_auto():
 alt.themes.register("custom_auto", _alt_auto)
 alt.themes.enable("custom_auto")
 
-# Helpers that now read from CSS vars (for dataframe styling)
 def divider():
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
@@ -353,7 +309,6 @@ def style_dark_df(df: pd.DataFrame):
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
-# ----------------------- rest of your app stays the same -----------------------
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
@@ -490,7 +445,6 @@ def usd_fmt(x):
     except: return "-"
 
 divider()
-
 mode = "Dashboard"
 divider()
 
