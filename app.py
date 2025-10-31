@@ -1274,9 +1274,9 @@ def render_tradeoff_scenarios():
       .info-badge{
       display:inline-flex;align-items:center;justify-content:center;
       width:22px;height:22px;min-width:22px;border-radius:50%;
-      background:transparent !important;           
-      color:var(--texted) !important;              
-      border:2px solid var(--texted) !important;   
+      background:transparent !important;
+      color:var(--texted) !important;
+      border:2px solid var(--texted) !important;
       font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
