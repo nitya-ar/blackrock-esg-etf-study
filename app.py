@@ -1,4 +1,3 @@
-```python
 import os
 from io import StringIO, BytesIO
 import urllib.parse
