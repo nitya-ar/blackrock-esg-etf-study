@@ -213,9 +213,9 @@ st.markdown(
       .chart-head .chart-title {{ flex:1 1 auto; }}
       .chart-head .info-badge {{ margin-left:auto; }}
 
-      .info-badge:hover, .info-badge:focus {{
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
-        outline: none;
+      .info-badge:hover, .info-badge:focus{{
+      box-shadow:0 0 0 3px rgba(198,60,65,0.22);
+      outline:none;
       }}
 
       .has-tip {{ position:relative; }}
