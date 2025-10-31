@@ -1,3 +1,4 @@
+```python
 import os
 from io import StringIO, BytesIO
 import urllib.parse
@@ -200,7 +201,6 @@ st.markdown(
         .vega-tooltip, .vega-tooltip * {{ background:#FFFFFF !important; color:#0C1116 !important; border-color:#E4E8EE !important; }}
       }}
 
-      /* INFO BADGE — EXACTLY LIKE CODE 1 */
       .info-badge{{
   display:inline-flex;align-items:center;justify-content:center;
   width:22px;height:22px;min-width:22px;
@@ -215,7 +215,6 @@ st.markdown(
   outline:none;
   border-radius:50% !important;
 }}
-
 
       .has-tip {{ position:relative; }}
       .has-tip::after {{
@@ -806,7 +805,6 @@ def render_change_since_2017():
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
     with k1:
-        # CHANGE #2: use standard kpi-neutral (no custom inline bg) so light theme shading matches others
         st.markdown(
             f"""
             <div class="kpi kpi-neutral">
@@ -1271,13 +1269,12 @@ def render_tradeoff_scenarios():
       .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
-      /* INFO BADGE — EXACTLY LIKE CODE 1 (tab 3 scope too) */
       .info-badge{
         display:inline-flex;align-items:center;justify-content:center;
         width:22px;height:22px;min-width:22px;border-radius:50%;
-        background: var(--card) !important;
+        background: transparent !important;
         color: var(--muted) !important;
-        border: 1px solid var(--muted) !important;
+        border: none !important;
         font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
       }
       .has-tip{position:relative;}
@@ -2075,3 +2072,4 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+```
