@@ -131,6 +131,12 @@ st.markdown(
         --contro:{COLORS.get('contro','#C63C41')};
         --other: {COLORS.get('other','#4062FF')};
         --accent:#C63C41;
+        --texted: {COLORS['text']};
+        --scr-prisons: #C84B4B;
+        --scr-defor: #B5651D;
+        --scr-fossil: #800020;
+        --scr-weapons: #F08BA6;
+        --scr-tobacco: #4B2E05;
       }}
 
       @media (prefers-color-scheme: light) {{
@@ -141,10 +147,16 @@ st.markdown(
           --text: #0C1116;
           --muted: #475467;
           --primary: #006FD6;
-          --clean: #1E9068;
-          --contro: #C63C41;
-          --other: #667085;
+          --clean: #2AAF86;
+          --contro: #D35A5F;
+          --other: #8894A8;
           --accent: #C63C41;
+          --texted: #0C1116;
+          --scr-prisons: #D87272;
+          --scr-defor: #C47A33;
+          --scr-fossil: #9A2840;
+          --scr-weapons: #F3A9BE;
+          --scr-tobacco: #6A4A1F;
         }}
       }}
 
@@ -999,12 +1011,12 @@ def render_change_since_2017():
         else:
             SCREEN_DOMAIN = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
             SCREEN_COLORS = [
-                COLORS["clean"],
-                "#C84B4B",
-                "#B5651D",
-                "#800020",
-                "#F08BA6",
-                "#4B2E05",
+                "var(--clean)",
+                "var(--scr-prisons)",
+                "var(--scr-defor)",
+                "var(--scr-fossil)",
+                "var(--scr-weapons)",
+                "var(--scr-tobacco)",
             ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
@@ -1070,7 +1082,7 @@ def render_change_since_2017():
                         title=None,
                         scale=alt.Scale(
                             domain=["Clean", "Controversial", "Other"],
-                            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]],
+                            range=["var(--clean)", "var(--contro)", "var(--other)"],
                         ),
                     ),
                     tooltip=[
@@ -1266,14 +1278,14 @@ def render_tradeoff_scenarios():
         background:#0B0D12;color:#E7EBF0;border:1px solid #1C2027;border-radius:12px;padding:14px 16px;line-height:1.45;
         white-space:normal;min-width:420px;max-width:720px;box-shadow:0 10px 28px rgba(0,0,0,.35);opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;}
-      .has-tip.tip-left:hover::after{{opacity:1;transform:translateY(0);}}
-      .has-tip.tip-narrow::after{{ min-width:320px; max-width:480px; }}
-      .has-tip.tip-wide::after  {{ min-width:560px; max-width:880px; }}
-      .has-tip.tip-full::after  {{ min-width:720px; max-width:1100px; }}
-      div[data-testid="stRadio"][data-baseweb="radio"] label{{font-size:12px !important;}}
-      @media (prefers-color-scheme: light){{
-        .has-tip.tip-left::after{{ background:#FFFFFF; color:#0C1116; border:1px solid #E4E8EE; box-shadow:0 10px 28px rgba(0,0,0,.10); }}
-      }}
+      .has-tip.tip-left:hover::after{opacity:1;transform:translateY(0);}
+      .has-tip.tip-narrow::after{ min-width:320px; max-width:480px; }
+      .has-tip.tip-wide::after  { min-width:560px; max-width:880px; }
+      .has-tip.tip-full::after  { min-width:720px; max-width:1100px; }
+      div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
+      @media (prefers-color-scheme: light){
+        .has-tip.tip-left::after{ background:#FFFFFF; color:#0C1116; border:1px solid #E4E8EE; box-shadow:0 10px 28px rgba(0,0,0,.10); }
+      }
     </style>
     """, unsafe_allow_html=True)
 
