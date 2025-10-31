@@ -105,7 +105,7 @@ def _alt_dark():
                 "tickColor":   "#2A2F36",
                 "grid": True,
                 "gridColor": "#222831",
-                "gridOpacity": 0.75
+                "gridOpacity": 1.5
             },
             "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
             "title": {"color": COLORS["text"]},
