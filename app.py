@@ -90,32 +90,23 @@ COLORS = {
     "primary": "#00A3FF",
     "clean": "#0E8F66",
     "contro": "#C63C41",
-    "other": "#768397",
+    "other": "#4B6478"
 }
 
-def _alt_dark():
+def _alt_base():
     return {
         "config": {
             "background": "transparent",
-            "view": {"fill": "transparent", "stroke": COLORS["border"]},
-            "axis": {
-                "labelColor": COLORS["text"],
-                "titleColor": COLORS["muted"],
-                "domainColor": "#2A2F36",
-                "tickColor":   "#2A2F36",
-                "grid": True,
-                "gridColor": "#222831",
-                "gridOpacity": 0.45
-            },
-            "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
-            "title": {"color": COLORS["text"]},
+            "view": {"fill": "transparent"},
+            "axis": {"grid": True},
+            "legend": {},
+            "title": {},
         }
     }
 
-alt.themes.register("custom_dark", _alt_dark)
-alt.themes.enable("custom_dark")
+alt.themes.register("custom_base", _alt_base)
+alt.themes.enable("custom_base")
 
-# STYLES
 st.markdown(
     f"""
     <style>
@@ -126,12 +117,29 @@ st.markdown(
         --card: {COLORS['card']};
         --border: {COLORS['border']};
         --text: {COLORS['text']};
-        --muted: {COLORS.get('muted','#A9B4C2')};
+        --muted: {COLORS['muted']};
         --primary: {COLORS['primary']};
-        --clean: {COLORS.get('clean','#0E8F66')};
-        --contro:{COLORS.get('contro','#C63C41')};
-        --other: {COLORS.get('other','#4062FF')};
+        --clean: {COLORS['clean']};
+        --contro:{COLORS['contro']};
+        --other: {COLORS['other']};
         --accent:#C63C41;
+        color-scheme: dark;
+      }}
+
+      @media (prefers-color-scheme: light) {{
+        :root {{
+          --bg: #FFFFFF;
+          --card: #F7F9FB;
+          --border: #D6DFEA;
+          --text: #0F172A;
+          --muted: #4B5563;
+          --primary: #005BBB;
+          --clean: #0B7A58;
+          --contro: #B23434;
+          --other: #445A70;
+          --accent: #B23434;
+          color-scheme: light;
+        }}
       }}
 
       html, body, [data-testid="stAppViewContainer"] {{
@@ -149,27 +157,33 @@ st.markdown(
         border-radius: 14px; padding: 14px 16px;
       }}
       .kpi {{
-        background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+        background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
         border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        .kpi {{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)); }}
       }}
       .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
       .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
-      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(198,60,65,0.16), rgba(255,255,255,0)); border-color: rgba(198,60,65,0.45); }}
-      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.16), rgba(255,255,255,0)); border-color: rgba(14,143,102,0.45); }}
-      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(178,52,52,0.12), rgba(0,0,0,0)); border-color: rgba(178,52,52,0.45); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(11,122,88,0.12), rgba(0,0,0,0)); border-color: rgba(11,122,88,0.45); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0)); border-color: rgba(0,0,0,0.08); }}
+      @media (prefers-color-scheme: dark) {{
+        .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); border-color: rgba(255,255,255,0.08); }}
+      }}
 
       .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
       .vega-embed, .stAltairChart {{ background: transparent !important; }}
-      .vega-tooltip, .vega-tooltip * {{ background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important; }}
 
-      /* ---------- Info badges (red OUTLINE, right-aligned, with tooltip) ---------- */
+      .vega-tooltip, .vega-tooltip * {{ background: var(--card) !important; color:var(--text) !important; border-color:var(--border) !important; }}
+
       .info-badge {{
         display:inline-flex; align-items:center; justify-content:center;
         width:22px; height:22px; min-width:22px; border-radius:50%;
         background: transparent !important;
-        color: var(--texted) !important;
-        border: 2px solid var(--texted) !important;
+        color: var(--text) !important;
+        border: 2px solid var(--text) !important;
         font-weight:700; font-size:12px;
         margin-left:8px; vertical-align:text-bottom;
       }}
@@ -178,7 +192,7 @@ st.markdown(
       .chart-head .info-badge {{ margin-left:auto; }}
 
       .info-badge:hover, .info-badge:focus {{
-        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
         outline: none;
       }}
 
@@ -186,11 +200,11 @@ st.markdown(
       .has-tip::after {{
         content: attr(data-tip);
         position:absolute; right:0; top:calc(100% + 8px);
-        background:#0B0D12; color:var(--text); border:1px solid var(--border);
+        background:var(--card); color:var(--text); border:1px solid var(--border);
         padding:6px 10px; border-radius:8px; white-space:nowrap;
         opacity:0; transform:translateY(6px); pointer-events:none;
         transition:opacity .15s ease, transform .15s ease;
-        box-shadow:0 10px 24px rgba(0,0,0,.45); z-index:99999;
+        box-shadow:0 10px 24px rgba(0,0,0,.15); z-index:99999;
       }}
       .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
 
@@ -200,19 +214,19 @@ st.markdown(
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
       div[data-testid="stDataframe"] thead tr th {{
-        background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important;
+        background: color-mix(in srgb, var(--card) 92%, var(--border)) !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important;
       }}
       :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
       div[data-testid="stDataframe"] tbody tr td {{
-        background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important;
+        background: var(--card) !important; color:var(--text) !important; border-top:1px solid var(--border) !important;
       }}
 
       :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
-      :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:var(--text) !important; border-bottom:1px solid #2A2F36 !important; }}
-      :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:var(--text) !important; border-top:1px solid #12151C !important; }}
+      :where([data-testid="stTable"]) thead th {{ background: color-mix(in srgb, var(--card) 92%, var(--border)) !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background: var(--card) !important; color:var(--text) !important; border-top:1px solid var(--border) !important; }}
 
       [data-baseweb="select"], [data-baseweb="input"] {{
-        border: 1px solid var(--border) !important; border-radius: 10px !important; background:#0F1116 !important;
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background:var(--card) !important;
       }}
       [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
         background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
@@ -220,121 +234,79 @@ st.markdown(
       [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
       [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
         outline:none !important; border:1px solid var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.28) !important;
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent) !important;
       }}
       [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
       [data-baseweb="menu"] {{
-        background:#10131A !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       [data-baseweb="menu"] li {{ color:var(--text) !important; }}
-      [data-baseweb="menu"] li:hover {{ background:#161A22 !important; }}
+      [data-baseweb="menu"] li:hover {{ background:color-mix(in srgb, var(--card) 82%, var(--border)) !important; }}
 
       [data-baseweb="slider"] > div {{ background:transparent !important; }}
-      [data-baseweb="slider"] div[role="presentation"] {{ background:#1C2027 !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background:var(--border) !important; }}
       [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
       [data-baseweb="slider"] [role="slider"] {{
         background:var(--accent) !important;
-        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+        box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent) !important; border:0 !important;
       }}
       [data-baseweb="slider"] * {{ color:var(--text) !important; }}
 
       div[data-testid="stSegmentedControl"] div[role="tablist"] {{
-        background:#0E1015 !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:var(--card) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
       div[data-testid="stSegmentedControl"] button[role="tab"],
       div[data-testid="stSegmentedControl"] button[role="tab"] > *,
       div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-        background:#0E1015 !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+        background:var(--card) !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
       }}
       div[data-testid="stSegmentedControl"] button[aria-selected="true"],
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
       div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:#12151C !important; color:var(--text) !important;
+        background:color-mix(in srgb, var(--card) 85%, var(--border)) !important; color:var(--text) !important;
         border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
       }}
-      div[data-testid="stSegmentedControl"] button[disabled],
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
-      div[data-testid="stSegmentedControl"] button[disabled] > *,
-      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
-        background:#151923 !important; color:#7E8A98 !important; border:none !important; box-shadow:none !important; opacity:1 !important;
-      }}
 
-      .stTabs [data-baseweb="tab-list"] {{ background:#0E1015 !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab-list"] {{ background:var(--card) !important; border-bottom:1px solid var(--border) !important; }}
       .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
       .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
 
       .stDownloadButton > button, .stButton > button {{
-        background:#12151C !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+        background:color-mix(in srgb, var(--card) 90%, var(--border)) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
       }}
-      .stDownloadButton > button:hover, .stButton > button:hover {{ background:#151923 !important; border-color:#2A2F36 !important; }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background:color-mix(in srgb, var(--card) 82%, var(--border)) !important; border-color:var(--border) !important; }}
 
-      label {{
-        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
-      }}
+      label {{ color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px; }}
+
       *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
-      *::-webkit-scrollbar-thumb {{ background:#2A2F36; border-radius: 8px; }}
-      *::-webkit-scrollbar-track {{ background:#0B0D12; }}
-
-      :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
+      *::-webkit-scrollbar-thumb {{ background:var(--border); border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background:color-mix(in srgb, var(--bg) 92%, var(--border)); }}
 
       [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
       [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
-        background: #10131A !important;
+        background: var(--card) !important;
         color: var(--text) !important;
         border-color: var(--border) !important;
       }}
-
-      [role="listbox"] {{ background:#10131A !important; border:1px solid var(--border) !important; }}
+      [role="listbox"] {{ background:var(--card) !important; border:1px solid var(--border) !important; }}
       [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
-      [role="option"][aria-selected="true"],
-      [role="option"]:hover {{ background:#161A22 !important; }}
+      [role="option"][aria-selected="true"], [role="option"]:hover {{ background:color-mix(in srgb, var(--card) 82%, var(--border)) !important; }}
 
       div[data-testid="stPopover"] div[role="dialog"],
       div[data-testid="stPopover"] div[role="dialog"] * {{
-        background:#10131A !important; color:var(--text) !important; border-color: var(--border) !important;
+        background:var(--card) !important; color:var(--text) !important; border-color: var(--border) !important;
       }}
 
-      .vega-tooltip, .vega-tooltip * {{
-        background:#0F1116 !important; color:var(--text) !important; border-color:var(--border) !important;
-      }}
+      .vega-embed text {{ fill: var(--text) !important; }}
+      .vega-embed .mark-text text {{ fill: var(--text) !important; }}
+      .vega-embed .role-axis, .vega-embed .role-axis path, .vega-embed .role-axis line {{ stroke: var(--border) !important; }}
+      .vega-embed .role-grid, .vega-embed .role-grid line {{ stroke: color-mix(in srgb, var(--border) 75%, transparent) !important; }}
 
-      div[data-testid="stSegmentedControl"] div[role="tablist"],
-      div[data-testid="stSegmentedControl"] button[role="tab"],
-      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
-      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
-        background:#0E1015 !important; color:var(--muted) !important; box-shadow:none !important; border:none !important;
+      @media (prefers-color-scheme: dark) {{
+        :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: dark !important; }}
       }}
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
-      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
-        background:#12151C !important; color:var(--text) !important;
-        box-shadow: inset 0 0 0 1px var(--accent) !important; border:none !important;
-      }}
-
-      /* ------- Robust cross-browser fixes for first-row/headers/hover ------- */
-      div[data-testid="stDataFrame"] [role="columnheader"],
-      div[data-testid="stDataframe"] [role="columnheader"],
-      div[data-testid="stTable"] thead th {{
-        background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important;
-      }}
-
-      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
-      div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
-      div[data-testid="stTable"] tbody td,
-      div[data-testid="stTable"] tbody tr:nth-child(odd) td,
-      div[data-testid="stTable"] tbody tr:nth-child(even) td,
-      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-      div[data-testid="stTable"] tbody tr:first-child td {{
-        background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important;
-      }}
-
-      div[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"],
-      div[data-testid="stDataFrame"] [role="row"][data-focused="true"] [role="gridcell"] {{
-        background:#10131A !important;
-      }}
-
-      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
-        background:#0F1116 !important; border:1px solid #1C2027 !important; border-radius:12px !important;
+      @media (prefers-color-scheme: light) {{
+        :root, html, body, [data-testid="stAppViewContainer"] {{ color-scheme: light !important; }}
       }}
     </style>
     """,
@@ -343,48 +315,25 @@ st.markdown(
 
 st.markdown("""
 <style>
-/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
-
-/* 1) Tables — ensure first data row never flips to white */
 div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
 div[data-testid="stTable"] tbody tr:first-child td {
-  background: #0E1015 !important;
-  color: #E7EBF0 !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
 }
-
-/* 2) Tab 2: segmented control (Weighting) hover/focus states */
 div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
 div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
-  background: #151923 !important;
+  background: color-mix(in srgb, var(--card) 82%, var(--border)) !important;
   color: var(--text) !important;
 }
-
-/* 3) Tab 3: radio group (Top Added / Top Removed) dark background */
 div[data-testid="stRadio"][data-baseweb="radio"] {
-  background: #0E1015 !important;
+  background: var(--card) !important;
   border-radius: 10px !important;
 }
-div[data-testid="stRadio"][data-baseweb="radio"] > div {
-  background: transparent !important;
-}
-div[data-baseweb="radio"] label {
-  color: var(--text) !important;
-}
-div[data-baseweb="radio"] svg {
-  background: #0E1015 !important;
-  border-radius: 50%;
-}
-div[data-baseweb="radio"] input:checked + label svg {
-  box-shadow: 0 0 0 2px var(--accent) inset !important;
-}
-
-/* 4) Altair/Vega tooltip — single, pinned dark theme */
-.vega-tooltip,
-.vega-tooltip * {
-  background: #0F1116 !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}
+div[data-testid="stRadio"][data-baseweb="radio"] > div { background: transparent !important; }
+div[data-baseweb="radio"] label { color: var(--text) !important; }
+div[data-baseweb="radio"] svg { background: var(--card) !important; border-radius: 50%; }
+div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
+.vega-tooltip, .vega-tooltip * { background: var(--card) !important; color: var(--text) !important; border-color: var(--border) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -395,7 +344,7 @@ def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
 def style_dark_df(df: pd.DataFrame):
-    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
+    bg, hdr, txt, bdr = "var(--card)", "color-mix(in srgb, var(--card) 92%, var(--border))", "var(--text)", "var(--border)"
     sty = (
         df.style
           .set_table_styles([
@@ -410,7 +359,6 @@ def style_dark_df(df: pd.DataFrame):
 def grid(df: pd.DataFrame):
     st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
 
-# LOADERS
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
@@ -534,7 +482,6 @@ def load_covariance_daily():
 def load_etf_aum_2025():
     return load_csv(3, "etf_aum_2025.csv")
 
-# HEADER CONTENT
 st.markdown(
     """
     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -575,7 +522,6 @@ divider()
 mode = "Dashboard"
 divider()
 
-# RENDER: Change since 2017
 def render_change_since_2017():
     import numpy as np
     import pandas as pd
@@ -751,7 +697,7 @@ def render_change_since_2017():
     with k1:
         st.markdown(
             f"""
-            <div class="kpi kpi-neutral" style="background:linear-gradient(180deg, rgba(231,235,240,0.06), rgba(255,255,255,0));">
+            <div class="kpi kpi-neutral">
               <div class="label">Net improvement (Clean − Controversial)</div>
               <div class="value">{(net_delta if net_delta is not None else 0):+,.1f} pp</div>
             </div>
@@ -1135,8 +1081,6 @@ def render_change_since_2017():
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         grid(_fmt(top_decrease))
 
-
-# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1223,21 +1167,17 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
 
-      .info-badge{
-        display:inline-flex;align-items:center;justify-content:center;
-        width:22px;height:22px;min-width:22px;border-radius:50%;
-        background:var(--primary);color:#fff;font-weight:700;font-size:12px;
-        margin-left:8px;position:relative;z-index:3;
-      }
+      .info-badge{ display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;border-radius:50%;
+                   background:var(--primary);color:#fff;font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3; }
 
       .has-tip{position:relative;}
       .has-tip.tip-left::after{
         content:attr(data-tip);
         position:absolute;right:0;left:auto;top:calc(100% + 10px);
-        background:#0B0D12;color:var(--text);border:1px solid var(--border);
+        background:var(--card);color:var(--text);border:1px solid var(--border);
         border-radius:12px;padding:14px 16px;line-height:1.45;
         white-space:normal;min-width:420px;max-width:720px;
-        box-shadow:0 10px 28px rgba(0,0,0,.35);
+        box-shadow:0 10px 28px rgba(0,0,0,.15);
         opacity:0;pointer-events:none;transform:translateY(-4px);
         transition:opacity .12s ease, transform .12s ease;text-align:left;z-index:9999;
       }
@@ -1469,7 +1409,7 @@ def render_tradeoff_scenarios():
                         y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=[COLOR_PT, COLOR_SE])),
+                                                        range=["#C77DBB", "#7A8BFF"])),
                         size=alt.SizeValue(80),
                         tooltip=[alt.Tooltip("Scenario:N"),
                                  alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
@@ -1544,7 +1484,7 @@ def render_tradeoff_scenarios():
                         y=alt.Y("Value:Q", title=None, axis=alt.Axis(format=".1f")),
                         color=alt.Color("Scenario:N", title=None,
                                         scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                        range=[COLOR_PT, COLOR_SE])),
+                                                        range=["#C77DBB", "#7A8BFF"])),
                         tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
                     ).properties(height=H_LEFT_BOTTOM, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
@@ -1656,7 +1596,7 @@ def render_tradeoff_scenarios():
                             y=alt.Y("%Clean:Q", title="% Clean (scenario)", axis=alt.Axis(format=".1f")),
                             color=alt.Color("Scenario:N", title=None,
                                             scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
-                                                            range=[COLOR_PT, COLOR_SE])),
+                                                            range=["#C77DBB", "#7A8BFF"])),
                             size=alt.SizeValue(80),
                             tooltip=[alt.Tooltip("Scenario:N"),
                                      alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
@@ -1693,7 +1633,6 @@ def render_tradeoff_scenarios():
             deltas2 = None
 
     if deltas2 is not None:
-        # normalize headers + create aliases/fallbacks if a required column is missing
         def _norm_col(s):
             return str(s).replace("\u200b", "").replace("\xa0", " ").strip()
         deltas2.columns = [_norm_col(c) for c in deltas2.columns]
@@ -1709,7 +1648,7 @@ def render_tradeoff_scenarios():
         if "category" not in deltas2.columns and "Category" in deltas2.columns:
             deltas2["category"] = deltas2["Category"]
         if "category" not in deltas2.columns:
-            deltas2["category"] = ""  # final safety so table never crashes
+            deltas2["category"] = ""
 
         try:
             s_col  = _need(deltas2, "scenario")
@@ -1773,8 +1712,6 @@ def render_tradeoff_scenarios():
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
-
-# BODY
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
 
@@ -1965,7 +1902,6 @@ if mode == "Dashboard":
     with tab3:
         render_tradeoff_scenarios()
 
-# FOOTER
 gap(28)
 divider()
 
@@ -1980,9 +1916,12 @@ st.markdown(
         align-items: center;
         gap: 12px;
         padding: 12px 14px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.04));
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.02));
         border: 1px solid var(--border);
         border-radius: 12px;
+      }}
+      @media (prefers-color-scheme: dark) {{
+        .footer-cta {{ background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.04)); }}
       }}
       .footer-cta a {{
         display: inline-flex;
