@@ -202,28 +202,19 @@ st.markdown(
 
       /* INFO BADGE — EXACTLY LIKE CODE 1 */
       .info-badge{{
-          display:inline;
-  padding:0;
-  width:auto;height:auto;min-width:auto;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;min-width:22px;
   background:transparent !important;
+  color: var(--muted) !important;
   border:none !important;
-  box-shadow:none !important;
-  outline:none !important;
-  border-radius:0 !important;
-  color:var(--muted) !important;
-  font-weight:700;font-size:12px;
-  margin-left:8px;vertical-align:text-bottom;
+  border-radius:50% !important;
+  font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
 }}
-
-      
-      .chart-head {{ display:flex; align-items:center; }}
-      .chart-head .chart-title {{ flex:1 1 auto; }}
-      .chart-head .info-badge {{ margin-left:auto; }}
-
-      .info-badge:hover, .info-badge:focus{{
-      box-shadow:0 0 0 3px rgba(198,60,65,0.22);
-      outline:none;
-      }}
+.info-badge:hover, .info-badge:focus{{
+  box-shadow:0 0 0 3px rgba(198,60,65,0.22);
+  outline:none;
+  border-radius:50% !important;
+}}
 
 
       .has-tip {{ position:relative; }}
