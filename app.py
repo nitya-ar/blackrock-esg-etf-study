@@ -238,11 +238,11 @@ st.markdown(
       @media (prefers-color-scheme: light) {{
         :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
         div[data-testid="stDataframe"] thead tr th {{
-          background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important;
+          background:#FFFFFF !important; color:#0C1116 !important; border-bottom:1px solid #EDF2F8 !important;
         }}
         :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
         div[data-testid="stDataframe"] tbody tr td {{
-          background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important;
+          background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F6F9FC !important;
         }}
       }}
 
@@ -250,8 +250,8 @@ st.markdown(
       :where([data-testid="stTable"]) thead th {{ background:#11151C !important; color:#E7EBF0 !important; border-bottom:1px solid #2A2F36 !important; }}
       :where([data-testid="stTable"]) tbody td {{ background:#0E1015 !important; color:#E7EBF0 !important; border-top:1px solid #12151C !important; }}
       @media (prefers-color-scheme: light) {{
-        :where([data-testid="stTable"]) thead th {{ background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important; }}
-        :where([data-testid="stTable"]) tbody td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important; }}
+        :where([data-testid="stTable"]) thead th {{ background:#FFFFFF !important; color:#0C1116 !important; border-bottom:1px solid #EDF2F8 !important; }}
+        :where([data-testid="stTable"]) tbody td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F6F9FC !important; }}
       }}
 
       [data-baseweb="select"], [data-baseweb="input"] {{
@@ -380,15 +380,15 @@ st.markdown(
       @media (prefers-color-scheme: light) {{
         div[data-testid="stDataFrame"] [role="columnheader"],
         div[data-testid="stDataframe"] [role="columnheader"],
-        div[data-testid="stTable"] thead th {{ background:#F2F4F7 !important; color:#0C1116 !important; border-bottom:1px solid #E4E8EE !important; }}
+        div[data-testid="stTable"] thead th {{ background:#FFFFFF !important; color:#0C1116 !important; border-bottom:1px solid #EDF2F8 !important; }}
         div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
         div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
         div[data-testid="stTable"] tbody td,
         div[data-testid="stTable"] tbody tr:nth-child(odd) td,
         div[data-testid="stTable"] tbody tr:nth-child(even) td,
         div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
-        div[data-testid="stTable"] tbody tr:first-child td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F0F2F5 !important; }}
-        div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{ background:#FFFFFF !important; border:1px solid #E4E8EE !important; }}
+        div[data-testid="stTable"] tbody tr:first-child td {{ background:#FFFFFF !important; color:#0C1116 !important; border-top:1px solid #F6F9FC !important; }}
+        div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{ background:#FFFFFF !important; border:1px solid #EDF2F8 !important; }}
       }}
 
       .vega-embed svg text,
@@ -400,8 +400,8 @@ st.markdown(
       .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: var(--border) !important; opacity: .9; }}
       .vega-embed .role-axis-grid {{ stroke: #222831 !important; opacity: .45; }}
       @media (prefers-color-scheme: light) {{
-        .vega-embed .role-axis-grid {{ stroke: #E9EEF4 !important; opacity: .6; }}
-        .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: #E1E6EE !important; opacity: .9; }}
+        .vega-embed .role-axis-grid {{ stroke: #F7F9FC !important; opacity: .22 !important; }}
+        .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: #F2F5FA !important; opacity: .55 !important; }}
       }}
 
       .vega-embed .mark-rect > path,
@@ -413,10 +413,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# FINAL OVERRIDES ONLY (your two tweaks)
 st.markdown("""
 <style>
-/* Light theme: force all tables to pure white (wrapper, headers, cells, borders) */
 @media (prefers-color-scheme: light) {
   div[data-testid="stDataFrame"],
   div[data-testid="stDataframe"],
@@ -440,17 +438,15 @@ st.markdown("""
     border-top:1px solid #F6F9FC !important;
   }
 }
-
-/* Light theme: make chart gridlines much lighter */
 @media (prefers-color-scheme: light) {
   .vega-embed .role-axis-grid {
-    stroke:#F3F6FA !important;
-    opacity:.28 !important;
+    stroke:#F7F9FC !important;
+    opacity:.22 !important;
   }
   .vega-embed .role-axis-domain,
   .vega-embed .role-axis-tick {
-    stroke:#EFF3F8 !important;
-    opacity:.6 !important;
+    stroke:#F2F5FA !important;
+    opacity:.55 !important;
   }
 }
 </style>
@@ -462,21 +458,8 @@ def divider():
 def gap(px=6):
     st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
 
-def style_dark_df(df: pd.DataFrame):
-    bg, hdr, txt, bdr = "#0E1015", "#0C0E13", "#E7EBF0", "#1C2027"
-    sty = (
-        df.style
-          .set_table_styles([
-              {"selector":"table","props":[("background-color",bg),("color",txt),("border-collapse","collapse"),("border",f"1px solid {bdr}")]},
-              {"selector":"thead th","props":[("background-color",hdr),("color",txt),("border-bottom",f"1px solid {bdr}"),("padding","6px 8px")]},
-              {"selector":"tbody td","props":[("background-color",bg),("color",txt),("border-top",f"1px solid {bdr}"),("padding","6px 8px")]}
-          ])
-          .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
-    )
-    return sty
-
 def grid(df: pd.DataFrame):
-    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 def _url_join(*parts: str) -> str:
     path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
@@ -679,8 +662,6 @@ def render_change_since_2017():
         if vals.empty:
             return [0, 1]
         lo, hi = float(vals.min()), float(vals.max())
-        if not np.isfinite(lo) or not np.isfinite(hi):
-            return [0, 1]
         if lo >= 0:
             span = max(hi, min_span)
             return [0, hi + span * pad]
