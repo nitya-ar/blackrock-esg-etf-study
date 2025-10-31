@@ -450,8 +450,52 @@ div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
     color: #0C1116 !important;
     border-color: #E4E8EE !important;
   }
+<style>
+/* LIGHT THEME: tables should look white */
+@media (prefers-color-scheme: light) {
+  /* st.dataframe / AgGrid wrapper */
+  div[data-testid="stDataFrame"],
+  div[data-testid="stDataframe"],
+  div[data-testid="stTable"] {
+    background:#FFFFFF !important;
+    border:1px solid #EDF2F8 !important;
+    border-radius:12px !important;
+  }
+
+  /* headers -> white, subtle divider */
+  div[data-testid="stDataFrame"] [role="columnheader"],
+  div[data-testid="stDataframe"] [role="columnheader"],
+  div[data-testid="stTable"] thead th {
+    background:#FFFFFF !important;
+    color:#0C1116 !important;
+    border-bottom:1px solid #EDF2F8 !important;
+  }
+
+  /* body cells -> white, ultra-light row lines */
+  div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
+  div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
+  div[data-testid="stTable"] tbody td {
+    background:#FFFFFF !important;
+    color:#0C1116 !important;
+    border-top:1px solid #F6F9FC !important;
+  }
+}
+
+/* LIGHT THEME: make chart gridlines much lighter everywhere */
+@media (prefers-color-scheme: light) {
+  /* Vega/Altair gridlines + axes */
+  .vega-embed .role-axis-grid {
+    stroke:#F3F6FA !important;
+    opacity:.28 !important;
+  }
+  .vega-embed .role-axis-domain,
+  .vega-embed .role-axis-tick {
+    stroke:#EFF3F8 !important;
+    opacity:.6 !important;
+  }
 }
 </style>
+
 """, unsafe_allow_html=True)
 
 def divider():
