@@ -1272,10 +1272,13 @@ def render_tradeoff_scenarios():
       .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
       .chart-title{font-weight:700;}
       .info-badge{
-        display:inline-flex;align-items:center;justify-content:center;
-        width:22px;height:22px;min-width:22px;border-radius:50%;
-        background:var(--texted);color:#fff;font-weight:700;font-size:12px;
-        margin-left:8px;position:relative;z-index:3;}
+      display:inline-flex;align-items:center;justify-content:center;
+      width:22px;height:22px;min-width:22px;border-radius:50%;
+      background:transparent !important;           
+      color:var(--texted) !important;              
+      border:2px solid var(--texted) !important;   
+      font-weight:700;font-size:12px;margin-left:8px;position:relative;z-index:3;
+      }
       .has-tip{position:relative;}
       .has-tip.tip-left::after{content:attr(data-tip);position:absolute;right:0;left:auto;top:calc(100% + 10px);
         background:#0B0D12;color:#E7EBF0;border:1px solid #1C2027;border-radius:12px;padding:14px 16px;line-height:1.45;
