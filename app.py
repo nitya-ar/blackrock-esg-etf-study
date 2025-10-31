@@ -12,12 +12,16 @@ from PIL import Image
 
 _GH_RAW = "https://raw.githubusercontent.com/nitya-ar/blackrock-esg-etf-study/main/Blackrock%20esg%20study%20icon.png"
 
-def _pil_to_png_bytes(img: Image.Image):
-    buf = BytesIO(); img.save(buf, format="PNG"); return buf.getvalue()
-
 def _read_bytes(p: Path):
-    try: return p.read_bytes()
-    except Exception: return None
+    try:
+        return p.read_bytes()
+    except Exception:
+        return None
+
+def _pil_to_png_bytes(img: Image.Image):
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 def _load_icon_bytes():
     here = Path(__file__).parent if "__file__" in globals() else Path.cwd()
@@ -30,152 +34,47 @@ def _load_icon_bytes():
     ]
     for p in candidates:
         if p.exists():
-            try: return _pil_to_png_bytes(Image.open(p))
+            try:
+                img = Image.open(p)
+                return _pil_to_png_bytes(img)
             except Exception:
                 b = _read_bytes(p)
-                if b: return b
+                if b:
+                    return b
     try:
-        r = requests.get(_GH_RAW, timeout=8); r.raise_for_status()
-        return _pil_to_png_bytes(Image.open(BytesIO(r.content)))
+        r = requests.get(_GH_RAW, timeout=8)
+        r.raise_for_status()
+        img = Image.open(BytesIO(r.content))
+        return _pil_to_png_bytes(img)
     except Exception:
         return None
 
 _icon_bytes = _load_icon_bytes()
-st.set_page_config(page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
-                   page_icon=_icon_bytes if _icon_bytes else "🌿",
-                   layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(
+    page_title="BlackRock ESG ETFs — Alignment, Evolution, Tradeoffs",
+    page_icon=_icon_bytes if _icon_bytes else "🌿",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 if _icon_bytes:
     _b64 = base64.b64encode(_icon_bytes).decode()
-    st.markdown(f"""
-    <script>
-      (function(){{
-        const link = document.querySelector("link[rel='icon']") || document.createElement('link');
-        link.type='image/png'; link.rel='icon'; link.href="data:image/png;base64,{_b64}";
-        document.head.appendChild(link);
-      }})();
-    </script>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-<script>
-(function(){
-  try{
-    const url = new URL(window.location.href);
-    if(!url.searchParams.get('theme')){
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      url.searchParams.set('theme', prefersDark ? 'dark' : 'light');
-      window.history.replaceState({}, '', url);
-    }
-    const t = (url.searchParams.get('theme') || 'dark').toLowerCase();
-    document.documentElement.setAttribute('data-theme', t);
-    try{
-      const mq = window.matchMedia('(prefers-color-scheme: dark)');
-      mq.addEventListener('change', e => {
-        const u = new URL(window.location.href);
-        u.searchParams.set('theme', e.matches ? 'dark' : 'light');
-        window.location.replace(u.toString());
-      });
-    }catch(_){}
-  }catch(_){}
-})();
-</script>
-""", unsafe_allow_html=True)
-
-try:
-    params = st.experimental_get_query_params()
-except Exception:
-    params = {}
-val = params.get("theme")
-THEME = (val[0] if isinstance(val, list) and val else (val if isinstance(val, str) else "dark")).lower()
-if THEME not in ("dark","light"):
-    THEME = "dark"
-
-PALETTE = {
-    "dark": dict(
-        bg="#0A0B0D", card="#0F1116", border="#1C2027",
-        text="#F3F6FA", text_soft="#E6ECF5", muted="#9AA6B2",
-        axis="#B7C0CC", grid="#222831", grid_soft="#1A1F27",
-        primary="#00A3FF", clean="#0E8F66", contro="#C63C41", other="#7C8A9E",
-        band="#2A2F36", tooltip_bg="#0F1116", tooltip_border="#1C2027",
-        tabbar="#0E1015", tabbar_on="#12151C", slider_track="#1C2027", accent="#C63C41"
-    ),
-    "light": dict(
-        bg="#FFFFFF", card="#FBFCFE", border="#E5EAF2",
-        text="#0B1221", text_soft="#152033", muted="#5B6A7D",
-        axis="#4B5565", grid="#E9EEF5", grid_soft="#EEF2F7",
-        primary="#005EAD", clean="#0A7A58", contro="#B8363B", other="#5E6F84",
-        band="#DDE5F0", tooltip_bg="#FFFFFF", tooltip_border="#D7DEE8",
-        tabbar="#F3F6FA", tabbar_on="#EEF2F7", slider_track="#CFD8E3", accent="#B8363B"
+    st.markdown(
+        f"""
+        <script>
+        const setFav = () => {{
+            const link = document.querySelector("link[rel='icon']") || document.createElement('link');
+            link.type = 'image/png';
+            link.rel = 'icon';
+            link.href = "data:image/png;base64,{_b64}";
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }};
+        setFav();
+        </script>
+        """,
+        unsafe_allow_html=True,
     )
-}
-C = PALETTE[THEME]
 
-def _alt_theme():
-    return {
-        "config": {
-            "background": "transparent",
-            "view": {"fill": "transparent", "stroke": C["border"]},
-            "axis": {
-                "labelColor": C["text_soft"],
-                "titleColor": C["muted"],
-                "domainColor": C["band"],
-                "tickColor": C["band"],
-                "grid": True,
-                "gridColor": C["grid"] if THEME=="dark" else C["grid_soft"],
-                "gridOpacity": 0.65 if THEME=="dark" else 1.0
-            },
-            "legend": {"labelColor": C["text_soft"], "titleColor": C["muted"]},
-            "title": {"color": C["text_soft"]},
-            "range": {
-                "category": [C["clean"], C["contro"], C["other"], C["primary"]]
-            }
-        }
-    }
-alt.themes.register("nx", _alt_theme)
-alt.themes.enable("nx")
-
-st.markdown(f"""
-<style>
-:root {{
-  --bg:{C['bg']}; --card:{C['card']}; --border:{C['border']};
-  --text:{C['text']}; --text-soft:{C['text_soft']}; --muted:{C['muted']};
-  --primary:{C['primary']}; --clean:{C['clean']}; --contro:{C['contro']}; --other:{C['other']};
-  --band:{C['band']}; --tooltip:{C['tooltip_bg']}; --tooltip-b:{C['tooltip_border']};
-  --tabbar:{C['tabbar']}; --tabbar-on:{C['tabbar_on']}; --slider:{C['slider_track']}; --accent:{C['accent']};
-}}
-html, body, [data-testid="stAppViewContainer"]{{background:var(--bg)!important;color:var(--text)!important;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}}
-h1,h2,h3,h4,h5{{color:var(--text);letter-spacing:.1px}}
-.blx-divider{{border-top:1px solid var(--border);margin:10px 0 24px}}
-.blx-muted{{color:var(--muted)}}
-.blx-card{{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:14px;padding:14px 16px}}
-.kpi{{background:linear-gradient(180deg,rgba(0,0,0,.00),rgba(0,0,0,.00));border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:0 0 0 1px rgba(0,0,0,0.02) inset}}
-.kpi .label{{font-size:12px;color:var(--muted);margin-bottom:6px}}
-.kpi .value{{font-size:30px;font-weight:800;line-height:1.05}}
-.kpi.kpi-red{{border-color:rgba(198,60,65,.45)}}
-.kpi.kpi-green{{border-color:rgba(14,143,102,.45)}}
-.info-wrap{{display:flex;align-items:center;gap:8px}}
-.info-title{{font-weight:700}}
-.info-badge{{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;min-width:18px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-weight:800;font-size:11px;line-height:1}}
-.info-badge.has-tip{{position:relative;cursor:default}}
-.info-badge.has-tip::after{{content:attr(data-tip);position:absolute;left:24px;top:-4px;transform:translateY(-100%);background:var(--tooltip);color:var(--text);border:1px solid var(--tooltip-b);padding:8px 10px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.18)}}
-.info-badge.has-tip:hover::after{{opacity:1}}
-.stAltairChart,.stVegaLiteChart{{background:var(--card)!important;border:1px solid var(--border)!important}}
-.vega-tooltip,.vega-tooltip *{{background:var(--tooltip)!important;color:var(--text)!important;border-color:var(--tooltip-b)!important}}
-[data-testid="stDataFrame"],[data-testid="stDataframe"]{{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:12px!important}}
-[data-testid="stDataFrame"] [role="columnheader"],[data-testid="stTable"] thead th{{background:var(--tabbar)!important;color:var(--text)!important;border-bottom:1px solid var(--border)!important}}
-[data-testid="stDataFrame"] [role="gridcell"],[data-testid="stTable"] tbody td{{background:var(--card)!important;color:var(--text)!important;border-top:1px solid var(--border)!important}}
-div[data-testid="stSegmentedControl"] div[role="tablist"]{{background:var(--tabbar)!important;border:1px solid var(--border)!important;border-radius:12px}}
-div[data-testid="stSegmentedControl"] button[role="tab"]{{background:var(--tabbar)!important;color:var(--muted)!important;border:none!important;box-shadow:none!important}}
-div[data-testid="stSegmentedControl"] button[aria-selected="true"]{{background:var(--tabbar-on)!important;color:var(--text)!important;box-shadow:inset 0 0 0 1px var(--accent)!important}}
-[role="slider"]{{box-shadow:0 0 0 3px rgba(0,0,0,0) !important}}
-</style>
-""", unsafe_allow_html=True)
-
-def divider(): st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
-def gap(px=6): st.markdown(f'<div style="height:{px}px"></div>', unsafe_allow_html=True)
-
-# LOADERS
 GITHUB_USER_REPO = st.secrets.get("ESG_REPO", os.getenv("ESG_REPO", "nitya-ar/blackrock-esg-etf-study"))
 GITHUB_BRANCH    = st.secrets.get("ESG_BRANCH", os.getenv("ESG_BRANCH", "main"))
 DASH_BASE_PATH   = st.secrets.get("ESG_DASH_PATH", os.getenv("ESG_DASH_PATH", "Data/Data for Dashboard"))
@@ -183,8 +82,348 @@ LOCAL_BASE       = st.secrets.get("ESG_LOCAL_BASE", os.getenv("ESG_LOCAL_BASE", 
 GITHUB_TOKEN     = st.secrets.get("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN", ""))
 ANALYSIS_DIRS = {1: "Analysis 1", 2: "Analysis 2", 3: "Analysis 3"}
 
+COLORS_DARK = {
+    "bg": "#0A0B0D",
+    "card": "#0F1116",
+    "border": "#1C2027",
+    "text": "#E7EBF0",
+    "muted": "#97A2B0",
+    "primary": "#00A3FF",
+    "clean": "#0E8F66",
+    "contro": "#C63C41",
+    "other": "#768397",
+    "axis_domain": "#2A2F36",
+    "axis_tick": "#2A2F36",
+    "grid": "#222831",
+}
+
+COLORS_LIGHT = {
+    "bg": "#F7F8FA",
+    "card": "#FFFFFF",
+    "border": "#E2E8F0",
+    "text": "#111827",
+    "muted": "#6B7280",
+    "primary": "#0EA5E9",
+    "clean": "#0A7A58",
+    "contro": "#B42318",
+    "other": "#64748B",
+    "axis_domain": "#CBD5E1",
+    "axis_tick": "#CBD5E1",
+    "grid": "#EAEFF5",
+}
+
+_base = (st.get_option("theme.base") or "").lower()
+COLORS = COLORS_LIGHT if _base == "light" else COLORS_DARK
+
+def _alt_theme(colors: dict):
+    return {
+        "config": {
+            "background": "transparent",
+            "view": {"fill": "transparent", "stroke": colors["border"]},
+            "axis": {
+                "labelColor": colors["text"],
+                "titleColor": colors["muted"],
+                "domainColor": colors["axis_domain"],
+                "tickColor":   colors["axis_tick"],
+                "grid": True,
+                "gridColor": colors["grid"],
+                "gridOpacity": 0.45
+            },
+            "legend": {"labelColor": colors["text"], "titleColor": colors["muted"]},
+            "title": {"color": colors["text"]},
+        }
+    }
+
+alt.themes.register("custom_auto", lambda: _alt_theme(COLORS))
+alt.themes.enable("custom_auto")
+
+# STYLES
+st.markdown(
+    f"""
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+      :root {{
+        --bg: {COLORS_DARK['bg']};
+        --card: {COLORS_DARK['card']};
+        --border: {COLORS_DARK['border']};
+        --text: {COLORS_DARK['text']};
+        --muted: {COLORS_DARK['muted']};
+        --primary: {COLORS_DARK['primary']};
+        --clean: {COLORS_DARK['clean']};
+        --contro: {COLORS_DARK['contro']};
+        --other: {COLORS_DARK['other']};
+        --accent: {COLORS_DARK['contro']};
+        --axis-domain: {COLORS_DARK['axis_domain']};
+        --axis-tick: {COLORS_DARK['axis_tick']};
+        --grid: {COLORS_DARK['grid']};
+        color-scheme: dark;
+      }}
+      @media (prefers-color-scheme: light) {{
+        :root {{
+          --bg: {COLORS_LIGHT['bg']};
+          --card: {COLORS_LIGHT['card']};
+          --border: {COLORS_LIGHT['border']};
+          --text: {COLORS_LIGHT['text']};
+          --muted: {COLORS_LIGHT['muted']};
+          --primary: {COLORS_LIGHT['primary']};
+          --clean: {COLORS_LIGHT['clean']};
+          --contro: {COLORS_LIGHT['contro']};
+          --other: {COLORS_LIGHT['other']};
+          --accent: {COLORS_LIGHT['contro']};
+          --axis-domain: {COLORS_LIGHT['axis_domain']};
+          --axis-tick: {COLORS_LIGHT['axis_tick']};
+          --grid: {COLORS_LIGHT['grid']};
+          color-scheme: light;
+        }}
+      }}
+
+      html, body, [data-testid="stAppViewContainer"] {{
+        background-color: var(--bg) !important;
+        color: var(--text) !important;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }}
+      h1, h2, h3, h4, h5 {{ color: var(--text); letter-spacing: .1px; }}
+      .blx-divider {{ border-top: 1px solid var(--border); margin: 10px 0 24px 0; }}
+      .blx-muted {{ color: var(--muted); }}
+
+      .blx-card {{
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 14px; padding: 14px 16px;
+      }}
+      .kpi {{
+        background: linear-gradient(180deg, rgba(0,0,0,.02), rgba(0,0,0,0));
+        border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
+      }}
+      .kpi .label {{ font-size: 12px; color: var(--muted); margin-bottom: 6px; }}
+      .kpi .value {{ font-size: 30px; font-weight: 700; line-height: 1.05; }}
+      .kpi.kpi-red {{ background: linear-gradient(180deg, rgba(200,60,65,0.10), rgba(0,0,0,0)); border-color: rgba(200,60,65,0.40); }}
+      .kpi.kpi-green {{ background: linear-gradient(180deg, rgba(14,143,102,0.10), rgba(0,0,0,0)); border-color: rgba(14,143,102,0.40); }}
+      .kpi.kpi-neutral {{ background: linear-gradient(180deg, rgba(128,128,128,0.08), rgba(0,0,0,0)); border-color: rgba(128,128,128,0.25); }}
+
+      .stAltairChart, .stVegaLiteChart, .stPlotlyChart {{ background: var(--card) !important; border: 1px solid var(--border) !important; }}
+      .vega-embed, .stAltairChart {{ background: transparent !important; }}
+
+      .vega-tooltip, .vega-tooltip * {{ background: var(--card) !important; color: var(--text) !important; border-color: var(--border) !important; }}
+
+      .info-badge {{
+        display:inline-flex; align-items:center; justify-content:center;
+        width:22px; height:22px; min-width:22px; border-radius:50%;
+        background: transparent !important;
+        color: var(--text) !important;
+        border: 2px solid var(--text) !important;
+        font-weight:700; font-size:12px;
+        margin-left:8px; vertical-align:text-bottom;
+      }}
+      .chart-head {{ display:flex; align-items:center; }}
+      .chart-head .chart-title {{ flex:1 1 auto; }}
+      .chart-head .info-badge {{ margin-left:auto; }}
+
+      .info-badge:hover, .info-badge:focus {{
+        box-shadow: 0 0 0 3px rgba(198,60,65,0.22);
+        outline: none;
+      }}
+
+      .has-tip {{ position:relative; }}
+      .has-tip::after {{
+        content: attr(data-tip);
+        position:absolute; right:0; top:calc(100% + 8px);
+        background: var(--card); color:var(--text); border:1px solid var(--border);
+        padding:6px 10px; border-radius:8px; white-space:nowrap;
+        opacity:0; transform:translateY(6px); pointer-events:none;
+        transition:opacity .15s ease, transform .15s ease;
+        box-shadow:0 10px 24px rgba(0,0,0,.20); z-index:99999;
+      }}
+      .has-tip:hover::after, .has-tip:focus::after {{ opacity:1; transform:translateY(0); }}
+
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) {{
+        background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="grid"] {{ background: var(--card) !important; }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="columnheader"],
+      div[data-testid="stDataframe"] thead tr th {{
+        background: var(--card) !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important;
+      }}
+      :where([data-testid="stDataFrame"], [data-testid="stDataframe"]) [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] tbody tr td {{
+        background: var(--card) !important; color: var(--text) !important; border-top:1px solid var(--border) !important;
+      }}
+
+      :where([data-testid="stTable"]) table {{ background: var(--card) !important; border: 1px solid var(--border) !important; border-radius: 12px !important; }}
+      :where([data-testid="stTable"]) thead th {{ background: var(--card) !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important; }}
+      :where([data-testid="stTable"]) tbody td {{ background: var(--card) !important; color: var(--text) !important; border-top:1px solid var(--border) !important; }}
+
+      [data-baseweb="select"], [data-baseweb="input"] {{
+        border: 1px solid var(--border) !important; border-radius: 10px !important; background: var(--card) !important;
+      }}
+      [data-baseweb="select"] > div, [data-baseweb="input"] > div {{
+        background: var(--card) !important; border-radius:10px !important; box-shadow:none !important; border:none !important;
+      }}
+      [data-baseweb="select"] > div *, [data-baseweb="input"] > div * {{ background:transparent !important; color:var(--text) !important; }}
+      [data-baseweb="select"] > div:focus-within, [data-baseweb="input"] > div:focus-within {{
+        outline:none !important; border:1px solid var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important;
+      }}
+      [data-baseweb="input"] input::placeholder {{ color: var(--muted) !important; opacity:1 !important; }}
+      [data-baseweb="menu"] {{
+        background: var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      [data-baseweb="menu"] li {{ color:var(--text) !important; }}
+      [data-baseweb="menu"] li:hover {{ background: rgba(0,0,0,0.06) !important; }}
+
+      [data-baseweb="slider"] > div {{ background:transparent !important; }}
+      [data-baseweb="slider"] div[role="presentation"] {{ background: var(--border) !important; }}
+      [data-baseweb="slider"] div[role="presentation"] > div {{ background:var(--accent) !important; }}
+      [data-baseweb="slider"] [role="slider"] {{
+        background:var(--accent) !important;
+        box-shadow:0 0 0 3px rgba(198,60,65,0.18) !important; border:0 !important;
+      }}
+      [data-baseweb="slider"] * {{ color:var(--text) !important; }}
+
+      div[data-testid="stSegmentedControl"] div[role="tablist"] {{
+        background: var(--card) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[role="tab"],
+      div[data-testid="stSegmentedControl"] button[role="tab"] > *,
+      div[data-testid="stSegmentedControl"] button[role="tab"] > * > * {{
+        background: var(--card) !important; color:var(--muted) !important; border:none !important; box-shadow:none !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"],
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > *,
+      div[data-testid="stSegmentedControl"] button[aria-selected="true"] > * > * {{
+        background: var(--card) !important; color:var(--text) !important;
+        border:none !important; box-shadow: inset 0 0 0 1px var(--accent) !important;
+      }}
+      div[data-testid="stSegmentedControl"] button[disabled],
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"],
+      div[data-testid="stSegmentedControl"] button[disabled] > *,
+      div[data-testid="stSegmentedControl"] button[aria-disabled="true"] > * {{
+        background: var(--card) !important; color:var(--muted) !important; border:none !important; box-shadow:none !important; opacity:1 !important;
+      }}
+
+      .stTabs [data-baseweb="tab-list"] {{ background: var(--card) !important; border-bottom:1px solid var(--border) !important; }}
+      .stTabs [data-baseweb="tab"] {{ background:transparent !important; color:var(--muted) !important; border-color:transparent !important; box-shadow:none !important; }}
+      .stTabs [data-baseweb="tab"][aria-selected="true"] {{ color:var(--text) !important; border-color:transparent !important; box-shadow: inset 0 -2px 0 var(--accent) !important; }}
+
+      .stDownloadButton > button, .stButton > button {{
+        background: var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+      .stDownloadButton > button:hover, .stButton > button:hover {{ background: rgba(0,0,0,0.04) !important; border-color: var(--border) !important; }}
+
+      label {{
+        color: var(--muted) !important; font-size:13px !important; letter-spacing:.2px;
+      }}
+      *::-webkit-scrollbar {{ width: 10px; height: 10px; }}
+      *::-webkit-scrollbar-thumb {{ background: var(--border); border-radius: 8px; }}
+      *::-webkit-scrollbar-track {{ background: var(--bg); }}
+
+      [class*="portal"], [data-baseweb="popover"], [data-baseweb="menu"],
+      [data-baseweb="popover"] * , [data-baseweb="menu"] * {{
+        background: var(--card) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }}
+
+      [role="listbox"] {{ background: var(--card) !important; border:1px solid var(--border) !important; }}
+      [role="option"]  {{ background:transparent !important; color:var(--text) !important; }}
+      [role="option"][aria-selected="true"],
+      [role="option"]:hover {{ background: rgba(0,0,0,0.06) !important; }}
+
+      div[data-testid="stPopover"] div[role="dialog"],
+      div[data-testid="stPopover"] div[role="dialog"] * {{
+        background: var(--card) !important; color:var(--text) !important; border-color: var(--border) !important;
+      }}
+
+      div[data-testid="stDataFrame"] [role="columnheader"],
+      div[data-testid="stDataframe"] [role="columnheader"],
+      div[data-testid="stTable"] thead th {{
+        background: var(--card) !important; color: var(--text) !important; border-bottom:1px solid var(--border) !important;
+      }}
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stDataframe"] [role="rowgroup"] [role="row"] [role="gridcell"],
+      div[data-testid="stTable"] tbody td,
+      div[data-testid="stTable"] tbody tr:nth-child(odd) td,
+      div[data-testid="stTable"] tbody tr:nth-child(even) td,
+      div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+      div[data-testid="stTable"] tbody tr:first-child td {{
+        background: var(--card) !important; color: var(--text) !important; border-top:1px solid var(--border) !important;
+      }}
+      div[data-testid="stDataFrame"] [role="row"]:hover [role="gridcell"],
+      div[data-testid="stDataFrame"] [role="row"][data-focused="true"] [role="gridcell"] {{
+        background: rgba(0,0,0,0.04) !important;
+      }}
+
+      div[data-testid="stDataFrame"], div[data-testid="stDataframe"] {{
+        background: var(--card) !important; border:1px solid var(--border) !important; border-radius:12px !important;
+      }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown("""
+<style>
+/* ===== Safari/Private hardening: ONLY tables, segmented control, radio, vega tooltip ===== */
+div[data-testid="stDataFrame"] [role="rowgroup"] [role="row"]:first-of-type [role="gridcell"],
+div[data-testid="stTable"] tbody tr:first-child td {
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
+/* Tab 2: segmented control (Weighting) hover/focus states */
+div[data-testid="stSegmentedControl"] button[role="tab"]:hover,
+div[data-testid="stSegmentedControl"] button[role="tab"]:focus {
+  background: rgba(0,0,0,0.04) !important;
+  color: var(--text) !important;
+}
+
+/* Tab 3: radio group dark/light background */
+div[data-testid="stRadio"][data-baseweb="radio"] {
+  background: var(--card) !important;
+  border-radius: 10px !important;
+}
+div[data-testid="stRadio"][data-baseweb="radio"] > div { background: transparent !important; }
+div[data-baseweb="radio"] label { color: var(--text) !important; }
+div[data-baseweb="radio"] svg { background: var(--card) !important; border-radius: 50%; }
+div[data-baseweb="radio"] input:checked + label svg { box-shadow: 0 0 0 2px var(--accent) inset !important; }
+
+/* Altair/Vega tooltip */
+.vega-tooltip,
+.vega-tooltip * {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+def divider():
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
+
+def gap(px=6):
+    st.markdown(f'<div style="height:{px}px;"></div>', unsafe_allow_html=True)
+
+def style_dark_df(df: pd.DataFrame):
+    bg, hdr, txt, bdr = "var(--card)", "var(--card)", "var(--text)", "var(--border)"
+    sty = (
+        df.style
+          .set_table_styles([
+              {"selector":"table","props":[("background-color",bg),("color",txt),("border-collapse","collapse"),("border",f"1px solid {bdr}")]},
+              {"selector":"thead th","props":[("background-color",hdr),("color",txt),("border-bottom",f"1px solid {bdr}"),("padding","6px 8px")]},
+              {"selector":"tbody td","props":[("background-color",bg),("color",txt),("border-top",f"1px solid {bdr}"),("padding","6px 8px")]}
+          ])
+          .set_properties(**{"background-color": bg, "color": txt, "border-color": bdr})
+    )
+    return sty
+
+def grid(df: pd.DataFrame):
+    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+
+# LOADERS
 def _url_join(*parts: str) -> str:
-    path = "/".join(p.strip("/").replace("\\","/") for p in parts if p)
+    path = "/".join(p.strip("/").replace("\\", "/") for p in parts if p)
     return "/".join(urllib.parse.quote(s, safe=":/") for s in path.split("/"))
 
 def github_raw_url(analysis: int, filename: str) -> str:
@@ -196,24 +435,31 @@ def github_api_url(analysis: int, filename: str) -> str:
     return f"https://api.github.com/repos/{GITHUB_USER_REPO}/contents/{rel}?ref={GITHUB_BRANCH}"
 
 def local_path(analysis: int, filename: str) -> str:
-    if not LOCAL_BASE: return ""
+    if not LOCAL_BASE:
+        return ""
     return os.path.join(LOCAL_BASE, ANALYSIS_DIRS[analysis], filename)
 
 @st.cache_data(show_spinner=False)
 def load_csv(analysis: int, filename: str) -> pd.DataFrame:
     lp = local_path(analysis, filename)
-    if lp and os.path.exists(lp): return pd.read_csv(lp)
+    if lp and os.path.exists(lp):
+        return pd.read_csv(lp)
     raw_url = github_raw_url(analysis, filename)
-    try: return pd.read_csv(raw_url)
+    try:
+        return pd.read_csv(raw_url)
     except Exception as e_raw:
         api_url = github_api_url(analysis, filename)
         headers = {"Accept": "application/vnd.github.v3.raw"}
-        if GITHUB_TOKEN: headers["Authorization"] = f"token {GITHUB_TOKEN}"
+        if GITHUB_TOKEN:
+            headers["Authorization"] = f"token {GITHUB_TOKEN}"
         try:
-            r = requests.get(api_url, headers=headers, timeout=25); r.raise_for_status()
+            r = requests.get(api_url, headers=headers, timeout=25)
+            r.raise_for_status()
             return pd.read_csv(StringIO(r.text))
         except Exception as e_api:
-            raise FileNotFoundError(f"Failed to load {filename}.\nraw={e_raw}; api={e_api}")
+            raise FileNotFoundError(
+                f"Failed to load {filename}. Tried local, public raw, and API.\nraw={e_raw}; api={e_api}"
+            )
 
 @st.cache_data(show_spinner=False)
 def load_context_summary():   return load_csv(1, "context_summary_2025.csv")
@@ -226,9 +472,16 @@ def load_explorer():
     df = load_csv(1, "holdings_explorer_2025.csv")
     for col in ["classification","sector","region","screen_categories"]:
         if col in df.columns: df[col] = df[col].fillna("")
-    scn = (df["screen_categories"].astype(str).str.split(r"\s*\|\s*")
-           .apply(lambda xs: [x.strip() for x in xs if x and x.lower()!="nan"])) if "screen_categories" in df.columns else [[] for _ in range(len(df))]
+    if "screen_categories" in df.columns:
+        scn = (
+            df["screen_categories"].astype(str)
+            .str.split(r"\s*\|\s*")
+            .apply(lambda xs: [x.strip() for x in xs if x and x.lower() != "nan"])
+        )
+    else:
+        scn = [[] for _ in range(len(df))]
     df["_screen_categories_norm"] = scn
+
     rename_map = {
         "etf_ticker":"ETF","etf_name":"ETF Name","ticker":"Ticker","holding_name":"Holding",
         "sector":"Sector","region":"Region","classification":"Class","screen_categories":"Screens",
@@ -236,58 +489,89 @@ def load_explorer():
         "as_of_date":"As-of",
     }
     df_disp = df.rename(columns={k:v for k,v in rename_map.items() if k in df.columns})
-    ordered = [c for c in ["ETF","ETF Name","Ticker","Holding","Sector","Region","Class","Screens",
-                           "Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)","As-of"] if c in df_disp.columns]
+    ordered = [c for c in [
+        "ETF","ETF Name","Ticker","Holding","Sector","Region","Class","Screens",
+        "Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)","As-of"
+    ] if c in df_disp.columns]
     df_disp = df_disp[ordered]
     tags = sorted({t for xs in scn for t in xs if t})
     return df, df_disp, tags
-@st.cache_data(show_spinner=False)
-def load_exposures_by_fund_year(): return load_csv(2, "exposures_by_fund_year.csv")
-@st.cache_data(show_spinner=False)
-def load_aggregate_trends():     return load_csv(2, "aggregate_exposure_trends.csv")
-@st.cache_data(show_spinner=False)
-def load_dispersion_stats():     return load_csv(2, "exposure_dispersion_stats.csv")
-@st.cache_data(show_spinner=False)
-def load_screen_trends():        return load_csv(2, "aggregate_screen_trends.csv")
-@st.cache_data(show_spinner=False)
-def load_year_compare():         return load_csv(2, "year_compare_summary.csv")
-@st.cache_data(show_spinner=False)
-def load_top_movers_with_names():return load_csv(2, "top_movers_with_names.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_specs():       return load_csv(3, "scenario_specs.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_metrics():     return load_csv(3, "scenario_portfolio_metrics.csv")
-@st.cache_data(show_spinner=False)
-def load_scenario_deltas():      return load_csv(3, "scenario_position_deltas.csv")
-@st.cache_data(show_spinner=False)
-def load_returns_top():          return load_csv(3, "returns_top_per_etf_2025.csv")
-@st.cache_data(show_spinner=False)
-def load_covariance_daily():     return load_csv(3, "covariance_2025.csv")
-@st.cache_data(show_spinner=False)
-def load_etf_aum_2025():         return load_csv(3, "etf_aum_2025.csv")
 
-def style_dark_df(df: pd.DataFrame):
-    sty = (
-        df.style
-        .set_table_styles([
-            {"selector":"table","props":[("background-color","var(--card)"),("color","var(--text)"),("border-collapse","collapse"),("border","1px solid var(--border)")]},
-            {"selector":"thead th","props":[("background-color","var(--tabbar)"),("color","var(--text)"),("border-bottom","1px solid var(--border)"),("padding","6px 8px")]},
-            {"selector":"tbody td","props":[("background-color","var(--card)"),("color","var(--text)"),("border-top","1px solid var(--border)"),("padding","6px 8px")]}
-        ])
-        .set_properties(**{"background-color":"var(--card)","color":"var(--text)","border-color":"var(--border)"})
-    )
-    return sty
+@st.cache_data(show_spinner=False)
+def load_exposures_by_fund_year():
+    return load_csv(2, "exposures_by_fund_year.csv")
 
-def grid(df: pd.DataFrame):
-    st.dataframe(style_dark_df(df), use_container_width=True, hide_index=True)
+@st.cache_data(show_spinner=False)
+def load_aggregate_trends():
+    return load_csv(2, "aggregate_exposure_trends.csv")
+
+@st.cache_data(show_spinner=False)
+def load_dispersion_stats():
+    return load_csv(2, "exposure_dispersion_stats.csv")
+
+@st.cache_data(show_spinner=False)
+def load_screen_trends():
+    return load_csv(2, "aggregate_screen_trends.csv")
+
+@st.cache_data(show_spinner=False)
+def load_year_compare():
+    return load_csv(2, "year_compare_summary.csv")
+
+@st.cache_data(show_spinner=False)
+def load_top_movers_with_names():
+    return load_csv(2, "top_movers_with_names.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_specs():
+    return load_csv(3, "scenario_specs.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_metrics():
+    return load_csv(3, "scenario_portfolio_metrics.csv")
+
+@st.cache_data(show_spinner=False)
+def load_scenario_deltas():
+    return load_csv(3, "scenario_position_deltas.csv")
+
+@st.cache_data(show_spinner=False)
+def load_returns_top():
+    return load_csv(3, "returns_top_per_etf_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_covariance_daily():
+    return load_csv(3, "covariance_2025.csv")
+
+@st.cache_data(show_spinner=False)
+def load_etf_aum_2025():
+    return load_csv(3, "etf_aum_2025.csv")
+
+# HEADER CONTENT
+st.markdown(
+    """
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <h2 style="margin:0; font-weight:800; letter-spacing:0.1px;">
+        BlackRock ESG ETFs: Alignment, Evolution, and Tradeoffs (2017–2025)
+      </h2>
+      <div class="blx-muted" style="max-width:1400px; text-align:justify; text-justify:inter-word;">
+        This project analyzes 20 BlackRock ETFs positioned as sustainable to evaluate how their holdings align with core sustainability themes from 2017 to 2025. It applies a consistent classification framework for 2025 that distinguishes companies considered clean from those associated with five controversial categories: fossil fuels, weapons, tobacco, prisons, and deforestation. The dashboard brings this analysis to life through three views: the 2025 Overview, which outlines current exposure to clean and controversial holdings; Change since 2017, which traces how these exposures have evolved; and Tradeoff Scenarios, which model cleaner portfolio versions to illustrate the relationship between sustainability alignment and investment performance.
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 def kpi_card(label: str, value: str, tone: str = "neutral"):
-    tone_class = {"red":"kpi kpi-red","green":"kpi kpi-green","neutral":"kpi"}.get(tone, "kpi")
-    st.markdown(f"""<div class="{tone_class}"><div class="label">{label}</div><div class="value">{value}</div></div>""", unsafe_allow_html=True)
+    tone_class = {"red":"kpi-red","green":"kpi-green","neutral":"kpi-neutral"}.get(tone, "kpi-neutral")
+    st.markdown(f"""
+        <div class="kpi {tone_class}">
+          <div class="label">{label}</div>
+          <div class="value">{value}</div>
+        </div>
+    """, unsafe_allow_html=True)
 
 def pct_fmt(x):
     try: return f"{float(x):.1f}%"
-    except: return "–"
+    except: return "-"
 
 def usd_fmt(x):
     try:
@@ -295,187 +579,74 @@ def usd_fmt(x):
         if abs(x) >= 1e9: return f"${x/1e9:.1f}B"
         if abs(x) >= 1e6: return f"${x/1e6:.1f}M"
         return f"${x:,.0f}"
-    except: return "–"
+    except: return "-"
 
 divider()
 
-# TAB 1
-with st.tabs(["2025 Overview","Change since 2017","Tradeoff Scenarios"])[0]:
-    st.subheader("2025 Overview")
-    ctx = load_context_summary()
-    scr = load_by_screen()
-    spot = load_spotlight()
-    k1, k2, k3, k4 = st.columns(4)
-    if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-        clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
-        contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"].sum()
-    else:
-        clean_pct = contro_pct = None
-    total_aum = ctx.get("total_aum_usd")
-    total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
-    num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0]) if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()) else None
-    with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
-    with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
-    with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="neutral")
-    with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "–", tone="neutral")
-    gap(6)
-    c1, c2 = st.columns([0.5, 0.5])
-    with c1:
-        st.markdown(f"""<div class="info-wrap"><div class="info-title">2025 Composition — Clean vs Controversial vs Other</div></div>""", unsafe_allow_html=True)
-        if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
-            comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
-            comp["classification"] = comp["classification"].map({"Clean":"Clean","Controversial":"Controversial","Other":"Other","clean":"Clean","controversial":"Controversial","other":"Other"})
-            comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
-            comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
-            comp["Group"] = "All"
-            chart = (
-                alt.Chart(comp)
-                .mark_bar(opacity=0.92)
-                .encode(
-                    x=alt.X("sum(share):Q", stack="normalize", axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
-                    y=alt.Y("Group:N", title=None, axis=None),
-                    color=alt.Color("classification:N", title=None,
-                                    scale=alt.Scale(domain=["Clean","Controversial","Other"], range=[C["clean"],C["contro"],C["other"]])),
-                    tooltip=[alt.Tooltip("classification:N"), alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
-                ).properties(height=120)
-            )
-            st.altair_chart(chart, use_container_width=True)
-        else:
-            st.info("composition columns missing in context_summary_2025.csv")
-    with c2:
-        st.markdown(f"""<div class="info-wrap"><div class="info-title">By-screen exposures — share of total AUM</div><div class="info-badge has-tip" data-tip="Categories can overlap; these shares indicate each screen’s footprint relative to total AUM.">i</div></div>""", unsafe_allow_html=True)
-        parts = []
-        clean200 = 0.0
-        if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
-            s2 = scr.copy(); s2["classification"] = s2["classification"].str.title()
-            s_con = s2[s2["classification"]=="Controversial"].groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
-            parts.append(s_con)
-            c2_row = scr.loc[scr["screen_category"].astype(str).str.strip().str.lower()=="clean200","share_of_total_aum_pct"].sum()
-            clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
-        parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
-        scr_all = pd.concat(parts, ignore_index=True).groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
-        scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
-        scr_all["color"] = scr_all["screen_category"].apply(lambda x: C["clean"] if str(x).strip().lower()=="clean200" else C["contro"])
-        chart2 = (
-            alt.Chart(scr_all)
-            .mark_bar(opacity=0.92)
-            .encode(
-                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
-                y=alt.Y("screen_category:N", sort="-x", title=None, axis=alt.Axis(labelColor=C["text_soft"])),
-                color=alt.Color("color:N", legend=None, scale=None),
-                tooltip=[alt.Tooltip("screen_category:N", title="Category"),
-                         alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
-            ).properties(height=240)
-        )
-        st.altair_chart(chart2, use_container_width=True)
-    s1, s2 = st.columns([0.5, 0.5])
-    with s1:
-        st.markdown('<div class="info-title" style="margin-bottom:6px">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
-        spotC = load_spotlight()
-        if "cohort" in spotC.columns:
-            cont = spotC[spotC["cohort"].str.lower()=="controversial"].copy()
-            if "rank_within_cohort" in cont.columns: cont = cont.sort_values("rank_within_cohort").head(10)
-            cont_disp = cont.rename(columns={
-                "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
-                "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
-            })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-            if "Share of AUM (%)" in cont_disp.columns:
-                cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-            grid(cont_disp)
-    with s2:
-        st.markdown('<div class="info-title" style="margin-bottom:6px">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
-        spotL = load_spotlight()
-        if "cohort" in spotL.columns:
-            clean = spotL[spotL["cohort"].str.lower()=="clean"].copy()
-            if "rank_within_cohort" in clean.columns: clean = clean.sort_values("rank_within_cohort").head(10)
-            clean_disp = clean.rename(columns={
-                "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
-                "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
-            })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
-            if "Share of AUM (%)" in clean_disp.columns:
-                clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
-            grid(clean_disp)
-    gap(8)
-    st.markdown('<div class="info-title" style="margin-bottom:6px">Holdings Explorer</div>', unsafe_allow_html=True)
-    df_raw, df_disp, all_tags = load_explorer()
-    fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
-    with fc1:
-        etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
-        sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
-    with fc2:
-        classes = ["Clean","Controversial","Other"]
-        sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
-    with fc3:
-        sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
-    with fc4:
-        sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
-        sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
-    with fc5:
-        regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
-        sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
-    q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
-    mask = pd.Series(True, index=df_raw.index)
-    if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
-    if sel_class:  mask &= df_disp["Class"].isin(sel_class)
-    if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
-    if sel_region: mask &= df_disp["Region"].isin(sel_region)
-    if sel_tags:   mask &= df_raw["_screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
-    if q:
-        qcols = [c for c in ["Ticker","Holding","ETF Name"] if c in df_disp.columns]
-        if qcols:
-            qmask = False
-            for c in qcols: qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
-            mask &= qmask
-    df_f = df_disp.loc[mask].copy()
-    default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
-    if default_sort: df_f = df_f.sort_values(by=default_sort, ascending=False)
-    df_view = df_f.copy()
-    for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
-        if c in df_view.columns: df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
-    grid(df_view)
-    csv_bytes = df_f.to_csv(index=False).encode("utf-8")
-    st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
+mode = "Dashboard"
+divider()
 
-# RENDER: Tab 2
+# RENDER: Change since 2017
 def render_change_since_2017():
     import numpy as np
-    by_fund = load_exposures_by_fund_year()
-    scr_tr  = load_screen_trends()
-    movers  = load_top_movers_with_names()
+    import pandas as pd
+    import altair as alt
+    import streamlit as st
+
+    st.subheader("Change since 2017")
+    st.caption("Track Clean vs Controversial from your selected start year. Switch weighting to see how AUM shifts affect the trend. All years apply the 2025 classification.")
 
     def _pick(df, *keys):
         keys = [k.lower() for k in keys]
         for c in df.columns:
-            if any(k in c.lower() for k in keys): return c
+            if any(k in c.lower() for k in keys):
+                return c
         return None
 
     def _pick_exact(df, *names):
         low = {c.lower(): c for c in df.columns}
         for n in names:
-            if n.lower() in low: return low[n.lower()]
+            if n.lower() in low:
+                return low[n.lower()]
         return None
 
     def _exists(df, label):
         if df is None or len(df) == 0:
-            st.error(f"{label}: no rows found."); st.stop()
+            st.error(f"{label}: no rows found.")
+            st.stop()
 
     def _need_col(df, col, label):
         if (col is None) or (col not in df.columns):
-            st.error(f"{label}: missing required column '{col}'."); st.stop()
+            st.error(f"{label}: missing required column '{col}'.")
+            st.stop()
 
     def _dyn_domain_zero(values, pad=0.08, min_span=0.8):
         vals = pd.to_numeric(pd.Series(values), errors="coerce").dropna()
-        if vals.empty: return [0, 1]
+        if vals.empty:
+            return [0, 1]
         lo, hi = float(vals.min()), float(vals.max())
-        if not np.isfinite(lo) or not np.isfinite(hi): return [0, 1]
+        if not np.isfinite(lo) or not np.isfinite(hi):
+            return [0, 1]
         if lo >= 0:
-            span = max(hi, min_span); return [0, hi + span * pad]
+            span = max(hi, min_span)
+            return [0, hi + span * pad]
         if hi <= 0:
-            span = max(abs(lo), min_span); return [lo - span * pad, 0]
-        m = max(abs(lo), abs(hi), min_span) * (1 + pad); return [-m, m]
+            span = max(abs(lo), min_span)
+            return [lo - span * pad, 0]
+        m = max(abs(lo), abs(hi), min_span) * (1 + pad)
+        return [-m, m]
 
     def _zero_rule(h):
-        return alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(opacity=0.35).encode(y="y:Q").properties(height=h)
+        return (
+            alt.Chart(pd.DataFrame({"y": [0]}))
+            .mark_rule(opacity=0.35)
+            .encode(y="y:Q")
+            .properties(height=h)
+        )
+
+    by_fund = load_exposures_by_fund_year()
+    scr_tr  = load_screen_trends()
+    movers  = load_top_movers_with_names()
 
     _exists(by_fund, "Exposures by fund/year")
     _exists(scr_tr,   "Screen trends")
@@ -502,7 +673,12 @@ def render_change_since_2017():
     topA, topB, topC = st.columns([0.44, 0.28, 0.28])
 
     with topB:
-        start_year = st.slider("Start Year", min_value=min_year, max_value=max(end_year - 1, min_year), value=min_year)
+        start_year = st.slider(
+            "Start Year",
+            min_value=min_year,
+            max_value=max(end_year - 1, min_year),
+            value=min_year,
+        )
 
     setA = set(df_all.loc[df_all[year_col] == start_year, etf_col].astype(str))
     setZ = set(df_all.loc[df_all[year_col] == end_year,   etf_col].astype(str))
@@ -512,8 +688,18 @@ def render_change_since_2017():
         sel_etfs = st.multiselect("ETF", overlap, default=[])
 
     with topC:
-        st.markdown(f'<div class="info-wrap"><div class="info-title">Weighting</div><div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>', unsafe_allow_html=True)
-        weighting = st.radio("", options=["AUM-weighted", "Equal-weighted"], horizontal=True, label_visibility="collapsed", index=0)
+        st.markdown(
+            '<div class="chart-head"><div class="chart-title">Weighting</div>'
+            '<div class="info-badge has-tip" data-tip="AUM-weighted averages ETFs by assets; Equal-weighted gives each ETF the same weight.">i</div></div>',
+            unsafe_allow_html=True,
+        )
+        weighting = st.radio(
+            "Weighting",
+            options=["AUM-weighted", "Equal-weighted"],
+            horizontal=True,
+            label_visibility="collapsed",
+            index=0,
+        )
 
     cohort = overlap if not sel_etfs else sel_etfs
     df = df_all[df_all[etf_col].astype(str).isin(cohort)].copy()
@@ -521,12 +707,15 @@ def render_change_since_2017():
     covI = len(cohort)
 
     def _series_from_funds(col_name: str) -> pd.DataFrame:
-        if col_name not in df.columns or df.empty: return pd.DataFrame(columns=[year_col, "value"])
+        if col_name not in df.columns or df.empty:
+            return pd.DataFrame(columns=[year_col, "value"])
         d = df[[year_col, col_name] + ([aum_col] if aum_col in df.columns else [])].copy()
         d[col_name] = pd.to_numeric(d[col_name], errors="coerce")
         if weighting == "AUM-weighted" and aum_col in d.columns and d[aum_col].notna().any():
             d[aum_col] = pd.to_numeric(d[aum_col], errors="coerce").clip(lower=0)
-            out = d.groupby(year_col).apply(lambda g: (g[col_name] * g[aum_col]).sum() / g[aum_col].sum() if g[aum_col].sum() > 0 else float("nan")).reset_index(name="value")
+            out = d.groupby(year_col).apply(
+                lambda g: (g[col_name] * g[aum_col]).sum() / g[aum_col].sum() if g[aum_col].sum() > 0 else float("nan")
+            ).reset_index(name="value")
         else:
             out = d.groupby(year_col)[col_name].mean().reset_index().rename(columns={col_name: "value"})
         return out.sort_values(year_col)
@@ -552,198 +741,359 @@ def render_change_since_2017():
     net_delta = (net_end - net_start) if (pd.notna(net_end) and pd.notna(net_start)) else None
 
     def slope_chart(two_point_df: pd.DataFrame, color, height=160):
-        two = two_point_df.copy(); two["Year"] = two[year_col].astype(str)
+        two = two_point_df.copy()
+        two["Year"] = two[year_col].astype(str)
         y_dom = _dyn_domain_zero(two["value"])
         base = alt.Chart(two).encode(
-            x=alt.X("Year:N", title=None, sort=[str(start_year), str(end_year)], axis=alt.Axis(labelColor=C["text_soft"])),
-            y=alt.Y("value:Q", title=None, axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"]),
-                    scale=alt.Scale(domain=y_dom, zero=False, nice=True)))
-        line = base.mark_line(color=color, strokeWidth=3); pts  = base.mark_point(color=color, size=110, filled=True)
+            x=alt.X("Year:N", title=None, sort=[str(start_year), str(end_year)]),
+            y=alt.Y(
+                "value:Q",
+                title=None,
+                axis=alt.Axis(format=".1f"),
+                scale=alt.Scale(domain=y_dom, zero=False, nice=True),
+            ),
+        )
+        line = base.mark_line(color=color, strokeWidth=3)
+        pts  = base.mark_point(color=color, size=110, filled=True)
         return alt.layer(_zero_rule(height), line, pts).resolve_scale(y="shared").properties(height=height)
 
     k1, k2, k3, k4 = st.columns([0.25, 0.25, 0.25, 0.25])
 
     with k1:
-        st.markdown(f"""<div class="kpi"><div class="label">Net improvement (Clean − Controversial)</div><div class="value">{(net_delta if net_delta is not None else 0):+,.1f} pp</div></div>""", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral" style="background:linear-gradient(180deg, rgba(127,127,127,0.08), rgba(0,0,0,0));">
+              <div class="label">Net improvement (Clean − Controversial)</div>
+              <div class="value">{(net_delta if net_delta is not None else 0):+,.1f} pp</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         if s_net is not None and not s_net.empty:
             tp = s_net[s_net[year_col].isin([start_year, end_year])][[year_col, "value"]]
-            if len(tp) == 2: st.altair_chart(slope_chart(tp, C["other"]), use_container_width=True)
+            if len(tp) == 2:
+                st.altair_chart(slope_chart(tp, "#8A93A6"), use_container_width=True)
+
     with k2:
         d_clean = (cZ - cA) if (pd.notna(cZ) and pd.notna(cA)) else None
-        kpi_card(f"Clean — change since {start_year}", f"{d_clean:.1f} pp" if d_clean is not None else "–", tone="green" if (d_clean or 0) >= 0 else "red")
+        kpi_card(
+            f"Clean — change since {start_year}",
+            f"{d_clean:.1f} pp" if d_clean is not None else "–",
+            tone="green" if (d_clean or 0) >= 0 else "red",
+        )
         if not s_clean.empty:
             tp = s_clean[s_clean[year_col].isin([start_year, end_year])][[year_col, "value"]]
-            if len(tp) == 2: st.altair_chart(slope_chart(tp, C["clean"]), use_container_width=True)
+            if len(tp) == 2:
+                st.altair_chart(slope_chart(tp, COLORS["clean"]), use_container_width=True)
+
     with k3:
         d_ctr = (kZ - kA) if (pd.notna(kZ) and pd.notna(kA)) else None
-        kpi_card(f"Controversial — change since {start_year}", f"{d_ctr:.1f} pp" if d_ctr is not None else "–", tone="red" if (d_ctr or 0) > 0 else "green")
+        kpi_card(
+            f"Controversial — change since {start_year}",
+            f"{d_ctr:.1f} pp" if d_ctr is not None else "–",
+            tone="red" if (d_ctr or 0) > 0 else "green",
+        )
         if not s_contro.empty:
             tp = s_contro[s_contro[year_col].isin([start_year, end_year])][[year_col, "value"]]
-            if len(tp) == 2: st.altair_chart(slope_chart(tp, C["contro"]), use_container_width=True)
+            if len(tp) == 2:
+                st.altair_chart(slope_chart(tp, COLORS["contro"]), use_container_width=True)
+
     with k4:
-        st.markdown(f"""<div class="kpi" style="display:flex;align-items:center;gap:14px"><div style="font-size:44px;font-weight:800;line-height:1">{covI}</div><div><div class="label" style="margin:0">ETFs appear in both <b>{start_year}</b> and <b>{end_year}</b></div></div></div>""", unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="kpi kpi-neutral" style="display:flex;align-items:center;gap:14px;">
+              <div style="font-size:44px; font-weight:800; line-height:1;">{covI}</div>
+              <div><div class="label" style="margin:0;">ETFs appear in both <b>{start_year}</b> and <b>{end_year}</b></div></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     gap(8)
-    st.markdown(f"""<div class="info-wrap"><div class="info-title">Combined trend — % Clean and % Controversial</div><div class="info-badge has-tip" data-tip="Shaded band shows middle 35–65% of ETF exposures each year; lines are the average based on your weighting.">i</div></div>""", unsafe_allow_html=True)
 
-    def _series_from_funds_outer(col_name: str) -> pd.DataFrame:
-        d = df[[year_col, col_name] + ([aum_col] if aum_col in df.columns else [])].copy()
-        d[col_name] = pd.to_numeric(d[col_name], errors="coerce")
-        if weighting == "AUM-weighted" and aum_col in d.columns and d[aum_col].notna().any():
-            d[aum_col] = pd.to_numeric(d[aum_col], errors="coerce").clip(lower=0)
-            out = d.groupby(year_col).apply(lambda g: (g[col_name] * g[aum_col]).sum() / g[aum_col].sum() if g[aum_col].sum() > 0 else float("nan")).reset_index(name="value")
-        else:
-            out = d.groupby(year_col)[col_name].mean().reset_index().rename(columns={col_name: "value"})
-        return out.sort_values(year_col)
-
-    s_clean2  = _series_from_funds_outer(clean_col)
-    s_contro2 = _series_from_funds_outer(ctr_col)
+    st.markdown(
+        '<div class="chart-head">'
+        '<div class="chart-title">Combined trend — % Clean and % Controversial</div>'
+        '<div class="info-badge has-tip" data-tip="The shaded band shows the middle 35–65% range of ETF exposures each year. Lines show the average based on your weighting.">i</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     def _band_quantiles(df_in: pd.DataFrame, col: str, q_low: float = 0.35, q_high: float = 0.65) -> pd.DataFrame:
-        if col not in df_in.columns or df_in.empty: return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
-        dd = df_in[[year_col, col]].copy(); dd[col] = pd.to_numeric(dd[col], errors="coerce")
+        if col not in df_in.columns or df_in.empty:
+            return pd.DataFrame(columns=[year_col, "qlo", "qhi", "category"])
+        dd = df_in[[year_col, col]].copy()
+        dd[col] = pd.to_numeric(dd[col], errors="coerce")
         q = dd.groupby(year_col)[col].quantile([q_low, q_high]).unstack().reset_index()
-        q.columns = [year_col, "qlo", "qhi"]; q["category"] = "Clean" if col == clean_col else "Controversial"; return q
+        q.columns = [year_col, "qlo", "qhi"]
+        q["category"] = "Clean" if col == clean_col else "Controversial"
+        return q
 
     band_clean  = _band_quantiles(df, clean_col, 0.35, 0.65)
     band_contro = _band_quantiles(df, ctr_col,   0.35, 0.65)
-    comb = pd.concat([s_clean2.assign(category="Clean"), s_contro2.assign(category="Controversial")], ignore_index=True) if (not s_clean2.empty or not s_contro2.empty) else pd.DataFrame(columns=[year_col, "value", "category"])
+    comb = (
+        pd.concat([s_clean.assign(category="Clean"), s_contro.assign(category="Controversial")], ignore_index=True)
+        if (not s_clean.empty or not s_contro.empty)
+        else pd.DataFrame(columns=[year_col, "value", "category"])
+    )
+
     if not comb.empty:
         H = 300
         y_values = []
-        if not band_clean.empty:  y_values += band_clean[["qlo","qhi"]].to_numpy().ravel().tolist()
-        if not band_contro.empty: y_values += band_contro[["qlo","qhi"]].to_numpy().ravel().tolist()
-        if not comb.empty:        y_values += comb["value"].tolist()
+        if not band_clean.empty:
+            y_values += band_clean[["qlo", "qhi"]].to_numpy().ravel().tolist()
+        if not band_contro.empty:
+            y_values += band_contro[["qlo", "qhi"]].to_numpy().ravel().tolist()
+        if not comb.empty:
+            y_values += comb["value"].tolist()
         y_dom = _dyn_domain_zero(y_values)
+
         band_df = pd.concat([band_clean, band_contro], ignore_index=True)
         band_layer = (
             alt.Chart(band_df)
             .mark_area(opacity=0.10)
             .encode(
-                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelColor=C["text_soft"])),
-                y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=y_dom, zero=False, nice=True),
-                        axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
+                x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
+                y=alt.Y("qlo:Q", title="Exposure (%)", scale=alt.Scale(domain=y_dom, zero=False, nice=True)),
                 y2="qhi:Q",
-                color=alt.Color("category:N", legend=None, scale=alt.Scale(domain=["Clean","Controversial"], range=[C["clean"], C["contro"]])),
-                tooltip=[alt.Tooltip(f"{year_col}:O", title="Year"), alt.Tooltip("qlo:Q", title="35–65% low",  format=".1f"),
-                         alt.Tooltip("qhi:Q", title="35–65% high", format=".1f"), alt.Tooltip("category:N", title="Category")],
-            ).properties(height=H)
+                color=alt.Color(
+                    "category:N",
+                    legend=None,
+                    scale=alt.Scale(
+                        domain=["Clean", "Controversial"],
+                        range=[COLORS["clean"], COLORS["contro"]],
+                    ),
+                ),
+                tooltip=[
+                    alt.Tooltip(f"{year_col}:O", title="Year"),
+                    alt.Tooltip("qlo:Q", title="35–65% band — low",  format=".1f"),
+                    alt.Tooltip("qhi:Q", title="35–65% band — high", format=".1f"),
+                    alt.Tooltip("category:N", title="Category"),
+                ],
+            )
+            .properties(height=H)
         )
+
         base_comb = alt.Chart(comb).encode(
-            x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelColor=C["text_soft"])),
-            y=alt.Y("value:Q", title="Exposure (%)", scale=alt.Scale(domain=y_dom, zero=False, nice=True),
-                    axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
-            color=alt.Color("category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial"], range=[C["clean"], C["contro"]])),
-            tooltip=[alt.Tooltip(f"{year_col}:O", title="Year"), alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"), alt.Tooltip("category:N", title="Category")],
+            x=alt.X(f"{year_col}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10)),
+            y=alt.Y(
+                "value:Q",
+                title="Exposure (%)",
+                scale=alt.Scale(domain=y_dom, zero=False, nice=True),
+                axis=alt.Axis(format=".1f"),
+            ),
+            color=alt.Color(
+                "category:N",
+                title=None,
+                scale=alt.Scale(
+                    domain=["Clean", "Controversial"],
+                    range=[COLORS["clean"], COLORS["contro"]],
+                ),
+            ),
+            tooltip=[
+                alt.Tooltip(f"{year_col}:O", title="Year"),
+                alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
+                alt.Tooltip("category:N", title="Category"),
+            ],
         )
-        st.altair_chart(alt.layer(_zero_rule(H), band_layer, base_comb.mark_line(clip=True), base_comb.mark_point(clip=True, filled=True)).resolve_scale(y="shared"), use_container_width=True)
+        st.altair_chart(
+            alt.layer(
+                _zero_rule(H),
+                band_layer,
+                base_comb.mark_line(clip=True),
+                base_comb.mark_point(clip=True, filled=True),
+            ).resolve_scale(y="shared"),
+            use_container_width=True,
+        )
 
     gap(8)
+
     h_left, h_right = st.columns([0.5, 0.5])
     with h_left:
-        st.markdown('<div class="info-title" style="margin-bottom:6px">Screen trends and portfolio composition</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="chart-title" style="margin-bottom:6px;">Screen trends and portfolio composition</div>',
+            unsafe_allow_html=True,
+        )
     with h_right:
-        st.markdown(f'<div class="info-title" style="margin-bottom:6px">Composition — {start_year} vs {end_year}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="chart-title" style="margin-bottom:6px;">Composition — {start_year} vs {end_year}</div>',
+            unsafe_allow_html=True,
+        )
 
     left, right = st.columns([0.5, 0.5])
+
     with left:
         d = scr_tr.copy()
-        if "value" not in d.columns and "exposure_pct" in d.columns: d = d.rename(columns={"exposure_pct": "value"})
+        if "value" not in d.columns and "exposure_pct" in d.columns:
+            d = d.rename(columns={"exposure_pct": "value"})
         _need_col(d, "value", "Screen trends")
         mode_name = "AUM_TRUE" if weighting == "AUM-weighted" else "EW"
-        if "weighting_mode" in d.columns: d = d[d["weighting_mode"].astype(str) == mode_name]
+        if "weighting_mode" in d.columns:
+            d = d[d["weighting_mode"].astype(str) == mode_name]
         yscr = _pick_exact(d, "year")
         if yscr:
-            d[yscr] = pd.to_numeric(d[yscr], errors="coerce"); d = d[(d[yscr] >= start_year) & (d[yscr] <= end_year)]
+            d[yscr] = pd.to_numeric(d[yscr], errors="coerce")
+            d = d[(d[yscr] >= start_year) & (d[yscr] <= end_year)]
         etf_scr = next((c for c in d.columns if c.lower() in ("etf_ticker", "etf")), None)
-        if etf_scr: d = d[d[etf_scr].astype(str).isin(set(cohort))]
+        if etf_scr:
+            d = d[d[etf_scr].astype(str).isin(set(cohort))]
         _need_col(d, "screen_category", "Screen trends")
-        d["Category"] = (d["screen_category"].astype(str).str.strip().replace({"Prison":"Prisons","Fossil_fuel":"Fossil Fuel","Clean200":"Clean"}))
-        keep = ["Clean","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]; d = d[d["Category"].isin(keep)]
+
+        d["Category"] = (
+            d["screen_category"]
+            .astype(str)
+            .str.strip()
+            .replace({"Prison": "Prisons", "Fossil_fuel": "Fossil Fuel", "Clean200": "Clean"})
+        )
+        keep = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+        d = d[d["Category"].isin(keep)]
+
         if etf_scr and yscr:
             d["value"] = pd.to_numeric(d["value"], errors="coerce")
             if mode_name == "AUM_TRUE" and ("aum_usd" in d.columns):
                 d["aum_usd"] = pd.to_numeric(d["aum_usd"], errors="coerce").clip(lower=0)
-                d = d.groupby([yscr, "Category"]).apply(lambda g: (g["value"] * g["aum_usd"]).sum() / g["aum_usd"].sum() if g["aum_usd"].sum() > 0 else np.nan).reset_index(name="value")
+                d = (
+                    d.groupby([yscr, "Category"])
+                    .apply(lambda g: (g["value"] * g["aum_usd"]).sum() / g["aum_usd"].sum() if g["aum_usd"].sum() > 0 else np.nan)
+                    .reset_index(name="value")
+                )
             else:
                 d = d.groupby([yscr, "Category"], as_index=False)["value"].mean()
+
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
-            SCREEN_DOMAIN = ["Clean","Prisons","Deforestation","Fossil Fuel","Weapons","Tobacco"]
-            SCREEN_COLORS = [C["clean"], "#CE6D6D", "#B5651D", "#8A1E2A", "#E77F98", "#7D5A27"]
+            SCREEN_DOMAIN = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+            SCREEN_COLORS = [
+                COLORS["clean"],
+                "#C84B4B",
+                "#B5651D",
+                "#800020",
+                "#F08BA6",
+                "#4B2E05",
+            ]
             H = 300
             y_dom_scr = _dyn_domain_zero(d["value"])
-            x_enc = alt.X(f"{(yscr or 'year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelColor=C["text_soft"]))
+            x_enc = alt.X(f"{(yscr or 'year')}:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
             if not yscr:
-                d["year"] = start_year; x_enc = alt.X("year:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10, labelColor=C["text_soft"]))
+                d["year"] = start_year
+                x_enc = alt.X("year:O", title=None, axis=alt.Axis(labelAngle=0, labelPadding=10))
             base = alt.Chart(d).encode(
                 x=x_enc,
-                y=alt.Y("value:Q", title="Exposure (%)", axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"]),
-                        scale=alt.Scale(domain=y_dom_scr, zero=False, nice=True)),
+                y=alt.Y(
+                    "value:Q",
+                    title="Exposure (%)",
+                    axis=alt.Axis(format=".1f"),
+                    scale=alt.Scale(domain=y_dom_scr, zero=False, nice=True),
+                ),
                 color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=SCREEN_DOMAIN, range=SCREEN_COLORS)),
-                tooltip=[alt.Tooltip("Category:N", title="Category"), alt.Tooltip((yscr or "year") + ":O", title="Year"), alt.Tooltip("value:Q", title="Exposure (%)", format=".1f")],
+                tooltip=[
+                    alt.Tooltip("Category:N", title="Category"),
+                    alt.Tooltip((yscr or "year") + ":O", title="Year"),
+                    alt.Tooltip("value:Q", title="Exposure (%)", format=".1f"),
+                ],
             )
-            st.altair_chart(alt.layer(_zero_rule(H), base.mark_line(strokeWidth=2, opacity=0.95), base.mark_point(size=40, opacity=0.95, filled=True)).resolve_scale(y="shared"), use_container_width=True)
+            st.altair_chart(
+                alt.layer(
+                    _zero_rule(H),
+                    base.mark_line(strokeWidth=2, opacity=0.95),
+                    base.mark_point(size=40, opacity=0.95, filled=True),
+                ).resolve_scale(y="shared"),
+                use_container_width=True,
+            )
+
     with right:
         comp_rows = []
-        def _series(col):
-            if col is None: return None, None
-            s = _series_from_funds_outer(col)
-            if s.empty: return None, None
-            vA = s.loc[s[year_col] == start_year, "value"]; vZ = s.loc[s[year_col] == end_year,   "value"]
+
+        def _val_series(col):
+            if col is None:
+                return None, None
+            s = _series_from_funds(col)
+            if s.empty:
+                return None, None
+            vA = s.loc[s[year_col] == start_year, "value"]
+            vZ = s.loc[s[year_col] == end_year,   "value"]
             return (float(vA.iloc[0]) if len(vA) else None, float(vZ.iloc[0]) if len(vZ) else None)
+
         for label, col in [("Clean", clean_col), ("Controversial", ctr_col), ("Other", oth_col)]:
-            vA, vZ = _series(col)
-            if vA is not None: comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
-            if vZ is not None: comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
+            vA, vZ = _val_series(col)
+            if vA is not None:
+                comp_rows.append({"Year": str(start_year), "Category": label, "Value": vA})
+            if vZ is not None:
+                comp_rows.append({"Year": str(end_year),   "Category": label, "Value": vZ})
+
         comp_df = pd.DataFrame(comp_rows)
         if not comp_df.empty:
             comp_df["Year"] = pd.Categorical(comp_df["Year"], categories=[str(start_year), str(end_year)], ordered=True)
             comp_chart = (
                 alt.Chart(comp_df)
-                .mark_bar(opacity=0.92)
+                .mark_bar(opacity=0.92, stroke="#0A0B0D", strokeWidth=0.6)
                 .encode(
-                    x=alt.X("Year:N", title=None, axis=alt.Axis(labelColor=C["text_soft"])),
-                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True, labelColor=C["text_soft"], title="Portfolio share", titleColor=C["muted"])),
-                    color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial","Other"], range=[C["clean"], C["contro"], C["other"]])),
-                    tooltip=[alt.Tooltip("Year:N", title="Year"), alt.Tooltip("Category:N", title="Category"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
-                ).properties(height=300, padding={"top":4,"left":4,"right":4,"bottom":4})
+                    x=alt.X("Year:N", title=None),
+                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", grid=True), title="Portfolio share"),
+                    color=alt.Color(
+                        "Category:N",
+                        title=None,
+                        scale=alt.Scale(
+                            domain=["Clean", "Controversial", "Other"],
+                            range=[COLORS["clean"], COLORS["contro"], COLORS["other"]],
+                        ),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Year:N", title="Year"),
+                        alt.Tooltip("Category:N", title="Category"),
+                        alt.Tooltip("Value:Q", title="Share (%)", format=".1f"),
+                    ],
+                )
+                .properties(height=300, padding={"top": 4, "left": 4, "right": 4, "bottom": 4})
             )
             st.altair_chart(comp_chart, use_container_width=True)
         else:
             st.info("No composition data for the current filters.")
-    gap(10)
-    st.markdown(f'<div class="info-title">Top movers — holdings ({start_year} → {end_year})</div>', unsafe_allow_html=True)
 
-    mv = movers.copy()
-    ya   = _pick_exact(mv, "year_a") or _pick(mv, "year_a")
-    yb   = _pick_exact(mv, "year_b") or _pick(mv, "year_b")
-    ecol = _pick_exact(mv, "etf_ticker") or _pick(mv, "etf")
-    tick = _pick_exact(mv, "ticker")
-    hld  = _pick_exact(mv, "holding_name") or _pick(mv, "name")
-    nm25 = _pick_exact(mv, "name_2025") or _pick(mv, "name_2025")
-    w_a  = _pick_exact(mv, "w_a") or _pick(mv, "weight_a", "wa")
-    w_b  = _pick_exact(mv, "w_b") or _pick(mv, "weight_b", "wb")
-    delta_pre = (_pick_exact(mv, "delta_contrib_pct_agg") or _pick_exact(mv, "delta_weight_pp") or _pick_exact(mv, "delta_weight_pct") or _pick_exact(mv, "delta_pp") or _pick(mv, "delta"))
-    cls_col = _pick_exact(mv, "classification_b") or _pick_exact(mv, "classification") or _pick_exact(mv, "category")
+    gap(10)
+
+    st.markdown(
+        f'''<div class="chart-head">
+               <div class="chart-title">Top movers — holdings ({start_year} → {end_year})</div>
+             </div>''',
+        unsafe_allow_html=True,
+    )
+
+    mv = load_top_movers_with_names().copy()
+    ya   = next((c for c in mv.columns if c.lower()=="year_a"), None) or next((c for c in mv.columns if "year_a" in c.lower()), None)
+    yb   = next((c for c in mv.columns if c.lower()=="year_b"), None) or next((c for c in mv.columns if "year_b" in c.lower()), None)
+    ecol = next((c for c in mv.columns if c.lower() in ("etf_ticker","etf")), None)
+    tick = next((c for c in mv.columns if c.lower()=="ticker"), None)
+    hld  = next((c for c in mv.columns if c.lower() in ("holding_name","name")), None)
+    nm25 = next((c for c in mv.columns if c.lower()=="name_2025"), None)
+    w_a  = next((c for c in mv.columns if c.lower() in ("w_a","weight_a","wa")), None)
+    w_b  = next((c for c in mv.columns if c.lower() in ("w_b","weight_b","wb")), None)
+    delta_pre = next((c for c in mv.columns if c.lower() in ("delta_contrib_pct_agg","delta_weight_pp","delta_weight_pct","delta_pp","delta")), None)
+    cls_col = next((c for c in mv.columns if c.lower() in ("classification_b","classification","category")), None)
 
     for need_c, lbl in [(ya, "year_a"), (yb, "year_b"), (tick, "ticker")]:
-        _need_col(mv, need_c, f"Top movers: need '{lbl}'")
+        if need_c is None: st.stop()
 
     mv = mv[(mv[ya] == start_year) & (mv[yb] == end_year)].copy()
-    if ecol is not None: mv = mv[mv[ecol].astype(str).isin(set(cohort))]
+    if ecol is not None:
+        mv = mv[mv[ecol].astype(str).isin(set(cohort))]
+
     if delta_pre is not None:
         mv["__delta_pp__"] = pd.to_numeric(mv[delta_pre], errors="coerce")
     else:
-        _need_col(mv, w_a, "Top movers: need 'w_a'"); _need_col(mv, w_b, "Top movers: need 'w_b'")
         mv["__delta_pp__"] = pd.to_numeric(mv[w_b], errors="coerce") - pd.to_numeric(mv[w_a], errors="coerce")
 
     if ecol is None:
         mv["__wETF__"] = 1.0
     else:
         if weighting == "AUM-weighted" and aum_col in df_all.columns:
-            aum_map = (df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))].groupby(etf_col, as_index=True)[aum_col].first().astype(float))
+            aum_map = (
+                df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
+                .groupby(etf_col, as_index=True)[aum_col]
+                .first()
+                .astype(float)
+            )
             total_aum = float(aum_map.sum()) if len(aum_map) else 0.0
             if total_aum > 0:
                 mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
@@ -752,68 +1102,148 @@ def render_change_since_2017():
         else:
             mv["__wETF__"] = 1.0 / max(len(cohort), 1)
 
-    mv["__contrib_pp__"] = pd.to_numeric(mv["__delta_pp__"], errors="coerce").fillna(0.0) * pd.to_numeric(mv["__wETF__"], errors="coerce").fillna(0.0)
-    name_col = nm25 if nm25 is not None else hld
+    mv["__contrib_pp__"] = (
+        pd.to_numeric(mv["__delta_pp__"], errors="coerce").fillna(0.0)
+        * pd.to_numeric(mv["__wETF__"], errors="coerce").fillna(0.0)
+    )
+
+    name_col = nm25 or hld
     mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
     mv["Ticker"] = mv[tick].astype(str)
     mv["Category"] = mv[cls_col].astype(str) if cls_col else "Unknown"
 
     grp_cols = ["Ticker", "Company", "Category"]
-    agg = mv.groupby(grp_cols, dropna=False)["__contrib_pp__"].sum().reset_index().rename(columns={"__contrib_pp__": "Δ weight (pp)"})
+    agg = mv.groupby(grp_cols, dropna=False)["__contrib_pp__"].sum().reset_index()
+    agg = agg.rename(columns={"__contrib_pp__": "Δ weight (pp)"})
+
     top_increase = agg.sort_values("Δ weight (pp)", ascending=False).head(10).copy()
     top_decrease = agg.sort_values("Δ weight (pp)", ascending=True).head(10).copy()
 
     def _fmt(df):
-        out = df.copy(); out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}"); return out
+        out = df.copy()
+        out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
+        return out
 
     a, b = st.columns(2, gap="large")
     with a:
-        st.caption(f"Top 10 Increases — {start_year} → {end_year}"); grid(_fmt(top_increase))
+        st.caption(f"Top 10 Increases — {start_year} → {end_year}")
+        grid(_fmt(top_increase))
     with b:
-        st.caption(f"Top 10 Decreases — {start_year} → {end_year}"); grid(_fmt(top_decrease))
+        st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
+        grid(_fmt(top_decrease))
 
-# RENDER: Tab 3
+
+# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
+    import pandas as pd
+    import streamlit as st
+    import base64
+    import altair as alt
+
     def _need(df: pd.DataFrame, name: str) -> str:
         if name in df.columns: return name
         low = {c.lower(): c for c in df.columns}
         if name.lower() in low: return low[name.lower()]
         raise KeyError(f"Missing required column: '{name}'")
+
     def _fmt_pct(v):
         try: return f"{float(v):.1f}%"
         except: return "–"
+
     def _fmt_te_from_fraction(v):
         try: return f"{100.0 * float(v):.2f}%"
         except: return "–"
+
     def _fmt_int(v):
         try: return f"{int(round(float(v))):,}"
         except: return "–"
+
     def _is_zero_display(v) -> bool:
         try: return abs(float(v)) < 0.05
         except: return False
 
+    try:
+        _ = COLORS
+    except Exception:
+        globals()["COLORS"] = {
+            "clean":  "#24A27B",
+            "contro": "#D35E5E",
+            "other":  "#9AA3B2",
+        }
+
+    COLOR_PT = "#C77DBB"
+    COLOR_SE = "#A47ADC"
+
     M = load_scenario_metrics().copy()
+
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
     clean_col = _need(M, "%Clean")
     ctr_col   = _need(M, "%Controversial")
     te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
+
     as_col    = "ActiveShare_%" if "ActiveShare_%" in M.columns else None
     aum_in_M  = "ETF_AUM_USD" if "ETF_AUM_USD" in M.columns else None
+
     for c in [clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else []) + ([aum_in_M] if aum_in_M else []):
         if c: M[c] = pd.to_numeric(M[c], errors="coerce")
+
     scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
     M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+
     st.subheader("Tradeoff Scenarios")
-    st.caption("Contrast the actual 2025 portfolio with cleaner scenarios and observe the risk/cleanliness tradeoff.")
+    st.caption(
+        "This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance."
+    )
+
+    st.markdown("""
+    <style>
+      .t3-scn-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+                   padding:12px 14px;height:130px;display:flex;flex-direction:column;justify-content:space-between;}
+      .t3-scn-card h4{margin:0 0 8px 0;font-size:13.5px;font-weight:600;}
+      .t3-scn-card .desc{color:var(--muted);font-size:12px;line-height:1.30;}
+      .t3-rowtitle{font-size:14px;font-weight:700;margin:6px 0 6px 0;}
+      .kpi.t3{padding:10px 14px !important;border-radius:16px !important;min-height:78px !important;
+              display:flex;flex-direction:column;justify-content:center;}
+      .kpi.t3 .label{font-size:11px !important;color:var(--muted) !important;margin:0 0 6px 0; display:flex; align-items:center; gap:6px;}
+      .kpi.t3 .value{font-size:22px !important;font-weight:800 !important;line-height:1.0;}
+
+      .t3-dl-inline-wrap{ display:flex; justify-content:flex-end; align-items:center; margin:6px 0 12px; }
+      .t3-dl-inline-text{ color:var(--muted); font-size:13px; }
+      .t3-dl-inline-link{ display:inline-block; width:12px; height:12px; margin-left:6px; color:var(--muted);
+                          text-decoration:none; vertical-align:baseline; transition:.12s ease; }
+      .t3-dl-inline-link:hover{ color:var(--text); transform: translateY(-1px); }
+      .t3-dl-inline-link svg{ width:12px; height:12px; display:block; }
+
+      .chart-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px;}
+      .chart-title{font-weight:700;}
+      div[data-testid="stRadio"][data-baseweb="radio"] label{font-size:12px !important;}
+    </style>
+    """, unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3, gap="medium")
-    with c1: st.markdown(f"""<div class="blx-card"><div class="info-title">Baseline</div><div class="blx-muted" style="font-size:12px">Actual 2025 portfolio.</div></div>""", unsafe_allow_html=True)
-    with c2: st.markdown(f"""<div class="blx-card"><div class="info-title">Pragmatic Tilt</div><div class="blx-muted" style="font-size:12px">Cleaner with low tracking error and sector neutrality.</div></div>""", unsafe_allow_html=True)
-    with c3: st.markdown(f"""<div class="blx-card"><div class="info-title">Strict Exclusion</div><div class="blx-muted" style="font-size:12px">Exclude all controversial holdings; sector-neutral.</div></div>""", unsafe_allow_html=True)
-    divider()
+    with c1:
+        st.markdown("""
+        <div class="t3-scn-card">
+          <div><h4>Baseline</h4>
+          <div class="desc">Actual 2025 portfolio; the reference point.</div></div>
+        </div>""", unsafe_allow_html=True)
+    with c2:
+        st.markdown("""
+        <div class="t3-scn-card">
+          <div><h4>Pragmatic Tilt</h4>
+          <div class="desc">Modestly raises clean exposure while maintaining benchmark alignment (low Tracking Error and ±2% sector balance) and preventing over-weighting of any single holding (5% cap).</div></div>
+        </div>""", unsafe_allow_html=True)
+    with c3:
+        st.markdown("""
+        <div class="t3-scn-card">
+          <div><h4>Strict Exclusion</h4>
+          <div class="desc">Excludes all controversial holdings and rebalances to maintain sector neutrality while preventing over-weighting of any single holding (5% cap).</div></div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
 
     etfs = sorted(M[etf_col].dropna().astype(str).unique().tolist())
     sel_etf = st.selectbox("ETF filter", ["All"] + etfs, index=0)
@@ -823,18 +1253,23 @@ def render_tradeoff_scenarios():
         A = load_etf_aum_2025()
         f = "ETF_Ticker" if "ETF_Ticker" in A.columns else "etf_ticker"
         v = "ETF_AUM_USD" if "ETF_AUM_USD" in A.columns else ("AUM_USD" if "AUM_USD" in A.columns else None)
-        if f and v and f in A.columns and v in A.columns: aum_map = A[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
+        if f and v and f in A.columns and v in A.columns:
+            aum_map = A[[f, v]].dropna().groupby(f)[v].first().astype(float).to_dict()
     except Exception:
         pass
     if not aum_map and aum_in_M:
-        try: aum_map = M[[etf_col, aum_in_M]].dropna().groupby(etf_col)[aum_in_M].first().astype(float).to_dict()
-        except Exception: pass
+        try:
+            aum_map = M[[etf_col, aum_in_M]].dropna().groupby(etf_col)[aum_in_M].first().astype(float).to_dict()
+        except Exception:
+            pass
+
     def _aum(etf):
         try: return float(aum_map.get(str(etf)))
-        except: return float("nan")
+        except: return np.nan
 
     X = M.copy()
-    if sel_etf != "All": X = X[X[etf_col].astype(str) == sel_etf]
+    if sel_etf != "All":
+        X = X[X[etf_col].astype(str) == sel_etf]
     X["__aum__"] = X[etf_col].astype(str).map(_aum)
 
     scen_order = ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]
@@ -842,42 +1277,80 @@ def render_tradeoff_scenarios():
     for s in scen_order:
         d = X[X["Scenario"] == s].copy()
         if d.empty:
-            rows.append({"Scenario": s, "clean": float("nan"), "contro": float("nan"), "te": float("nan"), "n": float("nan"), "as": float("nan")})
+            rows.append({"Scenario": s, "clean": np.nan, "contro": np.nan, "te": np.nan, "n": np.nan, "as": np.nan})
             continue
         use_weights = (sel_etf == "All" and d["__aum__"].notna().any() and d["__aum__"].sum() > 0)
-        w = d["__aum__"].clip(lower=0).values if use_weights else [1.0]*len(d)
+        w = d["__aum__"].clip(lower=0).values if use_weights else np.ones(len(d))
         rows.append({
             "Scenario": s,
             "clean":  np.average(pd.to_numeric(d[clean_col], errors="coerce"), weights=w),
             "contro": np.average(pd.to_numeric(d[ctr_col],   errors="coerce"), weights=w),
             "te":     np.average(pd.to_numeric(d[te_col],    errors="coerce"), weights=w),
             "n":      float(pd.to_numeric(d[n_col], errors="coerce").mean()),
-            "as":     np.average(pd.to_numeric(d[as_col],    errors="coerce"), weights=w) if as_col else float("nan"),
+            "as":     np.average(pd.to_numeric(d[as_col],    errors="coerce"), weights=w) if as_col else np.nan,
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
 
+    st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
-        st.markdown(f"<div class='info-title' style='margin-top:6px'>{r['Scenario']}</div>", unsafe_allow_html=True)
-        a,b,c,d = st.columns(4)
-        with a:
-            tone_cls = "kpi" if _is_zero_display(r["clean"]) else "kpi kpi-green"
+        st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>", unsafe_allow_html=True)
-        with b:
-            tone_cls = "kpi" if _is_zero_display(r["contro"]) else "kpi kpi-red"
+        with k2:
+            tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>", unsafe_allow_html=True)
-        with c:
-            st.markdown(f"<div class='kpi'><div class='label'>TE (ann.)</div><div class='value'>{_fmt_te_from_fraction(r['te'])}</div></div>", unsafe_allow_html=True)
-        with d:
-            st.markdown(f"<div class='kpi'><div class='label'>{'# Holdings' if sel_etf!='All' else '# Holdings (avg)'}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
+        with k3:
+            st.markdown(
+                "<div class='kpi kpi-neutral t3'>"
+                "<div class='label'>TE (ann.)"
+                "<span class='info-badge has-tip tip-left tip-narrow' "
+                "data-tip='Shows how much a scenario’s returns are expected to differ from the 2025 baseline (annualised). Lower values mean it stays closer to the original; higher values reflect more active deviation.'>i</span>"
+                "</div>"
+                f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
+                "</div>",
+                unsafe_allow_html=True
+            )
+        with k4:
+            lbl = "# Holdings" if sel_etf != "All" else "# Holdings (avg)"
+            st.markdown(f"<div class='kpi kpi-neutral t3'><div class='label'>{lbl}</div><div class='value'>{_fmt_int(r['n'])}</div></div>", unsafe_allow_html=True)
+        st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
-    show = (M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else [])]
-            .rename(columns={etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial", te_col:"TE_annual", n_col:"Holdings", **({"ActiveShare_%":"ActiveShare %"} if as_col else {})}))
+    show = (
+        M[[etf_col, "Scenario", clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else [])]
+        .rename(columns={
+            etf_col:"ETF", clean_col:"% Clean", ctr_col:"% Controversial",
+            te_col:"TE_annual", n_col:"Holdings", **({"ActiveShare_%":"ActiveShare %"} if as_col else {})
+        })
+        .copy()
+    )
     show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
     csv_b64 = base64.b64encode(show.to_csv(index=False).encode("utf-8")).decode("ascii")
-    st.markdown(f"""<div style="display:flex;justify-content:flex-end"><a href="data:text/csv;base64,{csv_b64}" download="per_etf_metrics_all_scenarios.csv" style="color:var(--text)">Download CSV</a></div>""", unsafe_allow_html=True)
+    csv_href = f"data:text/csv;base64,{csv_b64}"
+    st.markdown(
+        f"""
+        <div class="t3-dl-inline-wrap">
+          <span class="t3-dl-inline-text">Download CSV of per-ETF metrics across all scenarios.</span>
+          <a class="t3-dl-inline-link" href="{csv_href}"
+             download="per_etf_metrics_all_scenarios.csv" title="Download CSV" aria-label="Download CSV">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </a>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     left_col, right_col = st.columns([0.5, 0.5], gap="large")
+
     sector_cols = [c for c in M.columns if c.startswith("sector_dev__")]
     n_sectors = len(sector_cols) if sector_cols else 8
     H = max(230, 24 * n_sectors + 12)
@@ -886,215 +1359,649 @@ def render_tradeoff_scenarios():
     H_LEFT_BOTTOM = H_RIGHT + 130
 
     with left_col:
-        st.markdown('<div class="info-title">Scenario composition</div>', unsafe_allow_html=True)
+        st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div></div>', unsafe_allow_html=True)
+
         comp_rows = []
         for _, r in KP.iterrows():
             clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
             contro = float(r["contro"]) if pd.notna(r["contro"]) else float("nan")
             other  = 100.0 - (clean + contro) if (pd.notna(clean) and pd.notna(contro)) else float("nan")
-            comp_rows += [{"Scenario": r["Scenario"], "Category": "Clean", "Value": clean},
-                          {"Scenario": r["Scenario"], "Category": "Controversial", "Value": contro},
-                          {"Scenario": r["Scenario"], "Category": "Other", "Value": other}]
+            comp_rows += [
+                {"Scenario": r["Scenario"], "Category": "Clean",         "Value": clean},
+                {"Scenario": r["Scenario"], "Category": "Controversial", "Value": contro},
+                {"Scenario": r["Scenario"], "Category": "Other",         "Value": other},
+            ]
         comp_df = pd.DataFrame(comp_rows)
         if not comp_df.empty and comp_df["Value"].notna().any():
-            comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=["Baseline","Pragmatic Tilt","Strict Exclusion"], ordered=True)
+            comp_df["Scenario"] = pd.Categorical(comp_df["Scenario"], categories=scen_order, ordered=True)
             comp_df["Category"] = pd.Categorical(comp_df["Category"], categories=["Clean","Controversial","Other"], ordered=True)
             comp_chart = (
                 alt.Chart(comp_df)
-                .mark_bar()
+                .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
                 .encode(
-                    x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0, labelColor=C["text_soft"])),
-                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share", labelColor=C["text_soft"], titleColor=C["muted"])),
-                    color=alt.Color("Category:N", title=None, scale=alt.Scale(domain=["Clean","Controversial","Other"], range=[C["clean"], C["contro"], C["other"]])),
-                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"), alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
-                ).properties(height=H_LEFT_TOP, padding={"left":8,"right":8,"top":6,"bottom":6})
+                    x=alt.X("Scenario:N", title=None, axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("Value:Q", stack="normalize", axis=alt.Axis(format="%", title="Portfolio share")),
+                    color=alt.Color("Category:N", title=None,
+                                    scale=alt.Scale(domain=["Clean","Controversial","Other"],
+                                                    range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])),
+                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Category:N"),
+                             alt.Tooltip("Value:Q", title="Share (%)", format=".1f")],
+                ).properties(height=H_LEFT_TOP, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
             )
             st.altair_chart(comp_chart, use_container_width=True)
         else:
             st.info("Composition not available for the current selection.")
-        gap(12)
+
+        st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
 
     with right_col:
-        st.markdown('<div class="info-wrap"><div class="info-title">Cleanliness Uplift vs Tracking Error</div><div class="info-badge has-tip" data-tip="x-axis: Δ % Clean vs baseline (pp). y-axis: Tracking Error (annual).">i</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="chart-head">'
+            '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
+            '<span class="info-badge has-tip tip-left tip-wide" '
+            'data-tip="x-axis: increase in % Clean versus the 2025 baseline (percentage points). '
+            'y-axis: Tracking Error (annualised). Further right indicates a cleaner portfolio; higher values indicate more off-benchmark risk.">'
+            'i</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
         A = X.copy()
-        base = (A[A["Scenario"]=="Baseline"][[etf_col, clean_col, te_col, "__aum__"]].rename(columns={clean_col:"clean_base", te_col:"te_base"}))
-        alts = (A[A["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])][[etf_col, "Scenario", clean_col, te_col, "__aum__"]].rename(columns={clean_col:"clean_alt", te_col:"te_alt", "__aum__":"__aum__alt"}))
+        base = (A[A["Scenario"]=="Baseline"][[etf_col, clean_col, te_col, "__aum__"]]
+                .rename(columns={clean_col:"clean_base", te_col:"te_base"}))
+        alts = (A[A["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])]
+                [[etf_col, "Scenario", clean_col, te_col, "__aum__"]]
+                .rename(columns={clean_col:"clean_alt", te_col:"te_alt", "__aum__":"__aum__alt"}))
+
         if not base.empty and not alts.empty:
             J = pd.merge(alts, base, on=etf_col, how="left")
             aum_cols = [c for c in J.columns if c.startswith("__aum__")]
             J["AUM"] = J[aum_cols].apply(pd.to_numeric, errors="coerce").max(axis=1).fillna(0.0)
             J["delta_clean_pp"] = pd.to_numeric(J["clean_alt"], errors="coerce") - pd.to_numeric(J["clean_base"], errors="coerce")
             J["TE %"] = pd.to_numeric(J["te_alt"], errors="coerce") * 100.0
+
             if sel_etf == "All" and J["AUM"].sum() > 0:
                 def _aw(df, col):
-                    w = pd.to_numeric(df["AUM"], errors="coerce").clip(lower=0); x = pd.to_numeric(df[col], errors="coerce")
+                    w = pd.to_numeric(df["AUM"], errors="coerce").clip(lower=0)
+                    x = pd.to_numeric(df[col], errors="coerce")
                     return np.average(x, weights=w) if w.sum() > 0 else np.nan
-                pts = (J.groupby("Scenario").apply(lambda d: pd.Series({"delta_clean_pp": _aw(d,"delta_clean_pp"), "TE %": _aw(d,"TE %"), "AUM": d["AUM"].sum()})).reset_index())
+                pts = (J.groupby("Scenario")
+                         .apply(lambda d: pd.Series({"delta_clean_pp": _aw(d,"delta_clean_pp"),
+                                                     "TE %": _aw(d,"TE %"),
+                                                     "AUM": d["AUM"].sum()}))
+                         .reset_index())
             else:
                 pts = J.groupby("Scenario", as_index=False)[["delta_clean_pp","TE %","AUM"]].first()
+
             if not pts.empty and pts[["delta_clean_pp","TE %"]].notna().any(axis=None):
                 pts["Scenario"] = pd.Categorical(pts["Scenario"], categories=["Pragmatic Tilt","Strict Exclusion"], ordered=True)
                 bubble = (
                     alt.Chart(pts)
                     .mark_point(filled=True, opacity=0.9)
                     .encode(
-                        x=alt.X("delta_clean_pp:Q", title="Δ % Clean vs Baseline (pp)", axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
-                        y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f", labelColor=C["text_soft"], titleColor=C["muted"])),
-                        color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])),
+                        x=alt.X("delta_clean_pp:Q", title="Δ % Clean vs Baseline (pp)", axis=alt.Axis(format=".1f")),
+                        y=alt.Y("TE %:Q", title="Tracking Error (ann. %)", axis=alt.Axis(format=".2f")),
+                        color=alt.Color("Scenario:N", title=None,
+                                        scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
+                                                        range=[COLOR_PT, COLOR_SE])),
                         size=alt.SizeValue(80),
-                        tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"), alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"), alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f")],
-                    ).properties(height=H_RIGHT, padding={"left":8,"right":8,"top":6,"bottom":6})
+                        tooltip=[alt.Tooltip("Scenario:N"),
+                                 alt.Tooltip("delta_clean_pp:Q", title="Δ % Clean (pp)", format=".2f"),
+                                 alt.Tooltip("TE %:Q", title="TE (ann. %)", format=".2f"),
+                                 alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f")],
+                    ).properties(height=H_RIGHT, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
                 st.altair_chart(bubble, use_container_width=True)
             else:
                 st.info("Not enough data to compute uplift vs tracking error.")
         else:
             st.info("Not enough rows to compare scenarios against the baseline.")
-        gap(8)
+
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
     with left_col:
-        st.markdown('<div class="info-wrap"><div class="info-title">Turnover & Cost</div><div class="info-badge has-tip" data-tip="Turnover is 0.5 × sum of absolute weight changes. Cost uses round-trip cost (bps).">i</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="chart-head">'
+            '<div class="chart-title">Turnover & Cost</div>'
+            '<span class="info-badge has-tip tip-left tip-wide" '
+            'data-tip="Turnover measures how much the portfolio’s holdings change to reach the scenario; '
+            'Cost estimates trading expense using the Assumed round-trip cost (bps). Higher values imply more rebalancing and higher execution cost.">'
+            'i</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
         rtc = st.slider("Assumed round-trip cost (bps)", min_value=5, max_value=50, value=20, step=1, key="t3_rtc")
+
         deltas = None
-        for fn in ("load_scenario_position_deltas","load_scenario_deltas"):
-            try: deltas = globals()[fn]().copy(); break
-            except Exception: continue
-        if deltas is None:
-            try: deltas = load_csv(3, "scenario_position_deltas.csv").copy()
-            except Exception: deltas = None
-        if deltas is not None:
+        for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
             try:
-                s_col = "scenario" if "scenario" in deltas.columns else [c for c in deltas.columns if c.lower()=="scenario"][0]
-                e_col = "ETF_Ticker" if "ETF_Ticker" in deltas.columns else [c for c in deltas.columns if c.lower()=="etf_ticker"][0]
-                d_col = "delta" if "delta" in deltas.columns else [c for c in deltas.columns if c.lower()=="delta"][0]
+                deltas = globals()[fn]().copy()
+                break
+            except Exception:
+                continue
+        if deltas is None:
+            try:
+                deltas = load_csv(3, "scenario_position_deltas.csv").copy()
             except Exception:
                 deltas = None
+
+        if deltas is not None:
+            try:
+                s_col = _need(deltas, "scenario")
+                e_col = _need(deltas, "ETF_Ticker")
+                d_col = _need(deltas, "delta")
+            except KeyError:
+                deltas = None
+
         if deltas is not None:
             use = deltas.copy()
-            use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}.get(s.lower(), s))
+            use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
             use = use[use["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])]
-            if sel_etf != "All": use = use[use[e_col].astype(str) == sel_etf]
+            if sel_etf != "All":
+                use = use[use[e_col].astype(str) == sel_etf]
+
             if not use.empty:
-                agg = (use.assign(abs_delta = pd.to_numeric(use[d_col], errors="coerce").abs()).groupby("Scenario", as_index=False)["abs_delta"].sum())
+                agg = (use.assign(abs_delta = pd.to_numeric(use[d_col], errors="coerce").abs())
+                          .groupby("Scenario", as_index=False)["abs_delta"].sum())
                 agg["Turnover %"] = 0.5 * agg["abs_delta"] * 100.0
-                agg["Cost (bps)"] = agg["Turnover %"] * rtc
-                long = agg.melt(id_vars="Scenario", value_vars=["Turnover %","Cost (bps)"], var_name="Metric", value_name="Value")
+                agg["Cost (bps)"]   = agg["Turnover %"] * rtc
+
+                long = agg.melt(id_vars="Scenario", value_vars=["Turnover %","Cost (bps)"],
+                                var_name="Metric", value_name="Value")
+
                 bars = (
                     alt.Chart(long)
-                    .mark_bar()
+                    .mark_bar(stroke='#0A0B0D', strokeWidth=0.6)
                     .encode(
-                        x=alt.X("Metric:N", title=None, axis=alt.Axis(labelAngle=0, labelColor=C["text_soft"])),
+                        x=alt.X("Metric:N", title=None, axis=alt.Axis(labelAngle=0)),
                         xOffset=alt.X("Scenario:N", title=None),
-                        y=alt.Y("Value:Q", title=None, axis=alt.Axis(format=".1f", labelColor=C["text_soft"])),
-                        color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])),
+                        y=alt.Y("Value:Q", title=None, axis=alt.Axis(format=".1f")),
+                        color=alt.Color("Scenario:N", title=None,
+                                        scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
+                                                        range=[COLOR_PT, COLOR_SE])),
                         tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Metric:N"), alt.Tooltip("Value:Q", format=".2f")],
-                    ).properties(height=H_LEFT_BOTTOM, padding={"left":8,"right":8,"top":6,"bottom":6})
+                    ).properties(height=H_LEFT_BOTTOM, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
                 )
                 st.altair_chart(bars, use_container_width=True)
             else:
                 st.info("No position deltas available for the current selection.")
         else:
-            st.info("Turnover data not available.")
+            st.info("Turnover data not available (no position-deltas file detected).")
+
     with right_col:
-        st.markdown('<div class="info-wrap"><div class="info-title">Sector drift vs Baseline</div><div class="info-badge has-tip" data-tip="Each cell shows sector weight shift vs baseline (|pp|). Hover for signed drift.">i</div></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="chart-head">'
+            '<div class="chart-title">Sector drift vs Baseline</div>'
+            '<span class="info-badge has-tip tip-left tip-wide" '
+            'data-tip="Shows how each sector’s weight shifts relative to the 2025 baseline. '
+            'Colour encodes the magnitude of the drift (|percentage points|); hover to see the signed drift value.">'
+            'i</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
+
         if sector_cols:
-            mm = X[X["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])].copy()
+            mm = X[X["Scenario"].isin(["Pragmatic Tilt", "Strict Exclusion"])].copy()
+
             def _pretty_sector(s: str) -> str:
-                return (s.replace("sector_dev__","").replace("_and/or_"," & ").replace("_"," ").title())
+                return (s.replace("sector_dev__", "")
+                         .replace("_and/or_", " & ")
+                         .replace("_", " ")
+                         .title())
+
             if sel_etf == "All" and mm["__aum__"].notna().any() and mm["__aum__"].sum() > 0:
                 w = pd.to_numeric(mm["__aum__"], errors="coerce").clip(lower=0).fillna(0.0)
-                num = (mm[sector_cols].apply(pd.to_numeric, errors="coerce").mul(w, axis=0).groupby(mm["Scenario"]).sum())
+                num = (mm[sector_cols].apply(pd.to_numeric, errors="coerce").mul(w, axis=0)
+                       .groupby(mm["Scenario"]).sum())
                 den = mm.groupby("Scenario")["__aum__"].apply(lambda s: pd.to_numeric(s, errors="coerce").clip(lower=0).sum())
                 avg = (num.div(den, axis=0)).reset_index()
-                heat_df = avg.melt(id_vars="Scenario", value_vars=sector_cols, var_name="Sector", value_name="Drift_pp")
+                heat_df = avg.melt(id_vars="Scenario", value_vars=sector_cols,
+                                   var_name="Sector", value_name="Drift_pp")
             else:
                 take = (mm.groupby("Scenario", as_index=False)[sector_cols].first())
-                heat_df = take.melt(id_vars="Scenario", value_vars=sector_cols, var_name="Sector", value_name="Drift_pp")
+                heat_df = take.melt(id_vars="Scenario", value_vars=sector_cols,
+                                    var_name="Sector", value_name="Drift_pp")
+
             heat_df["Sector"] = heat_df["Sector"].map(_pretty_sector)
             heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
-            import numpy as np as _np
+
+            import numpy as np
+            _np = np
             dom = _np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
             if not _np.isfinite(dom) or dom <= 0: dom = 0.1
             lo  = max(dom * 0.15, 0.01)
+
             heat = (
                 alt.Chart(heat_df)
                 .mark_rect()
                 .encode(
-                    x=alt.X("Scenario:N", title=None, sort=["Pragmatic Tilt","Strict Exclusion"], axis=alt.Axis(labelAngle=0, labelColor=C["text_soft"])),
-                    y=alt.Y("Sector:N", title=None, axis=alt.Axis(labelAngle=0, labelLimit=1000, labelColor=C["text_soft"])),
-                    color=alt.Color("|Drift|:Q", title="Drift (|pp|)", scale=alt.Scale(domain=[lo, dom], range=["#B9B7F5", "#3B44DB"])),
-                    tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("Sector:N"), alt.Tooltip("Drift_pp:Q", title="Signed drift (pp)", format=".2f"), alt.Tooltip("|Drift|:Q", title="Magnitude (|pp|)", format=".2f")],
-                ).properties(height=H_RIGHT, padding={"left":8,"right":8,"top":6,"bottom":6})
+                    x=alt.X("Scenario:N", title=None, sort=["Pragmatic Tilt","Strict Exclusion"], axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y("Sector:N",   title=None, axis=alt.Axis(labelAngle=0, labelLimit=1000)),
+                    color=alt.Color("|Drift|:Q", title="Drift (|pp|)",
+                                    scale=alt.Scale(domain=[lo, dom], range=["#B9B7F5", "#3B44DB"])),
+                    tooltip=[alt.Tooltip("Scenario:N"),
+                             alt.Tooltip("Sector:N"),
+                             alt.Tooltip("Drift_pp:Q", title="Signed drift (pp)", format=".2f"),
+                             alt.Tooltip("|Drift|:Q", title="Magnitude (|pp|)", format=".2f")],
+                ).properties(height=H_RIGHT, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
             )
             st.altair_chart(heat, use_container_width=True)
         else:
-            st.info("Sector drift columns not found.")
+            st.info("Sector drift columns not found (expecting 'sector_dev__*').")
 
-    st.markdown('<div class="info-wrap"><div class="info-title">Active Share vs % Clean</div><div class="info-badge has-tip" data-tip="x-axis: Active Share vs baseline. y-axis: resulting % Clean.">i</div></div>', unsafe_allow_html=True)
-    if as_col:
-        A2 = X[X["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])].copy()
-        if not A2.empty:
-            if sel_etf == "All" and A2["__aum__"].notna().any() and A2["__aum__"].sum() > 0:
-                def _aw2(df, col):
-                    w = pd.to_numeric(df["__aum__"], errors="coerce").clip(lower=0); x = pd.to_numeric(df[col], errors="coerce")
-                    return np.average(x, weights=w) if w.sum() > 0 else np.nan
-                S = (A2.groupby("Scenario").apply(lambda d: pd.Series({"ActiveShare_%": _aw2(d, as_col), "%Clean": _aw2(d, clean_col), "AUM": d["__aum__"].sum()})).reset_index())
+        st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
+
+    with right_col:
+        st.markdown(
+            '<div class="chart-head">'
+            '<div class="chart-title">Active Share vs % Clean</div>'
+            '<span class="info-badge has-tip tip-left tip-wide" '
+            'data-tip="x-axis: Active Share (how different the holdings are from the 2025 baseline). '
+            'y-axis: resulting % Clean in the scenario. Moving right means more deviation from the baseline; moving up means a cleaner portfolio.">'
+            'i</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
+        if as_col:
+            A2 = X[X["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])].copy()
+            if not A2.empty:
+                if sel_etf == "All" and A2["__aum__"].notna().any() and A2["__aum__"].sum() > 0:
+                    def _aw2(df, col):
+                        w = pd.to_numeric(df["__aum__"], errors="coerce").clip(lower=0)
+                        x = pd.to_numeric(df[col], errors="coerce")
+                        return np.average(x, weights=w) if w.sum() > 0 else np.nan
+                    S = (A2.groupby("Scenario")
+                           .apply(lambda d: pd.Series({"ActiveShare_%": _aw2(d, as_col),
+                                                       "%Clean": _aw2(d, clean_col),
+                                                       "AUM": d["__aum__"].sum()}))
+                           .reset_index())
+                else:
+                    S = (A2.groupby("Scenario", as_index=False)
+                           .agg({"__aum__":"first", as_col:"first", clean_col:"first"})
+                           .rename(columns={"__aum__":"AUM", as_col:"ActiveShare_%", clean_col:"%Clean"}))
+
+                if not S.empty and S[["ActiveShare_%","%Clean"]].notna().any(axis=None):
+                    scatter = (
+                        alt.Chart(S)
+                        .mark_point(filled=True, opacity=0.9)
+                        .encode(
+                            x=alt.X("ActiveShare_%:Q", title="Active Share (%)", axis=alt.Axis(format=".1f")),
+                            y=alt.Y("%Clean:Q", title="% Clean (scenario)", axis=alt.Axis(format=".1f")),
+                            color=alt.Color("Scenario:N", title=None,
+                                            scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"],
+                                                            range=[COLOR_PT, COLOR_SE])),
+                            size=alt.SizeValue(80),
+                            tooltip=[alt.Tooltip("Scenario:N"),
+                                     alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"),
+                                     alt.Tooltip("%Clean:Q", title="% Clean", format=".2f"),
+                                     alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f")],
+                        ).properties(height=H_RIGHT, padding={"left": 8, "right": 8, "top": 6, "bottom": 6})
+                    )
+                    st.altair_chart(scatter, use_container_width=True)
+                else:
+                    st.info("Active Share data not available.")
             else:
-                S = (A2.groupby("Scenario", as_index=False).agg({"__aum__":"first", as_col:"first", clean_col:"first"}).rename(columns={"__aum__":"AUM", as_col:"ActiveShare_%", clean_col:"%Clean"}))
-            if not S.empty and S[["ActiveShare_%","%Clean"]].notna().any(axis=None):
-                scatter = (
-                    alt.Chart(S)
-                    .mark_point(filled=True, opacity=0.9)
-                    .encode(
-                        x=alt.X("ActiveShare_%:Q", title="Active Share (%)", axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
-                        y=alt.Y("%Clean:Q", title="% Clean (scenario)", axis=alt.Axis(format=".1f", labelColor=C["text_soft"], titleColor=C["muted"])),
-                        color=alt.Color("Scenario:N", title=None, scale=alt.Scale(domain=["Pragmatic Tilt","Strict Exclusion"], range=["#C77DBB","#A47ADC"])),
-                        size=alt.SizeValue(80),
-                        tooltip=[alt.Tooltip("Scenario:N"), alt.Tooltip("ActiveShare_%:Q", title="Active Share (%)", format=".2f"), alt.Tooltip("%Clean:Q", title="% Clean", format=".2f"), alt.Tooltip("AUM:Q", title="AUM ($)", format=",.0f")],
-                    ).properties(height=H_RIGHT, padding={"left":8,"right":8,"top":6,"bottom":6})
-                )
-                st.altair_chart(scatter, use_container_width=True)
-            else:
-                st.info("Active Share data not available.")
+                st.info("No rows for alternative scenarios.")
         else:
-            st.info("No rows for alternative scenarios.")
-    else:
-        st.info("Column 'ActiveShare_%' not found in metrics.")
+            st.info("Column 'ActiveShare_%' not found in metrics.")
 
-# TAB 2 & TAB 3
-tabs = st.tabs(["", "", ""])
-with tabs[1]:
-    render_change_since_2017()
-with tabs[2]:
-    render_tradeoff_scenarios()
+        st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
+
+    sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
+                               horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
+
+    deltas2 = None
+    for fn in ("load_scenario_position_deltas", "load_scenario_deltas"):
+        try:
+            deltas2 = globals()[fn]().copy()
+            break
+        except Exception:
+            continue
+    if deltas2 is None:
+        try:
+            deltas2 = load_csv(3, "scenario_position_deltas.csv").copy()
+        except Exception:
+            deltas2 = None
+
+    if deltas2 is not None:
+        def _norm_col(s):
+            return str(s).replace("\u200b", "").replace("\xa0", " ").strip()
+        deltas2.columns = [_norm_col(c) for c in deltas2.columns]
+
+        if "company_name" not in deltas2.columns and "Company" in deltas2.columns:
+            deltas2["company_name"] = deltas2["Company"]
+        if "company_ticker" not in deltas2.columns and "Ticker" in deltas2.columns:
+            deltas2["company_ticker"] = deltas2["Ticker"]
+        if "ETF_Ticker" not in deltas2.columns and "ETF" in deltas2.columns:
+            deltas2["ETF_Ticker"] = deltas2["ETF"]
+        if "delta" not in deltas2.columns and "Delta" in deltas2.columns:
+            deltas2["delta"] = deltas2["Delta"]
+        if "category" not in deltas2.columns and "Category" in deltas2.columns:
+            deltas2["category"] = deltas2["Category"]
+        if "category" not in deltas2.columns:
+            deltas2["category"] = ""
+
+        try:
+            s_col  = _need(deltas2, "scenario")
+            e_col  = _need(deltas2, "ETF_Ticker")
+            nm_col = _need(deltas2, "company_name")
+            tk_col = _need(deltas2, "company_ticker")
+            sec_col= _need(deltas2, "Sector")
+            cat_col= _need(deltas2, "category")
+            d_col  = _need(deltas2, "delta")
+        except KeyError as err:
+            deltas2 = None
+            st.info(f"Missing column in deltas: {err}")
+
+    if deltas2 is not None:
+        use = deltas2.copy()
+        use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+        use = use[use["Scenario"] == sel_scn_changes]
+        if sel_etf != "All":
+            use = use[use[e_col].astype(str) == sel_etf]
+
+        if use.empty:
+            st.info("No position changes for the current selection.")
+        else:
+            if sel_etf == "All":
+                try:
+                    AUM = load_etf_aum_2025()
+                    f = "ETF_Ticker" if "ETF_Ticker" in AUM.columns else "etf_ticker"
+                    v = "ETF_AUM_USD" if "ETF_AUM_USD" in AUM.columns else ("AUM_USD" if "AUM_USD" in AUM.columns else None)
+                    AUM = AUM[[f, v]].rename(columns={f: "ETF_Ticker", v: "ETF_AUM_USD"})
+                    use = use.merge(AUM, on="ETF_Ticker", how="left")
+                    use["__w__"] = pd.to_numeric(use["ETF_AUM_USD"], errors="coerce").fillna(1.0).clip(lower=0)
+                except Exception:
+                    use["__w__"] = 1.0
+            else:
+                use["__w__"] = 1.0
+
+            use["delta"] = pd.to_numeric(use[d_col], errors="coerce").fillna(0.0)
+
+            grp = (use.groupby([tk_col, nm_col, sec_col, cat_col])
+                      .apply(lambda d: pd.Series({
+                          "Δ weight (pp)": (d["delta"] * d["__w__"]).sum() / max(d["__w__"].sum(), 1e-9) * 100.0
+                      }))
+                      .reset_index()
+                      .rename(columns={tk_col:"Ticker", nm_col:"Company", sec_col:"Sector", cat_col:"Category"}))
+
+            top_added   = grp.sort_values("Δ weight (pp)", ascending=False).head(10)
+            top_removed = grp.sort_values("Δ weight (pp)", ascending=True).head(10)
+
+            def _fmt_table(df):
+                out = df[["Company", "Ticker", "Sector", "Category", "Δ weight (pp)"]].copy()
+                out["Δ weight (pp)"] = out["Δ weight (pp)"].map(lambda x: f"{x:.2f}")
+                return out.reset_index(drop=True)
+
+            ta, tr = st.columns(2, gap="large")
+            with ta:
+                st.caption("Top Added (Δ weight, pp)")
+                grid(_fmt_table(top_added))
+            with tr:
+                st.caption("Top Removed (Δ weight, pp)")
+                grid(_fmt_table(top_removed))
+    else:
+        st.info("Position deltas file not found; cannot compute Top Added / Removed.")
+
+
+# BODY
+if mode == "Dashboard":
+    tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
+
+    with tab1:
+        st.subheader("2025 Overview")
+
+        ctx = load_context_summary()
+        scr = load_by_screen()
+        spot = load_spotlight()
+
+        k1, k2, k3, k4 = st.columns(4)
+        if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+            clean_pct  = ctx.loc[ctx["classification"].str.lower()=="clean","share_of_total_aum_pct"].sum()
+            contro_pct = ctx.loc[ctx["classification"].str.lower()=="controversial","share_of_total_aum_pct"].sum()
+        else:
+            clean_pct = contro_pct = None
+        total_aum = ctx.get("total_aum_usd")
+        total_aum = float(total_aum.dropna().iloc[0]) if total_aum is not None and len(total_aum.dropna()) else None
+        num_etfs = int(ctx["num_etfs_in_scope"].dropna().iloc[0]) if "num_etfs_in_scope" in ctx.columns and len(ctx["num_etfs_in_scope"].dropna()) else None
+
+        with k1: kpi_card("% Controversial", pct_fmt(contro_pct), tone="red")
+        with k2: kpi_card("% Clean",         pct_fmt(clean_pct),  tone="green")
+        with k3: kpi_card("Total AUM",       usd_fmt(total_aum),  tone="neutral")
+        with k4: kpi_card("ETFs in scope",   f"{num_etfs:,}" if num_etfs is not None else "-", tone="neutral")
+
+        gap(6)
+
+        c1, c2 = st.columns([0.5, 0.5])
+
+        with c1:
+            st.markdown(
+                """<div class="chart-head">
+                      <div class="chart-title">2025 Composition — Clean vs Controversial vs Other</div>
+                      <div></div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
+
+            if {"classification","share_of_total_aum_pct"}.issubset(ctx.columns):
+                comp = ctx[ctx["classification"].str.lower().isin(["clean","controversial","other"])].copy()
+                comp["classification"] = comp["classification"].map({
+                    "Clean":"Clean","Controversial":"Controversial","Other":"Other",
+                    "clean":"Clean","controversial":"Controversial","other":"Other"
+                })
+                comp = comp.groupby("classification", as_index=False)["share_of_total_aum_pct"].sum()
+                comp["share"] = comp["share_of_total_aum_pct"]/comp["share_of_total_aum_pct"].sum()
+                comp["Group"] = "All"
+
+                color_scale = alt.Scale(domain=["Clean","Controversial","Other"],
+                                        range=[COLORS["clean"], COLORS["contro"], COLORS["other"]])
+
+                chart = alt.Chart(comp).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                    x=alt.X("sum(share):Q", stack="normalize",
+                            axis=alt.Axis(format='%', title=None, ticks=False, labels=False)),
+                    y=alt.Y("Group:N", title=None, axis=None),
+                    color=alt.Color("classification:N", scale=color_scale, legend=alt.Legend(orient="top", title=None)),
+                    tooltip=[alt.Tooltip("classification:N"),
+                             alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")]
+                ).properties(height=120)
+                st.altair_chart(chart, use_container_width=True)
+            else:
+                st.warning("composition columns missing in context_summary_2025.csv")
+
+        with c2:
+            st.markdown(
+                """<div class="chart-head">
+                      <div class="chart-title">By-screen exposures — share of total AUM</div>
+                      <div class="info-badge has-tip" data-tip="Categories can overlap; not intended to sum to overall controversial exposure.">i</div>
+                   </div>""",
+                unsafe_allow_html=True,
+            )
+
+            parts = []
+            clean200 = 0.0
+            if {"screen_category","classification","share_of_total_aum_pct"}.issubset(scr.columns):
+                s2 = scr.copy()
+                s2["classification"] = s2["classification"].str.title()
+                s_con = s2[s2["classification"]=="Controversial"].groupby(
+                    "screen_category", as_index=False
+                )["share_of_total_aum_pct"].sum()
+                parts.append(s_con)
+                c2_row = scr.loc[
+                    scr["screen_category"].astype(str).str.strip().str.lower()=="clean200",
+                    "share_of_total_aum_pct"
+                ].sum()
+                clean200 = float(c2_row) if pd.notna(c2_row) else 0.0
+
+            parts.append(pd.DataFrame({"screen_category":["Clean200"], "share_of_total_aum_pct":[clean200]}))
+
+            scr_all = pd.concat(parts, ignore_index=True)
+            scr_all = scr_all.groupby("screen_category", as_index=False)["share_of_total_aum_pct"].sum()
+            scr_all = scr_all.sort_values("share_of_total_aum_pct", ascending=True)
+            scr_all["color"] = scr_all["screen_category"].apply(
+                lambda x: COLORS["clean"] if str(x).strip().lower()=="clean200" else COLORS["contro"]
+            )
+
+            chart2 = alt.Chart(scr_all).mark_bar(opacity=0.92, stroke='#0A0B0D', strokeWidth=0.6).encode(
+                x=alt.X("share_of_total_aum_pct:Q", title="Share of total AUM (%)", axis=alt.Axis(format=".1f")),
+                y=alt.Y("screen_category:N", sort="-x", title=None),
+                color=alt.Color("color:N", legend=None, scale=None),
+                tooltip=[alt.Tooltip("screen_category:N", title="Category"),
+                         alt.Tooltip("share_of_total_aum_pct:Q", title="Share (%)", format=".1f")],
+            ).properties(height=240)
+            st.altair_chart(chart2, use_container_width=True)
+
+        s1, s2 = st.columns([0.5, 0.5])
+        with s1:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Controversial Holdings</div>', unsafe_allow_html=True)
+            spot = load_spotlight()
+            if "cohort" in spot.columns:
+                cont = spot[spot["cohort"].str.lower()=="controversial"].copy()
+                if "rank_within_cohort" in cont.columns:
+                    cont = cont.sort_values("rank_within_cohort").head(10)
+                cont_disp = cont.rename(columns={
+                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                if "Share of AUM (%)" in cont_disp.columns:
+                    cont_disp["Share of AUM (%)"] = pd.to_numeric(cont_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                grid(cont_disp)
+        with s2:
+            st.markdown('<div class="chart-title" style="margin-bottom:6px;">Top 10 Clean Holdings</div>', unsafe_allow_html=True)
+            spot = load_spotlight()
+            if "cohort" in spot.columns:
+                clean = spot[spot["cohort"].str.lower()=="clean"].copy()
+                if "rank_within_cohort" in clean.columns:
+                    clean = clean.sort_values("rank_within_cohort").head(10)
+                clean_disp = clean.rename(columns={
+                    "rank_within_cohort":"Rank","ticker":"Ticker","holding_name":"Holding",
+                    "share_of_total_aum_pct":"Share of AUM (%)","num_etfs":"#ETFs","screen_categories":"Screens"
+                })[["Rank","Ticker","Holding","Share of AUM (%)","#ETFs","Screens"]]
+                if "Share of AUM (%)" in clean_disp.columns:
+                    clean_disp["Share of AUM (%)"] = pd.to_numeric(clean_disp["Share of AUM (%)"], errors="coerce").map(lambda v: f"{v:.2f}")
+                grid(clean_disp)
+
+        gap(8)
+        st.markdown('<div class="chart-title" style="margin-bottom:6px;">Holdings Explorer</div>', unsafe_allow_html=True)
+
+        df_raw, df_disp, all_tags = load_explorer()
+        fc1, fc2, fc3, fc4, fc5 = st.columns([0.22, 0.18, 0.24, 0.18, 0.18])
+        with fc1:
+            etfs = sorted(df_disp["ETF"].dropna().unique().tolist()) if "ETF" in df_disp.columns else []
+            sel_etfs_explorer = st.multiselect("ETF", etfs, placeholder="All")
+        with fc2:
+            classes = ["Clean","Controversial","Other"]
+            sel_class = st.multiselect("Classification", classes, default=[], placeholder="Any")
+        with fc3:
+            sel_tags = st.multiselect("Screen tags", all_tags, default=[], placeholder="Any")
+        with fc4:
+            sectors = sorted([s for s in df_disp.get("Sector", pd.Series()).dropna().unique().tolist() if s])
+            sel_sector = st.multiselect("Sector", sectors, default=[], placeholder="Any")
+        with fc5:
+            regions = sorted([r for r in df_disp.get("Region", pd.Series()).dropna().unique().tolist() if r])
+            sel_region = st.multiselect("Region", regions, default=[], placeholder="Any")
+
+        q = st.text_input("Search ticker or name", "", placeholder="Type to filter…").strip().lower()
+
+        mask = pd.Series(True, index=df_raw.index)
+        if sel_etfs_explorer:   mask &= df_disp["ETF"].isin(sel_etfs_explorer)
+        if sel_class:  mask &= df_disp["Class"].isin(sel_class)
+        if sel_sector: mask &= df_disp["Sector"].isin(sel_sector)
+        if sel_region: mask &= df_disp["Region"].isin(sel_region)
+        if sel_tags:   mask &= df_raw["_screen_categories_norm"].apply(lambda xs: all(t in xs for t in sel_tags))
+        if q:
+            qcols = [c for c in ["Ticker","Holding","ETF Name"] if c in df_disp.columns]
+            if qcols:
+                qmask = False
+                for c in qcols:
+                    qmask |= df_disp[c].astype(str).str.lower().str.contains(q, na=False)
+                mask &= qmask
+
+        df_f = df_disp.loc[mask].copy()
+        default_sort = "$ Contribution (Agg)" if "$ Contribution (Agg)" in df_f.columns else ("Weight % in ETF" if "Weight % in ETF" in df_f.columns else None)
+        if default_sort:
+            df_f = df_f.sort_values(by=default_sort, ascending=False)
+
+        df_view = df_f.copy()
+        for c in ("Weight % in ETF","ETF AUM (USD)","$ Contribution (Agg)"):
+            if c in df_view.columns:
+                df_view[c] = pd.to_numeric(df_view[c], errors="coerce")
+        grid(df_view)
+
+        csv_bytes = df_f.to_csv(index=False).encode("utf-8")
+        st.download_button("Download filtered rows (CSV)", data=csv_bytes, file_name="holdings_explorer_filtered.csv", mime="text/csv")
+
+    with tab2:
+        render_change_since_2017()
+    with tab3:
+        render_tradeoff_scenarios()
 
 # FOOTER
-gap(28); divider()
-github_url = f"https://github.com/{GITHUB_USER_REPO}"
-st.markdown(f"""
-<style>
-.footer-cta{{margin:16px 0 8px;display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(180deg,rgba(0,0,0,0.00),rgba(0,0,0,0.00));border:1px solid var(--border);border-radius:12px}}
-.footer-cta a{{display:inline-flex;align-items:center;gap:8px;color:var(--text);text-decoration:none;font-weight:600;font-size:15px;opacity:.95}}
-.footer-cta .muted{{color:var(--muted);font-weight:500}}
-.footer-wrap{{display:flex;align-items:center;justify-content:space-between;width:100%;padding-top:12px}}
-.footer-left{{color:var(--muted);font-size:14px;white-space:nowrap}}
-.footer-links{{display:flex;gap:28px;align-items:center;justify-content:flex-end}}
-.footer-links a{{color:var(--text);text-decoration:none;font-size:15.5px;font-weight:500;opacity:.9}}
-.footer-links a:hover{{opacity:1}}
-@media (max-width:820px){{.footer-cta{{flex-wrap:wrap;gap:10px}} .footer-wrap{{flex-direction:column;gap:8px;align-items:flex-start}}}}
-</style>
-<div class="footer-cta"><span class="muted">Explore the data, methodology, and full code</span>
-  <a href="{github_url}" target="_blank" aria-label="Open GitHub">
-    <span>Open on GitHub</span><span style="opacity:.7">→</span>
-  </a>
-</div>
-<div class="footer-wrap">
-  <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
-  <div class="footer-links">
-    <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
-    <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
-    <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+gap(28)
+divider()
+
+github_url = f"https://github.com/{GITHUB_USER_REPO}" if "GITHUB_USER_REPO" in globals() else "https://github.com/nitya-ar/blackrock-esg-etf-study"
+
+st.markdown(
+    f"""
+    <style>
+      .footer-cta {{
+        margin: 16px 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(0,0,0,0.04));
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }}
+      .footer-cta a {{
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        opacity: .95;
+      }}
+      .footer-cta a:hover {{ opacity: 1; transform: translateY(-0.5px); }}
+      .footer-cta .muted {{ color: var(--muted); font-weight: 500; }}
+      .footer-wrap {{
+        display:flex; align-items:center; justify-content:space-between; width:100%;
+        padding-top: 12px;
+      }}
+      .footer-left {{ color: var(--muted); font-size: 14px; white-space: nowrap; }}
+      .footer-links {{ display:flex; gap:28px; align-items:center; justify-content:flex-end; }}
+      .footer-links a {{ color: var(--text); text-decoration:none; font-size:15.5px; font-weight:500; opacity:.9; }}
+      .footer-links a:hover {{ opacity:1; }}
+      @media (max-width: 820px) {{
+        .footer-cta {{ flex-wrap: wrap; gap:10px; }}
+        .footer-wrap {{ flex-direction: column; gap: 8px; align-items: flex-start; }}
+      }}
+    </style>
+
+    <div class="footer-cta">
+      <span class="muted">Explore the data, methodology, and full code</span>
+      <a href="{github_url}" target="_blank" aria-label="Open GitHub">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 .2a8 8 0 0 0-2.53 15.6c.4.07.55-.17.55-.38l-.01-1.34c-2.25.49-2.72-1.09-2.72-1.09-.36-.9-.89-1.13-.89-1.13-.73-.5.06-.49.06-.49.8.06 1.22.83 1.22.83.72 1.23 1.9.87 2.37.66.07-.53.28-.87.5-1.07-1.8-.2-3.69-.9-3.69-4 0-.88.31-1.6.83-2.17-.08-.2-.36-1.02.08-2.12 0 0 .68-.22 2.22.83.65-.18 1.34-.27 2.03-.27.69 0 1.38.09 2.03.27 1.54-1.05 2.22-.83 2.22-.83.44 1.1.16 1.92.08 2.12.52.57.83 1.29.83 2.17 0 3.11-1.89 3.8-3.69 4 .29.25.54.73.54 1.48l-.01 2.19c0 .21.15.45.55.38A8 8 0 0 0 8 .2Z"/>
+        </svg>
+        <span>Open on GitHub</span>
+        <span style="opacity:.7;">→</span>
+      </a>
+    </div>
+
+    <div class="footer-wrap">
+      <div class="footer-left">Built by <strong>Nitya Arya</strong></div>
+      <div class="footer-links">
+        <a href="https://www.linkedin.com/in/nitya-arya/" target="_blank">LinkedIn</a>
+        <a href="https://github.com/nitya-ar" target="_blank">GitHub</a>
+        <a href="https://forms.gle/qid7S1eJpGCuYdtY8" target="_blank"><strong>Send Feedback</strong></a>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
