@@ -202,17 +202,16 @@ st.markdown(
 
       /* INFO BADGE — EXACTLY LIKE CODE 1 */
       .info-badge{{
-          display:inline-flex;align-items:center;justify-content:center;
-          padding:2px;
-          width:auto;height:auto;min-width:auto;
-          border-radius:50%;
-          background:transparent !important;
-          color:var(--muted) !important;
-          border:none !important;
-          font-weight:700;font-size:12px;
-          margin-left:8px;vertical-align:text-bottom;
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:2px;
+      width:auto;height:auto;min-width:auto;border-radius:50%;
+      background:transparent !important;
+      color:var(--muted) !important;
+      border:none !important;
+      font-weight:700;font-size:12px;
+      margin-left:8px;vertical-align:text-bottom;
       }}
-
+      
       .chart-head {{ display:flex; align-items:center; }}
       .chart-head .chart-title {{ flex:1 1 auto; }}
       .chart-head .info-badge {{ margin-left:auto; }}
