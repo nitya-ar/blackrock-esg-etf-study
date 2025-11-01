@@ -104,8 +104,8 @@ def _alt_dark():
                 "domainColor": "#2A2F36",
                 "tickColor":   "#2A2F36",
                 "grid": True,
-                "gridColor": "#222831",
-                "gridOpacity": 0.45
+                "gridColor": "#262C35",
+                "gridOpacity": 0.60
             },
             "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
             "title": {"color": COLORS["text"]},
@@ -407,7 +407,7 @@ st.markdown(
       .vega-embed .role-legend-title {{ fill: var(--text) !important; }}
 
       .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: var(--border) !important; opacity: .9; }}
-      .vega-embed .role-axis-grid {{ stroke: #222831 !important; opacity: .45; }}
+      .vega-embed .role-axis-grid {{ stroke: #262C35 !important; opacity: .60; }}
       @media (prefers-color-scheme: light) {{
         .vega-embed .role-axis-grid {{ stroke: #F7F9FC !important; opacity: .22 !important; }}
         .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: #F2F5FA !important; opacity: .55 !important; }}
@@ -987,9 +987,9 @@ def render_change_since_2017():
             d["screen_category"]
             .astype(str)
             .str.strip()
-            .replace({"Prison": "Prisons", "Fossil_fuel": "Fossil Fuel", "Clean200": "Clean"})
+            .replace({"Prison": "Prisons", "Fossil_fuel": "Fossil Fuel"})
         )
-        keep = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+        keep = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
         d = d[d["Category"].isin(keep)]
 
         if etf_scr and yscr:
@@ -1006,7 +1006,7 @@ def render_change_since_2017():
         if d.empty or d["value"].dropna().empty:
             st.info("No screen-trend data for the current filters.")
         else:
-            SCREEN_DOMAIN = ["Clean", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
+            SCREEN_DOMAIN = ["Clean200", "Prisons", "Deforestation", "Fossil Fuel", "Weapons", "Tobacco"]
             SCREEN_COLORS = [
                 "var(--clean)",
                 "var(--scr-prisons)",
@@ -1139,20 +1139,15 @@ def render_change_since_2017():
     if ecol is None:
         mv["__wETF__"] = 1.0
     else:
-        df_all = by_fund
-        aum_col = _pick(df_all, "market_total_value_usd", "aum", "net_assets")
-        if weighting == "AUM-weighted" and aum_col in df_all.columns:
-            aum_map = (
-                df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
-                .groupby(etf_col, as_index=True)[aum_col]
-                .first()
-                .astype(float)
-            )
-            total_aum = float(aum_map.sum()) if len(aum_map) else 0.0
-            if total_aum > 0:
-                mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
-            else:
-                mv["__wETF__"] = 1.0 / max(len(cohort), 1)
+        aum_ref = by_fund.copy()
+        aum_ref = aum_ref[(aum_ref[year_col] == end_year) & (aum_ref[etf_col].astype(str).isin(cohort))]
+        aum_map = None
+        if aum_col in aum_ref.columns:
+            aum_ref[aum_col] = pd.to_numeric(aum_ref[aum_col], errors="coerce").clip(lower=0)
+            aum_map = aum_ref.groupby(etf_col, as_index=True)[aum_col].first()
+        if weighting == "AUM-weighted" and aum_map is not None and len(aum_map) and float(aum_map.sum()) > 0:
+            total_aum = float(aum_map.sum())
+            mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
         else:
             mv["__wETF__"] = 1.0 / max(len(cohort), 1)
 
@@ -1162,7 +1157,11 @@ def render_change_since_2017():
     )
 
     name_col = nm25 if nm25 is not None else hld
-    mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
+    if name_col and name_col in mv.columns:
+        nm_series = mv[name_col].astype(str)
+        mv["Company"] = np.where(nm_series.str.len() > 0, nm_series, mv[tick].astype(str))
+    else:
+        mv["Company"] = mv[tick].astype(str)
     mv["Ticker"] = mv[tick].astype(str)
     mv["Category"] = mv[cls_col].astype(str) if cls_col else "Unknown"
 
@@ -1365,10 +1364,10 @@ def render_tradeoff_scenarios():
         st.markdown(f"<div class='t3-rowtitle'>{r['Scenario']}</div>", unsafe_allow_html=True)
         k1, k2, k3, k4 = st.columns(4)
         with k1:
-            tone_cls = "kpi t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
+            tone_cls = "kpi kpi-neutral t3" if _is_zero_display(r["clean"]) else "kpi kpi-green t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Clean</div><div class='value'>{_fmt_pct(r['clean'])}</div></div>", unsafe_allow_html=True)
         with k2:
-            tone_cls = "kpi t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
+            tone_cls = "kpi kpi-neutral t3" if _is_zero_display(r["contro"]) else "kpi kpi-red t3"
             st.markdown(f"<div class='{tone_cls}'><div class='label'>% Controversial</div><div class='value'>{_fmt_pct(r['contro'])}</div></div>", unsafe_allow_html=True)
         with k3:
             st.markdown(
@@ -1637,9 +1636,11 @@ def render_tradeoff_scenarios():
 
             import numpy as np
             _np = np
-            dom = _np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
-            if not _np.isfinite(dom) or dom <= 0: dom = 0.1
-            lo  = max(dom * 0.15, 0.01)
+            dom = float(_np.nanmax(heat_df["|Drift|"].values))
+            if not _np.isfinite(dom) or dom <= 0:
+                  dom = 0.01
+            dom = max(dom, 0.01)
+            lo  = 0.15 * dom
 
             heat = (
                 alt.Chart(heat_df)
