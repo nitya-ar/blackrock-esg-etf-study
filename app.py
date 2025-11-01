@@ -104,7 +104,7 @@ def _alt_dark():
                 "domainColor": "#2A2F36",
                 "tickColor":   "#2A2F36",
                 "grid": True,
-                "gridColor": "#222831",
+                "gridColor": "#262C35",
                 "gridOpacity": 0.60
             },
             "legend": {"labelColor": COLORS["text"], "titleColor": COLORS["muted"]},
@@ -407,7 +407,7 @@ st.markdown(
       .vega-embed .role-legend-title {{ fill: var(--text) !important; }}
 
       .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: var(--border) !important; opacity: .9; }}
-      .vega-embed .role-axis-grid {{ stroke: #222831 !important; opacity: .45; }}
+      .vega-embed .role-axis-grid {{ stroke: #262C35 !important; opacity: .60; }}
       @media (prefers-color-scheme: light) {{
         .vega-embed .role-axis-grid {{ stroke: #F7F9FC !important; opacity: .22 !important; }}
         .vega-embed .role-axis-domain, .vega-embed .role-axis-tick {{ stroke: #F2F5FA !important; opacity: .55 !important; }}
