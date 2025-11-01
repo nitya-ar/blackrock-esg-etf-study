@@ -1139,20 +1139,15 @@ def render_change_since_2017():
     if ecol is None:
         mv["__wETF__"] = 1.0
     else:
-        df_all = by_fund
-        aum_col = _pick(df_all, "market_total_value_usd", "aum", "net_assets")
-        if weighting == "AUM-weighted" and aum_col in df_all.columns:
-            aum_map = (
-                df_all[(df_all[year_col] == end_year) & (df_all[etf_col].astype(str).isin(cohort))]
-                .groupby(etf_col, as_index=True)[aum_col]
-                .first()
-                .astype(float)
-            )
-            total_aum = float(aum_map.sum()) if len(aum_map) else 0.0
-            if total_aum > 0:
-                mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
-            else:
-                mv["__wETF__"] = 1.0 / max(len(cohort), 1)
+        aum_ref = by_fund.copy()
+        aum_ref = aum_ref[(aum_ref[year_col] == end_year) & (aum_ref[etf_col].astype(str).isin(cohort))]
+        aum_map = None
+        if aum_col in aum_ref.columns:
+            aum_ref[aum_col] = pd.to_numeric(aum_ref[aum_col], errors="coerce").clip(lower=0)
+            aum_map = aum_ref.groupby(etf_col, as_index=True)[aum_col].first()
+        if weighting == "AUM-weighted" and aum_map is not None and len(aum_map) and float(aum_map.sum()) > 0:
+            total_aum = float(aum_map.sum())
+            mv["__wETF__"] = pd.to_numeric(mv[ecol].map(aum_map), errors="coerce").fillna(0.0) / total_aum
         else:
             mv["__wETF__"] = 1.0 / max(len(cohort), 1)
 
@@ -1162,7 +1157,11 @@ def render_change_since_2017():
     )
 
     name_col = nm25 if nm25 is not None else hld
-    mv["Company"] = mv[name_col].where(mv.get(name_col).notna() & (mv.get(name_col).astype(str).str.len() > 0), mv[tick]) if name_col else mv[tick]
+    if name_col and name_col in mv.columns:
+        nm_series = mv[name_col].astype(str)
+        mv["Company"] = np.where(nm_series.str.len() > 0, nm_series, mv[tick].astype(str))
+    else:
+        mv["Company"] = mv[tick].astype(str)
     mv["Ticker"] = mv[tick].astype(str)
     mv["Category"] = mv[cls_col].astype(str) if cls_col else "Unknown"
 
