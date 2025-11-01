@@ -1637,9 +1637,11 @@ def render_tradeoff_scenarios():
 
             import numpy as np
             _np = np
-            dom = _np.nanmax(heat_df["|Drift|"].values) if heat_df["|Drift|"].notna().any() else 0.1
-            if not _np.isfinite(dom) or dom <= 0: dom = 0.1
-            lo  = max(dom * 0.15, 0.01)
+            dom = float(_np.nanmax(heat_df["|Drift|"].values))
+            if not _np.isfinite(dom) or dom <= 0:
+            dom = 0.01
+            dom = max(dom, 0.01)
+            lo  = 0.15 * dom
 
             heat = (
                 alt.Chart(heat_df)
