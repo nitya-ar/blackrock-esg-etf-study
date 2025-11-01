@@ -1639,7 +1639,7 @@ def render_tradeoff_scenarios():
             _np = np
             dom = float(_np.nanmax(heat_df["|Drift|"].values))
             if not _np.isfinite(dom) or dom <= 0:
-            dom = 0.01
+                  dom = 0.01
             dom = max(dom, 0.01)
             lo  = 0.15 * dom
 
