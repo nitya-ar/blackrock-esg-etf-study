@@ -1202,7 +1202,6 @@ def render_change_since_2017():
 
 
 
-# RENDER: Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1232,6 +1231,12 @@ def render_tradeoff_scenarios():
         try: return abs(float(v)) < 0.05
         except: return False
 
+    def _show_table(df):
+        try:
+            grid(df)
+        except Exception:
+            st.dataframe(df, use_container_width=True)
+
     try:
         _ = COLORS
     except Exception:
@@ -1245,6 +1250,11 @@ def render_tradeoff_scenarios():
     COLOR_SE = "#A47ADC"
 
     M = load_scenario_metrics().copy()
+    scen_specs = None
+    try:
+        scen_specs = load_data_file("scenario_specs.csv")
+    except Exception:
+        scen_specs = None
 
     scen_col  = _need(M, "scenario")
     etf_col   = _need(M, "ETF_Ticker")
@@ -1252,18 +1262,24 @@ def render_tradeoff_scenarios():
     ctr_col   = _need(M, "%Controversial")
     te_col    = _need(M, "TE_annual")
     n_col     = _need(M, "#names")
-
     as_col    = "ActiveShare_%" if "ActiveShare_%" in M.columns else None
     aum_in_M  = "ETF_AUM_USD" if "ETF_AUM_USD" in M.columns else None
 
     for c in [clean_col, ctr_col, te_col, n_col] + ([as_col] if as_col else []) + ([aum_in_M] if aum_in_M else []):
         if c: M[c] = pd.to_numeric(M[c], errors="coerce")
 
-    scen_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
-    M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+    if scen_specs is not None and "scenario" in scen_specs.columns:
+        spec_names = scen_specs["scenario"].dropna().astype(str).tolist()
+        scen_order = [s for s in ["Baseline","Pragmatic Tilt","Strict Exclusion"] if s in spec_names] or spec_names
+        name_map = {s.lower(): s for s in spec_names}
+        M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: name_map.get(s.lower(), s))
+    else:
+        scen_order = ["Baseline","Pragmatic Tilt","Strict Exclusion"]
+        name_map = {"baseline":"Baseline","pragmatic tilt":"Pragmatic Tilt","strict exclusion":"Strict Exclusion"}
+        M["Scenario"] = M[scen_col].astype(str).str.strip().map(lambda s: name_map.get(s.lower(), s))
 
     st.subheader("Tradeoff Scenarios")
-    st.caption("This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions, the Pragmatic Tilt and Strict Exclusion, to illustrate how shifting toward sustainability impacts risk and performance.")
+    st.caption("This section contrasts the actual 2025 portfolio with two hypothetical cleaner versions to show how shifting toward sustainability affects risk and portfolio composition.")
 
     st.markdown("""
     <style>
@@ -1308,24 +1324,28 @@ def render_tradeoff_scenarios():
     </style>
     """, unsafe_allow_html=True)
 
+    desc_baseline = "The starting point showing each ESG ETF’s actual 2025 holdings. It’s the reference used to measure change and cleaner rebalancing."
+    desc_tilt = "A modest shift toward cleaner companies while staying close to the market. Sector and region weights stay within ±2%, tracking error stays under 4% a year, and no stock exceeds 5% or three times its original size."
+    desc_strict = "A fully screened version removing all controversial companies, then rebalanced to stay broadly in line across sectors and regions (±2%) with single-stock limits of 5% or three times baseline weight."
+
     c1, c2, c3 = st.columns(3, gap="medium")
     with c1:
-        st.markdown("""
+        st.markdown(f"""
         <div class="t3-scn-card">
           <div><h4>Baseline</h4>
-          <div class="desc">Actual 2025 portfolio; the reference point.</div></div>
+          <div class="desc">{desc_baseline}</div></div>
         </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="t3-scn-card">
           <div><h4>Pragmatic Tilt</h4>
-          <div class="desc">Modestly raises clean exposure while maintaining benchmark alignment (low Tracking Error and ±2% sector balance) and preventing over-weighting of any single holding (5% cap).</div></div>
+          <div class="desc">{desc_tilt}</div></div>
         </div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown("""
+        st.markdown(f"""
         <div class="t3-scn-card">
           <div><h4>Strict Exclusion</h4>
-          <div class="desc">Excludes all controversial holdings and rebalances to maintain sector neutrality while preventing over-weighting of any single holding (5% cap).</div></div>
+          <div class="desc">{desc_strict}</div></div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown('<div class="blx-divider"></div>', unsafe_allow_html=True)
@@ -1357,7 +1377,6 @@ def render_tradeoff_scenarios():
         X = X[X[etf_col].astype(str) == sel_etf]
     X["__aum__"] = X[etf_col].astype(str).map(_aum)
 
-    scen_order = ["Baseline", "Pragmatic Tilt", "Strict Exclusion"]
     rows = []
     for s in scen_order:
         d = X[X["Scenario"] == s].copy()
@@ -1391,7 +1410,7 @@ def render_tradeoff_scenarios():
                 "<div class='kpi kpi-neutral t3'>"
                 "<div class='label'>TE (ann.)"
                 "<span class='info-badge has-tip tip-left tip-narrow' "
-                "data-tip='Shows how much a scenario’s returns are expected to differ from the 2025 baseline (annualised). Lower values mean it stays closer to the original; higher values reflect more active deviation.'>i</span>"
+                "data-tip='Annualised Tracking Error relative to the 2025 Baseline. Pragmatic Tilt is designed to be ≤ 4% with sector and region neutrality (±2 pp) and single-stock caps at min(5%, 3× Baseline).'>i</span>"
                 "</div>"
                 f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
                 "</div>",
@@ -1410,7 +1429,7 @@ def render_tradeoff_scenarios():
         })
         .copy()
     )
-    show["__ord__"] = show["Scenario"].map({"Baseline":0,"Pragmatic Tilt":1,"Strict Exclusion":2}).fillna(99)
+    show["__ord__"] = show["Scenario"].map({s:i for i,s in enumerate(scen_order)}).fillna(99)
     show = show.sort_values(["ETF","__ord__"]).drop(columns="__ord__")
     csv_b64 = base64.b64encode(show.to_csv(index=False).encode("utf-8")).decode("ascii")
     csv_href = f"data:text/csv;base64,{csv_b64}"
@@ -1445,7 +1464,6 @@ def render_tradeoff_scenarios():
 
     with left_col:
         st.markdown('<div class="chart-head"><div class="chart-title">Scenario composition</div></div>', unsafe_allow_html=True)
-
         comp_rows = []
         for _, r in KP.iterrows():
             clean  = float(r["clean"])  if pd.notna(r["clean"])  else float("nan")
@@ -1484,8 +1502,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="x-axis: increase in % Clean versus the 2025 baseline (percentage points). '
-            'y-axis: Tracking Error (annualised). Further right indicates a cleaner portfolio; higher values indicate more off-benchmark risk.">'
+            'data-tip="x-axis: increase in % Clean versus the 2025 Baseline (percentage points). y-axis: annualised Tracking Error. Pragmatic Tilt targets ≤ 4% TE while keeping sectors and regions within ±2 pp and single-stock caps at min(5%, 3× Baseline).">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
@@ -1549,8 +1566,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Turnover & Cost</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="Turnover measures how much the portfolio’s holdings change to reach the scenario; '
-            'Cost estimates trading expense using the Assumed round-trip cost (bps). Higher values imply more rebalancing and higher execution cost.">'
+            'data-tip="Turnover is half the sum of absolute weight changes. Cost is Turnover multiplied by the assumed round-trip cost (bps).">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
@@ -1580,7 +1596,7 @@ def render_tradeoff_scenarios():
 
         if deltas is not None:
             use = deltas.copy()
-            use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+            use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: name_map.get(s.lower(), s))
             use = use[use["Scenario"].isin(["Pragmatic Tilt","Strict Exclusion"])]
             if sel_etf != "All":
                 use = use[use[e_col].astype(str) == sel_etf]
@@ -1589,7 +1605,7 @@ def render_tradeoff_scenarios():
                 agg = (use.assign(abs_delta = pd.to_numeric(use[d_col], errors="coerce").abs())
                           .groupby("Scenario", as_index=False)["abs_delta"].sum())
                 agg["Turnover %"] = 0.5 * agg["abs_delta"] * 100.0
-                agg["Cost (bps)"]   = agg["Turnover %"] * rtc
+                agg["Cost (bps)"] = agg["Turnover %"] * rtc
 
                 long = agg.melt(id_vars="Scenario", value_vars=["Turnover %","Cost (bps)"],
                                 var_name="Metric", value_name="Value")
@@ -1611,15 +1627,14 @@ def render_tradeoff_scenarios():
             else:
                 st.info("No position deltas available for the current selection.")
         else:
-            st.info("Turnover data not available (no position-deltas file detected).")
+            st.info("Turnover data not available.")
 
     with right_col:
         st.markdown(
             '<div class="chart-head">'
             '<div class="chart-title">Sector drift vs Baseline</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="Shows how each sector’s weight shifts relative to the 2025 baseline. '
-            'Colour encodes the magnitude of the drift (|percentage points|); hover to see the signed drift value.">'
+            'data-tip="Heatmap of sector weight changes versus the 2025 Baseline (percentage points). Colour shows |drift|; hover to see signed values.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
@@ -1648,13 +1663,14 @@ def render_tradeoff_scenarios():
                                     var_name="Sector", value_name="Drift_pp")
 
             heat_df["Sector"] = heat_df["Sector"].map(_pretty_sector)
+            heat_df["Sector"] = heat_df["Sector"].astype(str)
+            heat_df = heat_df.sort_values(["Sector","Scenario"])
             heat_df["Drift_pp"] = pd.to_numeric(heat_df["Drift_pp"], errors="coerce")
             heat_df["|Drift|"] = heat_df["Drift_pp"].abs()
 
             import numpy as np
-            _np = np
-            dom = float(_np.nanmax(heat_df["|Drift|"].values))
-            if not _np.isfinite(dom) or dom <= 0:
+            dom = float(np.nanmax(heat_df["|Drift|"].values))
+            if not np.isfinite(dom) or dom <= 0:
                   dom = 0.01
             dom = max(dom, 0.01)
             lo  = 0.15 * dom
@@ -1675,7 +1691,7 @@ def render_tradeoff_scenarios():
             )
             st.altair_chart(heat, use_container_width=True)
         else:
-            st.info("Sector drift columns not found (expecting 'sector_dev__*').")
+            st.info("Sector drift columns not found.")
 
         st.markdown('<div style="height:8px;"></div>', unsafe_allow_html=True)
 
@@ -1684,8 +1700,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Active Share vs % Clean</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="x-axis: Active Share (how different the holdings are from the 2025 baseline). '
-            'y-axis: resulting % Clean in the scenario. Moving right means more deviation from the baseline; moving up means a cleaner portfolio.">'
+            'data-tip="x-axis: Active Share (difference from Baseline holdings). y-axis: resulting % Clean. Moving right increases deviation; moving up increases cleanliness.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
@@ -1737,7 +1752,7 @@ def render_tradeoff_scenarios():
 
     st.markdown('<div class="chart-head"><div class="chart-title">Top Added / Top Removed</div></div>', unsafe_allow_html=True)
 
-    sel_scn_changes = st.radio("", options=["Pragmatic Tilt", "Strict Exclusion"],
+    sel_scn_changes = st.radio("", options=[s for s in ["Pragmatic Tilt","Strict Exclusion"] if s in scen_order],
                                horizontal=True, key="t3_changes_scn", label_visibility="collapsed")
 
     deltas2 = None
@@ -1785,7 +1800,7 @@ def render_tradeoff_scenarios():
 
     if deltas2 is not None:
         use = deltas2.copy()
-        use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: scen_map.get(s.lower(), s))
+        use["Scenario"] = use[s_col].astype(str).str.strip().map(lambda s: name_map.get(s.lower(), s))
         use = use[use["Scenario"] == sel_scn_changes]
         if sel_etf != "All":
             use = use[use[e_col].astype(str) == sel_etf]
@@ -1826,10 +1841,10 @@ def render_tradeoff_scenarios():
             ta, tr = st.columns(2, gap="large")
             with ta:
                 st.caption("Top Added (Δ weight, pp)")
-                grid(_fmt_table(top_added))
+                _show_table(_fmt_table(top_added))
             with tr:
                 st.caption("Top Removed (Δ weight, pp)")
-                grid(_fmt_table(top_removed))
+                _show_table(_fmt_table(top_removed))
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
 
