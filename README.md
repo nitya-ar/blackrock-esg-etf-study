@@ -103,7 +103,7 @@ The analytical framework evaluates the credibility, evolution, and practical tra
 4. **Tradeoff Analysis**  
    Three portfolio scenarios are modeled to assess the relationship between ESG purity and benchmark fidelity:  
    * **Baseline:** replicates each ETF’s benchmark composition.  
-   * **Pragmatic Tilt:** increases Clean exposure while maintaining sector and regional neutrality within ±2%, limiting annualized tracking error (TE) to 2%, and capping single-name weights at 5%.  
+   * **Pragmatic Tilt:** increases Clean exposure while maintaining sector and regional neutrality within ±2%, limiting annualized tracking error (TE) to 4%, and capping single-name weights at 5%.  
    * **Strict Exclusion:** removes all Controversial holdings and rebalances under the same ±2% neutrality and 5% cap to minimize TE.  
 
    These parameters reflect realistic institutional constraints, allowing a fair comparison of how stronger ESG alignment affects diversification, concentration, and tracking precision.
