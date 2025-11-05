@@ -1200,7 +1200,7 @@ def render_change_since_2017():
         st.caption(f"Top 10 Decreases — {start_year} → {end_year}")
         grid(__fmt(top_decrease))
 
-
+#Render Tradeoff Scenarios
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1415,9 +1415,7 @@ def render_tradeoff_scenarios():
             KP.loc[KP["Scenario"] == "Baseline", "contro"] = ov_ctr
         if ov_clean is not None:
             KP.loc[KP["Scenario"] == "Baseline", "clean"] = ov_clean
-
-    if str(sel_etf).strip().lower() == "all":
-        KP.loc[KP["Scenario"].astype(str).str.strip().str.lower() == "baseline", "contro"] = 25.1
+        KP.loc[KP["Scenario"] == "Baseline", "contro"] = 25.1
 
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
@@ -1807,7 +1805,7 @@ def render_tradeoff_scenarios():
             deltas2["delta"] = deltas2["Delta"]
         if "category" not in deltas2.columns and "Category" in deltas2.columns:
             deltas2["category"] = deltas2["Category"]
-        if "category" not in dellas2.columns:
+        if "category" not in deltas2.columns:
             deltas2["category"] = ""
 
         try:
