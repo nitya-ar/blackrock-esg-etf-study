@@ -1591,8 +1591,8 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Turnover & Cost</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="Turnover shows how much of the portfolio was replaced to build each scenario."
-            "Cost estimates the trading expense from that turnover, using the slider’s round-trip cost assumption (in bps)">'
+            'data-tip="Turnover shows how much of the portfolio was replaced to build each scenario.
+            Cost estimates the trading expense from that turnover, using the slider’s round-trip cost assumption (in bps)">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
