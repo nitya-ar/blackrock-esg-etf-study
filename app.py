@@ -1201,7 +1201,6 @@ def render_change_since_2017():
         grid(__fmt(top_decrease))
 
 
-
 def render_tradeoff_scenarios():
     import numpy as np
     import pandas as pd
@@ -1394,6 +1393,28 @@ def render_tradeoff_scenarios():
             "as":     np.average(pd.to_numeric(d[as_col],    errors="coerce"), weights=w) if as_col else np.nan,
         })
     KP = pd.DataFrame(rows).set_index("Scenario").reindex(scen_order).reset_index()
+
+    try:
+        CS = load_data_file("context_summary_2025.csv")
+    except Exception:
+        CS = None
+    def _pick(df, *names):
+        low = {c.lower(): c for c in df.columns}
+        for n in names:
+            if n.lower() in low: return low[n.lower()]
+        for c in df.columns:
+            lc = c.lower()
+            if any(n.lower() in lc for n in names): return c
+        return None
+    if CS is not None and sel_etf == "All":
+        col_ctr  = _pick(CS, "% Controversial", "pct_controversial", "controversial_%", "controversial (%)")
+        col_clean= _pick(CS, "% Clean", "pct_clean", "clean_%", "clean (%)")
+        ov_ctr   = float(pd.to_numeric(CS[col_ctr], errors="coerce").dropna().iloc[0]) if col_ctr else None
+        ov_clean = float(pd.to_numeric(CS[col_clean], errors="coerce").dropna().iloc[0]) if col_clean else None
+        if ov_ctr is not None:
+            KP.loc[KP["Scenario"] == "Baseline", "contro"] = ov_ctr
+        if ov_clean is not None:
+            KP.loc[KP["Scenario"] == "Baseline", "clean"] = ov_clean
 
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
@@ -1847,6 +1868,9 @@ def render_tradeoff_scenarios():
                 _show_table(_fmt_table(top_removed))
     else:
         st.info("Position deltas file not found; cannot compute Top Added / Removed.")
+
+
+#BODY
 
 if mode == "Dashboard":
     tab1, tab2, tab3 = st.tabs(["2025 Overview", "Change since 2017", "Tradeoff Scenarios"])
