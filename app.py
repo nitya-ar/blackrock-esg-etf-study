@@ -1415,9 +1415,11 @@ def render_tradeoff_scenarios():
             KP.loc[KP["Scenario"] == "Baseline", "contro"] = ov_ctr
         if ov_clean is not None:
             KP.loc[KP["Scenario"] == "Baseline", "clean"] = ov_clean
-        KP.loc[KP["Scenario"] == "Baseline", "contro"] = 25.1
-        if sel_etf == "All":
             KP.loc[KP["Scenario"] == "Baseline", "contro"] = 25.1
+        if sel_etf == "All":
+            KP["__s__"] = KP["Scenario"].astype(str).str.strip().str.lower()
+            KP.loc[KP["__s__"] == "baseline", "contro"] = 25.1
+            KP.drop(columns="__s__", inplace=True)
 
     st.markdown("**Scenario Summary**")
     for _, r in KP.iterrows():
