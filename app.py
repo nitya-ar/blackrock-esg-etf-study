@@ -1659,7 +1659,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Sector drift vs Baseline</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip=" The chart shows how each scenario’s sector weights differ from the baseline. Darker shades indicate larger shifts in exposure. It helps visualize which sectors change the most when moving toward cleaner portfolio constructions.">'
+            'data-tip=" Sector weights are compared with the baseline, where darker shades show greater |drift|. This highlights which sectors shift the most under each scenario.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
