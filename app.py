@@ -1591,7 +1591,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Turnover & Cost</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip=" Turnover shows how much of the portfolio was replaced to build each scenario. Cost estimates the trading expense from that turnover, using the slider’s round-trip cost assumption (in bps)">'
+            'data-tip=" The slider sets the assumed trading cost. Cost (bps) shows the total expense at that rate, and Turnover % shows how much of the portfolio is traded. Higher values mean more rebalancing and higher transaction impact.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
