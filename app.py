@@ -1435,7 +1435,7 @@ def render_tradeoff_scenarios():
                 "<div class='kpi kpi-neutral t3'>"
                 "<div class='label'>TE (ann.)"
                 "<span class='info-badge has-tip tip-left tip-narrow' "
-                "data-tip='Annualised Tracking Error relative to the 2025 Baseline. Pragmatic Tilt is designed to be ≤ 4% with sector and region neutrality (±2 pp) and single-stock caps at min(5%, 3× Baseline).'>i</span>"
+                "data-tip='Annualised Tracking Error (TE) shows how closely a portfolio follows its benchmark. A higher TE means it moves further away, showing the balance between cleaner portfolios and benchmark accuracy.'>i</span>"
                 "</div>"
                 f"<div class='value'>{_fmt_te_from_fraction(r['te'])}</div>"
                 "</div>",
