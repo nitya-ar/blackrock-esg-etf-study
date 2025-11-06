@@ -115,10 +115,6 @@ The analytical framework builds on the standardized dataset to evaluate how Blac
 
 ---
 
-Sure — here’s the **final clean version** of your **Dashboard Overview** section, rewritten without any dashes or hyphens and perfectly aligned in tone and clarity with your refined methodology and framework sections. You can copy and paste this directly.
-
----
-
 ### **Dashboard Overview**
 
 The Streamlit dashboard translates the full analysis into an interactive format, allowing users to explore how BlackRock’s ESG ETFs align with sustainability goals, how this alignment has evolved since 2017, and what tradeoffs emerge when constructing cleaner portfolios. It combines quantitative analysis with clear visual storytelling to make the findings transparent and easy to interpret across funds and years.
