@@ -1725,7 +1725,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Active Share vs % Clean</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="x-axis: Active Share (difference from Baseline holdings). y-axis: resulting % Clean. Moving right increases deviation; moving up increases cleanliness.">'
+            'data-tip=" X-axis shows how much the portfolio’s weights differ from its benchmark. Y-axis shows how much cleaner the portfolio becomes. Moving right means greater deviation, moving up means stronger cleanliness. It shows the tradeoff between cleaner alignment and benchmark similarity.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
