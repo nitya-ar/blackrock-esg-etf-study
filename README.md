@@ -40,92 +40,99 @@ The research is guided by three central questions:
 
 3. **Tradeoffs**  
    What diversification and tracking-error implications arise when constructing alternative portfolios with stronger sustainability alignment?
-
+   
 ---
 
 ### **Methodology and Data Sources**
 
-1. **ETF Selection**  
-   20 iShares ESG ETFs were selected based on continuous data availability between 2017 and 2025 and substantial net assets, ensuring both analytical consistency and economic relevance. *(Source: [iShares ESG ETFs](https://www.ishares.com/us/products/etf-investments#/?productView=etf&ptrg=50%7C51%7C52%7C49&pageNumber=1&sortColumn=totalNetAssets&sortDirection=desc&dataView=keyFacts))*
+1. **ETF Selection**
+   Twenty iShares ESG ETFs were chosen for their continuous data availability between 2017 and 2025 and significant net assets, ensuring both analytical consistency and economic relevance.
+   *(Source: [iShares ESG ETFs](https://www.ishares.com/us/products/etf-investments#/?productView=etf&ptrg=50%7C51%7C52%7C49&pageNumber=1&sortColumn=totalNetAssets&sortDirection=desc&dataView=keyFacts))*
 
-2. **Data Collection**  
-   * **2025 Holdings:** Obtained directly from the iShares website, including security-level holdings, AUM, and price metadata. *(Source: [iShares.com](https://www.ishares.com/us))*  
-   * **2017–2024 Holdings:** Extracted from SEC **N-CSR** and **N-CSRS** filings (annual and semiannual reports) using Python, followed by extensive manual cleaning to correct holding's names, share, value and duplicates. *(Source: [SEC EDGAR Database](https://www.sec.gov/edgar/search/))*  
-   * **Prices:** ETF and benchmark price histories retrieved from Yahoo Finance for consistent time-series comparison. *(Source: [Yahoo Finance](https://finance.yahoo.com/))*
+2. **Data Collection**
 
-3. **Standardization**  
-   Each holding was standardized by ticker and canonical company name to ensure that the same issuer was consistently identified across all ETFs and years. This enabled accurate longitudinal analysis and integration with ESG classification and pricing data.
+   * **2025 Holdings:** Retrieved from the iShares website, including security-level holdings, AUM, and pricing metadata. *(Source: [iShares.com](https://www.ishares.com/us))*
+   * **2017–2024 Holdings:** Extracted from SEC **N-CSR** and **N-CSRS** filings using Python, then manually cleaned to correct security names, shares, values, and duplicates. *(Source: [SEC EDGAR Database](https://www.sec.gov/edgar/search/))*
+   * **Prices:** ETF and benchmark price histories collected from Yahoo Finance for time-series comparison. *(Source: [Yahoo Finance](https://finance.yahoo.com/))*
 
-4. **ESG Classification**  
-   Company-level classifications were integrated from two independent sources:  
-   * **As You Sow** datasets identifying companies involved in fossil fuels, weapons, tobacco, prisons, and deforestation. *(Source: [As You Sow](https://www.asyousow.org/))*  
-   * **Clean200** list highlighting global companies with the highest clean-energy revenues. *(Source: [Clean200](https://www.clean200.org/))*  
+3. **Standardization**
+   All holdings were standardized by ticker and canonical company name to maintain consistent issuer identification across years and ETFs. This step ensured accurate merging of holdings, classification, and pricing data.
 
-   Classification logic:  
-   * A company is **Controversial** if it appears in any of the five exclusion lists.  
-   * A company is **Clean** if it appears in *Clean200* and not in any controversial screen.  
-   * Remaining firms are categorized as **Other**.
+4. **ESG Classification**
+   Company-level classifications were integrated from two external datasets:
 
-5. **Aggregation and Weighting**  
-   Holdings within each ETF and year were normalized to sum to 100 percent. Two complementary aggregation methods were applied:  
-   * **Equal-Weighted (EW):** each ETF contributes equally, showing structural composition differences.  
-   * **AUM-Weighted:** ETFs are scaled by their net assets, reflecting capital-weighted influence.  
-     This dual perspective captures both composition and economic significance.
+   * **As You Sow:** Identifies companies involved in fossil fuels, weapons, tobacco, prisons, and deforestation. *(Source: [As You Sow](https://www.asyousow.org/))*
+   * **Clean200:** Lists global firms with the highest clean-energy revenues. *(Source: [Clean200](https://www.clean200.org/))*
 
-6. **Processed and Final Data**  
-   Cleaned, classified, and normalized data were consolidated into a unified dataset covering 2017–2025. Intermediate steps such as ticker mapping, category assignment, and exposure aggregation were performed in Python and exported as standardized CSV and Excel files for transparency.
+   Classification rules:
 
-7. **Analytical Integration**  
-   The final datasets power three layers of analysis featured in the dashboard:  
-   * **2025 Snapshot:** composition and alignment view for the latest year.  
-   * **Change Since 2017:** trend analysis showing shifts in clean vs. controversial exposures.  
-   * **Trade-Off Scenarios:** portfolio simulations (Baseline, Pragmatic Tilt, Strict Exclusion) demonstrating the tradeoff between cleaner holdings and benchmark tracking error.
+   * **Controversial:** Appears in any of the five exclusion categories.
+   * **Clean:** Appears in *Clean200* but not in any controversial list.
+   * **Other:** All remaining firms.
+
+5. **Aggregation and Weighting**
+   ETF holdings were normalized to sum to 100 percent per fund and year. Two aggregation methods were applied:
+
+   * **Equal-Weighted (EW):** Each ETF contributes equally, showing structural composition differences.
+   * **AUM-Weighted:** ETFs are weighted by assets under management, reflecting capital-weighted exposure.
+     These two perspectives provide both structural and economic context.
+
+6. **Processed and Final Data**
+   The cleaned, classified, and normalized data were consolidated into a unified 2017–2025 dataset. All processing, including ticker mapping, category tagging, and exposure aggregation, was conducted in Python and exported as standardized CSV and Excel outputs for transparency.
+
+7. **Analytical Integration**
+   The final dataset supports three analytical modules featured in the dashboard:
+
+   * **2025 Snapshot:** Captures the composition and alignment of the latest year.
+   * **Change Since 2017:** Tracks shifts in clean and controversial exposure over time.
+   * **Tradeoff Scenarios:** Models alternative portfolios to evaluate the impact of stronger ESG alignment under benchmark constraints.
 
 ---
 
 ### **Analytical Framework**
 
-The analytical framework evaluates the credibility, evolution, and practical tradeoffs of sustainability alignment within BlackRock’s ESG-branded ETFs. It integrates company-level ESG classifications, portfolio holdings, and market data to assess both composition and performance implications within a consistent structure.
+The analytical framework builds on the standardized dataset to evaluate how BlackRock’s ESG-branded ETFs align with sustainability principles, how that alignment has evolved, and what tradeoffs arise when pursuing cleaner portfolios. It provides a consistent structure for measuring ESG alignment, portfolio evolution, and tracking-error implications.
 
-1. **Alignment Measurement**  
-   For each ETF and year, the proportion of portfolio weight classified as **Clean**, **Controversial**, or **Other** is calculated using a standardized binary classification system. This quantifies how much of each portfolio is allocated to companies aligned with clean energy versus those associated with controversial industries.
+1. **Alignment Measurement**
+   For each ETF and year, portfolio weights are classified as **Clean**, **Controversial**, or **Other**. This quantifies the share of assets allocated to companies supporting clean-energy transitions versus those linked to controversial sectors.
 
-2. **Consistent Classification Across Time**  
-   The Clean and Controversial labels are derived from the **2025 ESG classification dataset**, applied retroactively to all historical holdings from 2017 to 2024. This approach, adopted due to the absence of consistent historical ESG data, ensures a constant evaluation framework across all years so that observed changes reflect true shifts in portfolio composition rather than differences in data quality or methodology.
+2. **Consistent Classification Over Time**
+   All historical holdings (2017–2024) are evaluated using the 2025 ESG classification to ensure comparability across years. This retrospective application isolates genuine portfolio changes from variations in data availability or classification standards.
 
-3. **Evolution of Alignment**  
-   Using this consistent framework, the analysis tracks year-by-year changes in Clean and Controversial exposure from 2017 through 2025 to evaluate whether BlackRock’s ESG ETFs have progressively improved in sustainability alignment.
+3. **Evolution of Alignment**
+   Year-by-year changes in Clean and Controversial exposure are analyzed to assess whether the ETFs have shifted meaningfully toward cleaner holdings over time, using both equal-weighted and AUM-weighted views.
 
-4. **Tradeoff Analysis**  
-   Three portfolio scenarios are modeled to assess the relationship between ESG purity and benchmark fidelity:  
-   * **Baseline:** replicates each ETF’s benchmark composition.  
-   * **Pragmatic Tilt:** increases Clean exposure while maintaining sector and regional neutrality within ±2%, limiting annualized tracking error (TE) to 4%, and capping single-name weights at 5%.  
-   * **Strict Exclusion:** removes all Controversial holdings and rebalances under the same ±2% neutrality and 5% cap to minimize TE.  
+4. **Tradeoff Analysis**
+   Three portfolio scenarios are constructed to test how stricter ESG alignment affects diversification and benchmark fidelity:
 
-   These parameters reflect realistic institutional constraints, allowing a fair comparison of how stronger ESG alignment affects diversification, concentration, and tracking precision.
+   * **Baseline:** Reflects each ETF’s actual benchmark composition.
+   * **Pragmatic Tilt:** Increases Clean exposure while maintaining sector and regional neutrality within ±2%, limits annualized tracking error (TE) to 4%, and caps single-name weights at 5%.
+   * **Strict Exclusion:** Removes all Controversial holdings, then rebalances under the same neutrality and concentration limits to minimize TE.
+     These scenarios illustrate the balance between sustainability objectives and investment realism.
 
-5. **Weighting Perspectives**  
-   Results are presented under two complementary views. The **Equal-Weighted** view treats all ETFs equally, highlighting structural differences, while the **AUM-Weighted** view scales results by fund size, capturing the real capital-weighted impact of investor exposure.
+5. **Integration into Dashboard**
+   Results from these analyses drive the Streamlit dashboard’s three modules — *2025 Overview*, *Change Since 2017*, and *Tradeoff Scenarios* — enabling users to explore portfolio composition, historical shifts, and cleaner portfolio simulations interactively.
 
-6. **Integration into Dashboard**  
-   The outputs from these analyses power the Streamlit dashboard’s three modules — *2025 Overview*, *Change Since 2017*, and *Tradeoff Scenarios* — enabling users to interactively explore composition, historical change, and the measurable tradeoffs between cleaner portfolios and benchmark alignment.
+---
+
+Sure — here’s the **final clean version** of your **Dashboard Overview** section, rewritten without any dashes or hyphens and perfectly aligned in tone and clarity with your refined methodology and framework sections. You can copy and paste this directly.
 
 ---
 
 ### **Dashboard Overview**
 
-The Streamlit dashboard brings the analysis to life by translating the study’s data and results into an interactive, visual format. It allows users to explore how BlackRock’s ESG ETFs align with sustainability principles, how that alignment has changed over time, and what tradeoffs arise when constructing cleaner portfolios.
+The Streamlit dashboard translates the full analysis into an interactive format, allowing users to explore how BlackRock’s ESG ETFs align with sustainability goals, how this alignment has evolved since 2017, and what tradeoffs emerge when constructing cleaner portfolios. It combines quantitative analysis with clear visual storytelling to make the findings transparent and easy to interpret across funds and years.
 
-1. **2025 Overview**  
-   This section provides a clear snapshot of the current ESG ETF landscape. It shows how fund assets are distributed across Clean, Controversial, and Other holdings, highlights exposure to each controversial screen, and identifies the largest clean and controversial positions. It establishes the baseline understanding of where BlackRock’s ESG ETFs stand today.
+1. **2025 Overview**
+   This section presents a snapshot of the current ESG ETF landscape. It breaks down each fund’s exposure by classification category, highlights contributions from each controversial area, and identifies the largest positions driving these exposures. It establishes the baseline view of where BlackRock’s ESG ETFs stand today in terms of sustainability alignment.
 
-2. **Change Since 2017**  
-   This section tracks the evolution of ESG alignment from 2017 to 2025 using a consistent classification framework. It shows whether exposure to controversial industries has declined and whether clean holdings have expanded, distinguishing between structural changes and AUM-driven shifts in capital allocation.
+2. **Change Since 2017**
+   This section examines how alignment has evolved from 2017 to 2025 using a consistent classification framework. It tracks changes in clean and controversial exposure over time and distinguishes between genuine shifts in portfolio composition and those driven by changes in asset size. Users can switch between equal-weighted and AUM-weighted views to understand both structural and capital-weighted impacts.
 
-3. **Tradeoff Scenarios**  
-   This section models alternative portfolio constructions to test the balance between stronger ESG alignment and investment practicality. It compares the actual 2025 portfolios with two simulated alternatives (Pragmatic Tilt and Strict Exclusion) to show how cleaner holdings affect diversification, tracking error, and portfolio costs within realistic investment limits.
+3. **Tradeoff Scenarios**
+   This section models alternative portfolio constructions to evaluate how stronger ESG alignment affects diversification, tracking error, and cost. It compares the actual 2025 portfolios with two modeled approaches, Pragmatic Tilt and Strict Exclusion, to illustrate how cleaner holdings perform under realistic investment constraints.
 
-Together, the three sections build a unified exploration of alignment, evolution, and tradeoffs. Helping users understand both the current state of BlackRock’s ESG ETFs and the measurable implications of moving toward cleaner portfolios.
+Together, these three modules provide a unified exploration of alignment, evolution, and tradeoffs, enabling users to assess both the current state of BlackRock’s ESG ETFs and the practical implications of pursuing stronger sustainability objectives within large benchmark-based portfolios.
 
 ---
 
