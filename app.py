@@ -1528,6 +1528,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
             'data-tip=" It shows the balance between cleanliness and benchmark accuracy. x-axis: how much cleaner the portfolio gets, y-axis: how much it drifts from the benchmark. Moving right means cleaner, moving up means less precise tracking.">'
+            'i</span>'
             '</div>',
             unsafe_allow_html=True
         )
