@@ -1527,7 +1527,7 @@ def render_tradeoff_scenarios():
             '<div class="chart-head">'
             '<div class="chart-title">Cleanliness Uplift vs Tracking Error</div>'
             '<span class="info-badge has-tip tip-left tip-wide" '
-            'data-tip="x-axis: increase in % Clean versus the 2025 Baseline (percentage points). y-axis: annualised Tracking Error. Pragmatic Tilt targets ≤ 4% TE while keeping sectors and regions within ±2 pp and single-stock caps at min(5%, 3× Baseline).">'
+            'data-tip="The x-axis shows how much cleaner the portfolio gets, and the y-axis shows how much it drifts from the benchmark. Moving right means cleaner, moving up means less precise tracking. It shows the balance between cleanliness and benchmark accuracy.">'
             'i</span>'
             '</div>',
             unsafe_allow_html=True
