@@ -1,4 +1,4 @@
-streamlit>=1.38  # dashboard optimized for dark mode; best viewed with browser dark theme enabled
+streamlit>=1.38 
 pandas>=2.2
 numpy>=1.26
 altair>=5.3
